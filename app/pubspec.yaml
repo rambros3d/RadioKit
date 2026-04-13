@@ -1,0 +1,31 @@
+name: radiokit
+description: RadioKit - BLE companion app for Arduino RadioKit library
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # BLE communication
+  flutter_reactive_ble: ^5.3.1
+
+  # State management
+  provider: ^6.1.2
+
+  # Permissions for BLE on Android/iOS
+  permission_handler: ^11.3.1
+
+  cupertino_icons: ^1.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
