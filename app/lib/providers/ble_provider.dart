@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../models/device_info.dart';
 import '../services/ble_service.dart';
+// permission_handler is not available on web; import conditionally
+import 'package:permission_handler/permission_handler.dart'
+    if (dart.library.js_interop) '../utils/permission_handler_stub.dart';
 
 /// Manages BLE scanning state and the list of discovered devices.
 class BleProvider extends ChangeNotifier {
@@ -24,8 +26,12 @@ class BleProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   /// Request all required BLE permissions.
-  /// Returns true if all required permissions are granted.
+  ///
+  /// On web, permissions are handled by the browser device picker,
+  /// so this always returns true.
   Future<bool> requestPermissions() async {
+    if (kIsWeb) return true;
+
     final permissions = [
       Permission.bluetooth,
       Permission.bluetoothScan,

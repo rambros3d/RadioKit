@@ -61,6 +61,26 @@ flutter run
 
 The app scans for nearby RadioKit BLE devices, connects, downloads the UI layout from the Arduino, and renders it on screen.
 
+#### Web (no install required)
+
+Run the app in your browser to test without installing anything:
+
+```bash
+cd app
+flutter pub get
+flutter run -d chrome
+```
+
+Or build and serve a static bundle:
+
+```bash
+flutter build web
+cd build/web && python3 -m http.server 8080
+# open http://localhost:8080
+```
+
+> Web Bluetooth requires **Chrome or Edge** (desktop or Android). Firefox and Safari do not support the Web Bluetooth API. The page must be served over **https** or **localhost**.
+
 ---
 
 ## Supported Widgets
@@ -81,7 +101,7 @@ The app scans for nearby RadioKit BLE devices, connects, downloads the UI layout
 - **ESP32** boards (any variant with built-in BLE)
 - Communication: **Bluetooth Low Energy (BLE)**
 
-The app runs on **Android** and **iOS**.
+The app runs on **Android**, **iOS**, and **Web** (Chrome/Edge — no install required).
 
 ---
 

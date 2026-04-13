@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/ble_provider.dart';
@@ -20,10 +21,13 @@ class _ScanScreenState extends State<ScanScreen> {
   @override
   void initState() {
     super.initState();
-    // Start scanning automatically when the screen opens
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BleProvider>().startScan();
-    });
+    // On native, start scanning automatically.
+    // On web, the user taps a button to trigger the browser device picker.
+    if (!kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<BleProvider>().startScan();
+      });
+    }
   }
 
   Future<void> _onDeviceTapped(DeviceInfo device) async {
@@ -81,16 +85,18 @@ class _ScanScreenState extends State<ScanScreen> {
               ],
             ),
             actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: bleProvider.isScanning
-                    ? const _ScanningIndicator()
-                    : IconButton(
-                        icon: const Icon(Icons.refresh_rounded),
-                        tooltip: 'Rescan',
-                        onPressed: () => bleProvider.startScan(),
-                      ),
-              ),
+              // On web, scanning is triggered via button — no toolbar action
+              if (!kIsWeb)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: bleProvider.isScanning
+                      ? const _ScanningIndicator()
+                      : IconButton(
+                          icon: const Icon(Icons.refresh_rounded),
+                          tooltip: 'Rescan',
+                          onPressed: () => bleProvider.startScan(),
+                        ),
+                ),
             ],
           ),
           body: RefreshIndicator(
@@ -109,6 +115,11 @@ class _ScanScreenState extends State<ScanScreen> {
       return _buildErrorState(bleProvider.errorMessage!);
     }
 
+    // Web: show the one-shot browser picker UI
+    if (kIsWeb) {
+      return _buildWebPickerState(bleProvider);
+    }
+
     if (bleProvider.devices.isEmpty) {
       return _buildEmptyState(bleProvider.isScanning);
     }
@@ -123,6 +134,85 @@ class _ScanScreenState extends State<ScanScreen> {
         );
       },
     );
+  }
+
+  Widget _buildWebPickerState(BleProvider bleProvider) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const _RadioKitLogo(),
+            const SizedBox(height: 32),
+            Text(
+              'RadioKit Web',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Click the button below to open the browser Bluetooth device picker.\n'
+              'Make sure your Arduino is powered on and running the RadioKit sketch.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.primary),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.info_outline_rounded,
+                      size: 16, color: AppColors.textSecondary),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Requires Chrome or Edge on desktop, or Chrome on Android.\n'
+                      'Web Bluetooth is not available in Firefox or Safari.',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            bleProvider.isScanning
+                ? const CircularProgressIndicator(color: AppColors.highlight)
+                : ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.highlight,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 28, vertical: 16),
+                      textStyle: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    icon: const Icon(Icons.bluetooth_searching_rounded),
+                    label: const Text('Connect to Device'),
+                    onPressed: () => _startWebConnect(bleProvider),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startWebConnect(BleProvider bleProvider) async {
+    // Trigger the browser's device picker
+    await bleProvider.startScan();
+
+    if (!mounted) return;
+
+    final devices = bleProvider.devices;
+    if (devices.isNotEmpty) {
+      // A device was selected — connect immediately
+      await _onDeviceTapped(devices.first);
+    }
   }
 
   Widget _buildEmptyState(bool isScanning) {
