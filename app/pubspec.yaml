@@ -17,11 +17,12 @@ dependencies:
   # BLE: web (Web Bluetooth API — Chrome/Edge)
   flutter_web_bluetooth: ^1.1.0
 
-  # Serial: native (Android USB-CDC + desktop)
-  usb_serial: ^2.7.0
+  # Serial: native Android USB-CDC (FTDI, CDC, CP210x, CH340 …)
+  usb_serial: ^0.5.2
 
   # Serial: web (Web Serial API — Chrome/Edge)
-  web_serial: ^0.1.2
+  # https://pub.dev/packages/webserial
+  webserial: ^1.1.0
 
   # State management
   provider: ^6.1.2

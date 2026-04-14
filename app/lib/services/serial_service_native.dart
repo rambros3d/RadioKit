@@ -6,14 +6,15 @@ import 'protocol_service.dart';
 import 'transport_service.dart';
 export 'transport_service.dart';
 
-/// Native USB-CDC Serial transport (Android + desktop).
+/// Native USB-CDC Serial transport (Android).
 ///
-/// Uses the `usb_serial` package to enumerate USB-CDC devices and open
-/// a bidirectional byte stream. Received bytes are fed into the same
-/// RadioKit framing buffer used by the BLE service.
+/// Uses the `usb_serial` ^0.5.2 package to enumerate USB-CDC devices
+/// (FTDI, CDC ACM, CP210x, CH340 …) and open a bidirectional byte stream.
+/// Received bytes are fed into the same RadioKit framing buffer used by
+/// the BLE service.
 ///
-/// isConnected returns true for [_kSessionTimeout] after the last
-/// valid packet — matching the Arduino firmware's 3-second window.
+/// [isConnected] returns true for [_kSessionTimeout] after the last valid
+/// packet — matching the Arduino firmware's 3-second keep-alive window.
 class SerialService implements TransportService {
   static const _kSessionTimeout = Duration(seconds: 3);
   static const _kDefaultBaud = 115200;
@@ -21,7 +22,6 @@ class SerialService implements TransportService {
   @override PacketReceivedCallback? onPacketReceived;
   @override ConnectionLostCallback? onConnectionLost;
 
-  UsbDevice? _device;
   UsbPort? _port;
   StreamSubscription<Uint8List>? _rxSub;
   Timer? _sessionTimer;
@@ -31,20 +31,25 @@ class SerialService implements TransportService {
 
   bool get isSupported => true;
 
+  @override
+  bool get isConnected => _connected;
+
   // ---------------------------------------------------------------------------
   // Port discovery
   // ---------------------------------------------------------------------------
 
-  /// Returns a one-shot stream of available USB-CDC [DeviceInfo] objects.
-  ///
-  /// The [DeviceInfo.id] encodes the USB device serial number / port path
-  /// used by [connect].
+  /// Enumerates attached USB-CDC devices and yields them as [DeviceInfo].
+  /// The [DeviceInfo.id] encodes `"<vid>:<pid>:<serial|deviceName>"` so
+  /// that [connect] can locate the exact device.
   Stream<DeviceInfo> listPorts() async* {
     final devices = await UsbSerial.listDevices();
     for (final d in devices) {
+      final serial = d.serial?.isNotEmpty == true ? d.serial! : (d.deviceName ?? 'usb');
       yield DeviceInfo(
-        id: '${d.vid}:${d.pid}:${d.serial ?? d.deviceName ?? 'usb'}',
-        name: d.productName ?? d.deviceName ?? 'USB Serial Device',
+        id: '${d.vid}:${d.pid}:$serial',
+        name: d.productName?.isNotEmpty == true
+            ? d.productName!
+            : (d.deviceName ?? 'USB Serial Device'),
         rssi: 0, // not applicable for serial
       );
     }
@@ -57,28 +62,33 @@ class SerialService implements TransportService {
   @override
   Future<void> connect(String deviceId) async {
     final devices = await UsbSerial.listDevices();
-    final target = devices.firstWhere(
-      (d) => '${d.vid}:${d.pid}:${d.serial ?? d.deviceName ?? 'usb'}' == deviceId,
-      orElse: () => throw Exception('USB device "$deviceId" not found.'),
-    );
+
+    UsbDevice? target;
+    for (final d in devices) {
+      final serial = d.serial?.isNotEmpty == true ? d.serial! : (d.deviceName ?? 'usb');
+      if ('${d.vid}:${d.pid}:$serial' == deviceId) {
+        target = d;
+        break;
+      }
+    }
+    if (target == null) throw Exception('USB device "$deviceId" not found.');
 
     final port = await target.create();
-    if (port == null) throw Exception('Failed to open USB port.');
+    if (port == null) throw Exception('Failed to create USB port.');
 
     final opened = await port.open();
     if (!opened) throw Exception('USB port refused to open.');
 
     await port.setDTR(true);
     await port.setRTS(true);
-    await port.setPortParameters(
+    port.setPortParameters(
       _kDefaultBaud,
       UsbPort.DATABITS_8,
       UsbPort.STOPBITS_1,
       UsbPort.PARITY_NONE,
     );
 
-    _device = target;
-    _port   = port;
+    _port = port;
     _receiveBuffer.clear();
     _connected = false;
 
@@ -88,9 +98,6 @@ class SerialService implements TransportService {
       onDone: ()   => _handleDisconnect('Serial port closed'),
     );
   }
-
-  @override
-  bool get isConnected => _connected;
 
   // ---------------------------------------------------------------------------
   // Receive path
@@ -147,7 +154,7 @@ class SerialService implements TransportService {
   }
 
   // ---------------------------------------------------------------------------
-  // Disconnect
+  // Disconnect / dispose
   // ---------------------------------------------------------------------------
 
   void _handleDisconnect(String reason) {
@@ -156,8 +163,7 @@ class SerialService implements TransportService {
     _rxSub?.cancel();
     _rxSub = null;
     _port?.close();
-    _port   = null;
-    _device = null;
+    _port = null;
     onConnectionLost?.call(reason);
   }
 
@@ -168,8 +174,7 @@ class SerialService implements TransportService {
     await _rxSub?.cancel();
     _rxSub = null;
     try { await _port?.close(); } catch (_) {}
-    _port   = null;
-    _device = null;
+    _port = null;
     _receiveBuffer.clear();
   }
 

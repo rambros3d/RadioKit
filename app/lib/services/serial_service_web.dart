@@ -1,20 +1,25 @@
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:typed_data';
-import 'package:web_serial/web_serial.dart';
+import 'package:webserial/webserial.dart';
 import '../models/device_info.dart';
 import 'protocol_service.dart';
 import 'transport_service.dart';
 export 'transport_service.dart';
 
-/// Web Serial transport (Chrome / Edge).
+/// Web Serial transport (Chrome / Edge — Web Serial API).
 ///
-/// The Web Serial API works like Web Bluetooth:
-///   - A one-shot browser port picker dialog is shown when [requestPort] is called.
-///   - The selected port persists for the browser session.
-///   - Requires a secure context (https or localhost).
+/// Uses the `webserial` ^1.1.0 package which wraps `window.navigator.serial`
+/// via `dart:js_interop` extension types.
 ///
-/// isConnected returns true for [_kSessionTimeout] after the last
-/// valid packet — matching the Arduino firmware's 3-second window.
+/// Flow:
+///   1. [listPorts] → calls `serial.requestPort(null)` — shows the browser
+///      port picker once and yields the selected port as a [DeviceInfo].
+///   2. [connect] → opens the port at 115200 baud and starts the read loop.
+///   3. [writePacket] → locks the writable stream, writes, then releases lock.
+///
+/// [isConnected] returns true for [_kSessionTimeout] after the last valid
+/// packet — matching the Arduino firmware's 3-second keep-alive window.
 class SerialService implements TransportService {
   static const _kSessionTimeout = Duration(seconds: 3);
   static const _kDefaultBaud = 115200;
@@ -22,26 +27,32 @@ class SerialService implements TransportService {
   @override PacketReceivedCallback? onPacketReceived;
   @override ConnectionLostCallback? onConnectionLost;
 
-  SerialPort? _port;
-  StreamSubscription<Uint8List>? _rxSub;
+  JSSerialPort? _port;
   Timer? _sessionTimer;
   bool _connected = false;
+  bool _reading = false;
   bool _pickerOpen = false;
 
   final List<int> _receiveBuffer = [];
 
-  bool get isSupported => WebSerial.isSupported;
-
   @override
   bool get isConnected => _connected;
 
+  bool get isSupported {
+    try {
+      return serial.isDefinedAndNotNull;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // ---------------------------------------------------------------------------
-  // Port discovery (triggers browser picker)
+  // Port discovery — triggers browser picker
   // ---------------------------------------------------------------------------
 
-  /// Open the browser's serial port picker and yield the selected port as
-  /// a single [DeviceInfo]. Uses a synthetic ID of the form
-  /// `serial:<usbVendorId>:<usbProductId>` when available.
+  /// Opens the browser serial port picker and yields the selected port as a
+  /// single [DeviceInfo]. The port is cached internally so [connect] can
+  /// open it without showing the picker again.
   Stream<DeviceInfo> listPorts() {
     final controller = StreamController<DeviceInfo>();
     _requestPort(controller);
@@ -49,10 +60,9 @@ class SerialService implements TransportService {
   }
 
   Future<void> _requestPort(StreamController<DeviceInfo> controller) async {
-    if (!WebSerial.isSupported) {
+    if (!isSupported) {
       controller.addError(Exception(
-        'Web Serial is not supported in this browser.\n'
-        'Please use Chrome or Edge on desktop.',
+        'Web Serial is not supported in this browser. Use Chrome or Edge on desktop.',
       ));
       await controller.close();
       return;
@@ -62,32 +72,40 @@ class SerialService implements TransportService {
     _pickerOpen = true;
 
     try {
-      final port = await WebSerial.requestPort();
-      _pendingPort = port;
+      // requestWebSerialPort is the top-level helper from webserial package
+      final port = await requestWebSerialPort(null);
+      if (port == null) {
+        // User cancelled — close silently
+        await controller.close();
+        return;
+      }
 
+      _port = port;
+
+      // Build a display ID from vendor/product IDs when available
       final info = port.getInfo();
-      final vendorId  = info.usbVendorId  ?? 0;
-      final productId = info.usbProductId ?? 0;
-      final id = 'serial:${vendorId.toRadixString(16).padLeft(4, '0')}:${productId.toRadixString(16).padLeft(4, '0')}';
+      final vid = (info.getProperty<JSNumber?>('usbVendorId'.toJS)?.toDartInt ?? 0)
+          .toRadixString(16).padLeft(4, '0');
+      final pid = (info.getProperty<JSNumber?>('usbProductId'.toJS)?.toDartInt ?? 0)
+          .toRadixString(16).padLeft(4, '0');
+      final id = 'serial:$vid:$pid';
 
       controller.add(DeviceInfo(
         id: id,
-        name: 'USB Serial ($id)',
+        name: 'USB Serial ($vid:$pid)',
         rssi: 0,
       ));
     } catch (e) {
       final msg = e.toString();
+      // Suppress "user cancelled" errors (NotFoundError / SecurityError)
       if (!msg.contains('NotFoundError') && !msg.contains('SecurityError')) {
         if (!controller.isClosed) controller.addError(Exception('Serial error: $e'));
       }
-      // User cancelled — close silently
     } finally {
       _pickerOpen = false;
       if (!controller.isClosed) await controller.close();
     }
   }
-
-  SerialPort? _pendingPort;
 
   // ---------------------------------------------------------------------------
   // Connection
@@ -95,33 +113,56 @@ class SerialService implements TransportService {
 
   @override
   Future<void> connect(String deviceId) async {
-    final port = _pendingPort;
-    _pendingPort = null;
-
+    final port = _port;
     if (port == null) {
       throw Exception('No serial port selected. Please choose a port first.');
     }
 
-    await port.open(baudRate: _kDefaultBaud);
+    // Build JSSerialOptions with baudRate
+    final options = JSSerialOptions(
+      baudRate: _kDefaultBaud.toJS,
+    );
+    await port.open(options).toDart;
 
-    _port = port;
     _receiveBuffer.clear();
     _connected = false;
+    _reading = true;
 
-    _rxSub = port.readable?.listen(
-      _onBytesReceived,
-      onError: (e) => _handleDisconnect('Serial read error: $e'),
-      onDone: ()   => _handleDisconnect('Serial port closed'),
-    );
+    // Start continuous read loop in background
+    _readLoop(port);
   }
 
   // ---------------------------------------------------------------------------
-  // Receive path
+  // Read loop
   // ---------------------------------------------------------------------------
 
-  void _onBytesReceived(Uint8List data) {
-    _receiveBuffer.addAll(data);
-    _processBuffer();
+  Future<void> _readLoop(JSSerialPort port) async {
+    final readable = port.readable;
+    if (readable == null) {
+      _handleDisconnect('Serial port has no readable stream');
+      return;
+    }
+
+    final reader = readable.getReader();
+
+    try {
+      while (_reading) {
+        final result = await reader.read().toDart;
+        final done = (result.getProperty<JSBoolean?>('done'.toJS)?.toDart) ?? false;
+        if (done) break;
+
+        final jsValue = result.getProperty<JSUint8Array?>('value'.toJS);
+        if (jsValue != null) {
+          final bytes = jsValue.toDart;
+          _receiveBuffer.addAll(bytes);
+          _processBuffer();
+        }
+      }
+    } catch (e) {
+      if (_reading) _handleDisconnect('Serial read error: $e');
+    } finally {
+      try { reader.releaseLock(); } catch (_) {}
+    }
   }
 
   void _processBuffer() {
@@ -166,30 +207,37 @@ class SerialService implements TransportService {
   Future<void> writePacket(Uint8List data) async {
     final port = _port;
     if (port == null) throw StateError('Serial port not open');
-    await port.writable?.write(data);
+
+    final writable = port.writable;
+    if (writable == null) throw StateError('Serial port has no writable stream');
+
+    final writer = writable.getWriter();
+    try {
+      await writer.write(data.toJS).toDart;
+    } finally {
+      writer.releaseLock();
+    }
   }
 
   // ---------------------------------------------------------------------------
-  // Disconnect
+  // Disconnect / dispose
   // ---------------------------------------------------------------------------
 
   void _handleDisconnect(String reason) {
+    _reading = false;
     _connected = false;
     _sessionTimer?.cancel();
-    _rxSub?.cancel();
-    _rxSub = null;
-    try { _port?.close(); } catch (_) {}
+    try { _port?.close().toDart; } catch (_) {}
     _port = null;
     onConnectionLost?.call(reason);
   }
 
   @override
   Future<void> disconnect() async {
+    _reading = false;
     _connected = false;
     _sessionTimer?.cancel();
-    await _rxSub?.cancel();
-    _rxSub = null;
-    try { await _port?.close(); } catch (_) {}
+    try { await _port?.close().toDart; } catch (_) {}
     _port = null;
     _receiveBuffer.clear();
   }
