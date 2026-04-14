@@ -21,7 +21,7 @@ dependencies:
   usb_serial: ^2.7.0
 
   # Serial: web (Web Serial API — Chrome/Edge)
-  flutter_web_serial: ^0.1.2
+  web_serial: ^0.1.2
 
   # State management
   provider: ^6.1.2

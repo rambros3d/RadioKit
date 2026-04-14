@@ -24,6 +24,7 @@
  * Swap startBLE → startSerial(Serial) for USB testing.
  */
 
+#include <Arduino.h>
 #include <RadioKit.h>
 
 // ── Pin definitions ───────────────────────────────────────────

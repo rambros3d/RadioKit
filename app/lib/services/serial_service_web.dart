@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:flutter_web_serial/flutter_web_serial.dart';
+import 'package:web_serial/web_serial.dart';
 import '../models/device_info.dart';
 import 'protocol_service.dart';
 import 'transport_service.dart';

@@ -22,6 +22,7 @@
  * Swap startBLE → startSerial(Serial) for USB testing.
  */
 
+#include <Arduino.h>
 #include <RadioKit.h>
 #include <ESP32Servo.h>
 

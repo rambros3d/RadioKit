@@ -29,6 +29,7 @@
  * Do NOT open the Arduino Serial Monitor while the app is connected.
  */
 
+#include <Arduino.h>
 #include <RadioKit.h>
 
 // ── Pin definitions ───────────────────────────────────────────

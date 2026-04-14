@@ -21,6 +21,7 @@
  * uncomment startSerial() — no other changes needed.
  */
 
+#include <Arduino.h>
 #include <RadioKit.h>
 
 // ── Pin definitions ───────────────────────────────────────────
