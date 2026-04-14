@@ -7,9 +7,7 @@ import '../models/protocol.dart';
 import '../models/device_info.dart';
 import 'protocol_service.dart';
 
-/// Callback types used by [BleService].
-typedef PacketReceivedCallback = void Function(ParsedPacket packet);
-typedef ConnectionLostCallback = void Function(String reason);
+import 'transport_service.dart';
 
 /// Web BLE service using the Web Bluetooth API (Chrome/Edge).
 ///
@@ -21,7 +19,7 @@ typedef ConnectionLostCallback = void Function(String reason);
 ///
 /// The [startScan] method triggers the browser's native device picker,
 /// yielding a single [DeviceInfo] for whatever device the user selects.
-class BleService {
+class BleService implements TransportService {
   BleService() {
     // Expose a function to JS for debugging/mocking
     js.context['injectBlePacket'] = (List<dynamic> bytes) {

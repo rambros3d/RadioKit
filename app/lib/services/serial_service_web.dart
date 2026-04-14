@@ -84,10 +84,8 @@ class SerialService implements TransportService {
 
       // Build a display ID from vendor/product IDs when available
       final info = port.getInfo();
-      final vid = (info.getProperty<JSNumber?>('usbVendorId'.toJS)?.toDartInt ?? 0)
-          .toRadixString(16).padLeft(4, '0');
-      final pid = (info.getProperty<JSNumber?>('usbProductId'.toJS)?.toDartInt ?? 0)
-          .toRadixString(16).padLeft(4, '0');
+      final vid = info.usbVendorId.toRadixString(16).padLeft(4, '0');
+      final pid = info.usbProductId.toRadixString(16).padLeft(4, '0');
       final id = 'serial:$vid:$pid';
 
       controller.add(DeviceInfo(
@@ -120,7 +118,12 @@ class SerialService implements TransportService {
 
     // Build JSSerialOptions with baudRate
     final options = JSSerialOptions(
-      baudRate: _kDefaultBaud.toJS,
+      baudRate: _kDefaultBaud,
+      dataBits: 8,
+      stopBits: 1,
+      parity: 'none',
+      flowControl: 'none',
+      bufferSize: 255,
     );
     await port.open(options).toDart;
 
@@ -143,15 +146,15 @@ class SerialService implements TransportService {
       return;
     }
 
-    final reader = readable.getReader();
+    final reader = readable.getReader() as ReadableStreamDefaultReader;
 
     try {
       while (_reading) {
         final result = await reader.read().toDart;
-        final done = (result.getProperty<JSBoolean?>('done'.toJS)?.toDart) ?? false;
+        final done = result.done;
         if (done) break;
 
-        final jsValue = result.getProperty<JSUint8Array?>('value'.toJS);
+        final jsValue = result.value as JSUint8Array?;
         if (jsValue != null) {
           final bytes = jsValue.toDart;
           _receiveBuffer.addAll(bytes);
@@ -211,7 +214,7 @@ class SerialService implements TransportService {
     final writable = port.writable;
     if (writable == null) throw StateError('Serial port has no writable stream');
 
-    final writer = writable.getWriter();
+    final writer = writable.getWriter() as WritableStreamDefaultWriter;
     try {
       await writer.write(data.toJS).toDart;
     } finally {

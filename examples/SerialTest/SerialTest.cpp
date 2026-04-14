@@ -33,55 +33,58 @@
 #include <RadioKit.h>
 
 // ── Pin definitions ───────────────────────────────────────────
-#define LED_PIN 2
+#define LED_PIN 7
 
 // ── Widget declarations ───────────────────────────────────────────
 //                          label        x    y  size
-RadioKit_Button   btn      ("Press",    20,  50,  20);
-RadioKit_Switch   sw       ("LED",      60,  50,  20);
-RadioKit_Slider   sld      ("Level",   100,  50,  12, 8.0);
-RadioKit_Joystick joy      ("Stick",   160,  50,  40);
-RadioKit_LED      statusLED(            20,  20,  14);
-RadioKit_Text     uptimeText("Uptime",  80,  20,  10);
+RadioKit_Button btn("Press", 20, 50, 20);
+RadioKit_Switch sw("LED", 60, 50, 20);
+RadioKit_Slider sld("Level", 100, 50, 12, 8.0);
+RadioKit_Joystick joy("Stick", 160, 50, 40);
+RadioKit_LED statusLED(20, 20, 14);
+RadioKit_Text uptimeText("Uptime", 80, 20, 10);
 
 // ────────────────────────────────────────────────────────────
 void setup() {
-    pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN, LOW);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
 
-    // USB Serial transport — app connects over Web Serial or Android USB
-    RadioKit.startSerial(Serial);
+  // USB Serial transport — app connects over Web Serial or Android USB
+  RadioKit.startSerial(Serial);
 }
 
 // ────────────────────────────────────────────────────────────
 void loop() {
-    RadioKit.update();
+  RadioKit.update();
 
-    // Button: blink LED on press
-    if (btn.isPressed()) {
-        digitalWrite(LED_PIN, HIGH);
-        delay(80);
-        digitalWrite(LED_PIN, LOW);
-    }
+  // Button: blink LED on press
+  if (btn.isPressed()) {
+    digitalWrite(LED_PIN, HIGH);
+    delay(80);
+    digitalWrite(LED_PIN, LOW);
+  }
 
-    // Switch: hold LED on
-    if (sw.isOn()) {
-        digitalWrite(LED_PIN, HIGH);
-    }
+  // Switch: hold LED on
+  if (sw.isOn()) {
+    digitalWrite(LED_PIN, HIGH);
+  }
 
-    // Status LED: reflects slider level
-    uint8_t level = sld.value();
-    if      (level < 34) statusLED.set(RadioKit_LED::RED);
-    else if (level < 67) statusLED.set(RadioKit_LED::YELLOW);
-    else                 statusLED.set(RadioKit_LED::GREEN);
+  // Status LED: reflects slider level
+  uint8_t level = sld.value();
+  if (level < 34)
+    statusLED.set(RadioKit_LED::RED);
+  else if (level < 67)
+    statusLED.set(RadioKit_LED::YELLOW);
+  else
+    statusLED.set(RadioKit_LED::GREEN);
 
-    // Uptime text (updates every second)
-    static uint32_t lastSec = 0;
-    uint32_t nowSec = millis() / 1000;
-    if (nowSec != lastSec) {
-        lastSec = nowSec;
-        char buf[20];
-        snprintf(buf, sizeof(buf), "%lus", (unsigned long)nowSec);
-        uptimeText.set(buf);
-    }
+  // Uptime text (updates every second)
+  static uint32_t lastSec = 0;
+  uint32_t nowSec = millis() / 1000;
+  if (nowSec != lastSec) {
+    lastSec = nowSec;
+    char buf[20];
+    snprintf(buf, sizeof(buf), "%lus", (unsigned long)nowSec);
+    uptimeText.set(buf);
+  }
 }
