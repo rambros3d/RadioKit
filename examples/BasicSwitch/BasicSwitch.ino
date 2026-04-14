@@ -3,63 +3,55 @@
  *
  * Demonstrates the simplest RadioKit setup:
  *   - A toggle switch controls the built-in LED
- *   - An LED widget in the app mirrors the physical LED state
- *   - A text widget displays "ON" or "OFF"
+ *   - An LED widget mirrors the physical LED state in the app
+ *   - A text widget shows "ON" or "OFF"
  *
  * Hardware:
  *   - ESP32 dev board (built-in LED on GPIO 2)
  *   - No external components needed
  *
+ * Wiring: none — uses the onboard LED
+ *
  * Usage:
  *   1. Flash to ESP32
- *   2. Open the RadioKit Flutter app and scan for "LightSwitch"
+ *   2. Open the RadioKit app and connect to "LightSwitch"
  *   3. Tap the switch to toggle the LED
+ *
+ * To test over USB instead of BLE, comment out startBLE() and
+ * uncomment startSerial() — no other changes needed.
  */
 
 #include <RadioKit.h>
 
-// ── Pin definitions ──────────────────────────────────────────────────────────
-#define LED_PIN 2  // Built-in LED on most ESP32 boards
+// ── Pin definitions ───────────────────────────────────────────
+#define LED_PIN 2   // Built-in LED on most ESP32 dev boards
 
-// ── Widget declarations ──────────────────────────────────────────────────────
-RadioKit_Switch switchWidget;   // input  — user toggles in app
-RadioKit_LED    ledWidget;      // output — shows LED state in app
-RadioKit_Text   textWidget;     // output — shows "ON" or "OFF"
+// ── Widget declarations (self-register on construction) ────────────────
+//                          label      x    y   size  aspect
+RadioKit_Switch lightSwitch("Light",  100,  50,  20);
+RadioKit_LED    statusLED  (           20,  20,  14);
+RadioKit_Text   stateText  ("State",  100,  20,  10);
 
-// ────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 void setup() {
-    Serial.begin(115200);
-    Serial.println("RadioKit BasicSwitch example starting...");
-
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(LED_PIN, LOW);
 
-    // Register widgets (virtual 1000×1000 coordinate space)
-    //                  label       x     y     w     h
-    RadioKit.addWidget(switchWidget, "Light",  300, 200, 400, 150);
-    RadioKit.addWidget(ledWidget,    "Status", 400, 450, 200, 200);
-    RadioKit.addWidget(textWidget,   "State",  350, 700, 300, 100);
-
-    // Initialise BLE — device name visible in the app's scan list
-    RadioKit.begin("LightSwitch");
-
-    Serial.println("BLE advertising as 'LightSwitch'");
+    RadioKit.startBLE("LightSwitch");
+    // RadioKit.startSerial(Serial);   // ← swap this in to test over USB
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 void loop() {
-    RadioKit.handle();  // must be called every iteration
+    RadioKit.update();
 
-    // ── Read input widget ────────────────────────────────────────────────────
-    if (switchWidget.isOn()) {
-        // Switch is ON — turn on physical LED and update output widgets
+    if (lightSwitch.isOn()) {
         digitalWrite(LED_PIN, HIGH);
-        ledWidget.set(RadioKit_LED::GREEN);
-        textWidget.set("ON");
+        statusLED.set(RadioKit_LED::GREEN);
+        stateText.set("ON");
     } else {
-        // Switch is OFF
         digitalWrite(LED_PIN, LOW);
-        ledWidget.set(RadioKit_LED::OFF);
-        textWidget.set("OFF");
+        statusLED.set(RadioKit_LED::OFF);
+        stateText.set("OFF");
     }
 }

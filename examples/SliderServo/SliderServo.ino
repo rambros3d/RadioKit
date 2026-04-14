@@ -1,84 +1,65 @@
 /**
  * SliderServo — RadioKit Example
  *
- * A slider in the app controls a servo motor angle (0°–180°).
- * A text widget displays the current angle.
- * An LED widget provides a visual zone indicator:
- *   0–30°  → RED    (left zone)
- *   31–150° → GREEN (centre zone)
- *   151–180°→ BLUE  (right zone)
+ * A slider in the app controls a servo motor angle (0–180°).
+ * A text widget shows the current angle.
+ * An LED indicates the position zone:
+ *   0–30°   → RED   (left)
+ *   31–150°  → GREEN (centre)
+ *   151–180° → BLUE  (right)
  *
  * Hardware:
  *   - ESP32 dev board
- *   - Standard RC servo connected to SERVO_PIN
- *     (signal wire → GPIO 18, power → 5 V, GND → GND)
+ *   - Standard RC servo: signal → GPIO 18, power → 5 V, GND → GND
+ *
+ * Requires the "ESP32Servo" library (install via Library Manager).
  *
  * Usage:
  *   1. Flash to ESP32
- *   2. Open the RadioKit Flutter app and scan for "ServoControl"
- *   3. Move the slider — the servo follows
+ *   2. Connect to "ServoControl" in the RadioKit app
+ *   3. Drag the slider to move the servo
+ *
+ * Swap startBLE → startSerial(Serial) for USB testing.
  */
 
 #include <RadioKit.h>
-#include <ESP32Servo.h>   // Install "ESP32Servo" library via Library Manager
+#include <ESP32Servo.h>
 
-// ── Pin definitions ──────────────────────────────────────────────────────────
+// ── Pin definitions ───────────────────────────────────────────
 #define SERVO_PIN 18
 
-// ── Widget declarations ──────────────────────────────────────────────────────
-RadioKit_Slider slider;    // input  — 0 to 100
-RadioKit_Text   angleText; // output — displays "90°"
-RadioKit_LED    zoneLED;   // output — indicates position zone
+// ── Widget declarations ───────────────────────────────────────────
+//                        label       x    y  size
+RadioKit_Slider servoSlider("Angle", 100,  50,  12, 8.0);  // wide bar
+RadioKit_LED    zoneLED    (          20,  20,  14);
+RadioKit_Text   angleText  ("Deg",    20,  80,  10);
 
-// ── Servo object ─────────────────────────────────────────────────────────────
+// ── Servo object ───────────────────────────────────────────────────
 Servo myServo;
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-// Map slider value (0-100) to servo angle (0-180)
-int sliderToAngle(uint8_t sliderVal) {
-    return map(sliderVal, 0, 100, 0, 180);
-}
-
-// ────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 void setup() {
-    Serial.begin(115200);
-    Serial.println("RadioKit SliderServo example starting...");
+    myServo.attach(SERVO_PIN, 500, 2400);
+    myServo.write(90);  // centre on boot
 
-    // Attach servo with standard 50 Hz timing
-    myServo.attach(SERVO_PIN, 500, 2400); // min/max pulse in µs
-    myServo.write(90); // centre on start-up
-
-    // Register widgets
-    //                 label         x    y    w     h
-    RadioKit.addWidget(slider,    "Angle",   100, 400, 800, 120);
-    RadioKit.addWidget(angleText, "Degrees", 350, 600, 300, 100);
-    RadioKit.addWidget(zoneLED,   "Zone",    425, 200, 150, 150);
-
-    RadioKit.begin("ServoControl");
-    Serial.println("BLE advertising as 'ServoControl'");
+    RadioKit.startBLE("ServoControl");
+    // RadioKit.startSerial(Serial);   // ← swap for USB testing
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 void loop() {
-    RadioKit.handle();
+    RadioKit.update();
 
-    // ── Compute angle from slider ────────────────────────────────────────────
-    int angle = sliderToAngle(slider.value());
-
-    // ── Drive servo ─────────────────────────────────────────────────────────
+    int angle = map(servoSlider.value(), 0, 100, 0, 180);
     myServo.write(angle);
 
-    // ── Update text widget ───────────────────────────────────────────────────
+    // Angle text
     char buf[16];
     snprintf(buf, sizeof(buf), "%d deg", angle);
     angleText.set(buf);
 
-    // ── Update zone LED ──────────────────────────────────────────────────────
-    if (angle <= 30) {
-        zoneLED.set(RadioKit_LED::RED);
-    } else if (angle <= 150) {
-        zoneLED.set(RadioKit_LED::GREEN);
-    } else {
-        zoneLED.set(RadioKit_LED::BLUE);
-    }
+    // Zone LED
+    if      (angle <= 30)  zoneLED.set(RadioKit_LED::RED);
+    else if (angle <= 150) zoneLED.set(RadioKit_LED::GREEN);
+    else                   zoneLED.set(RadioKit_LED::BLUE);
 }
