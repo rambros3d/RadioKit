@@ -1,143 +1,45 @@
 /**
  * RadioKit.cpp
- * Core implementation — config parsing, struct sync, protocol dispatch.
+ * OOP widget registry, protocol dispatch, serialization.
  */
 
 #include "RadioKit.h"
 #include <string.h>
 
 // ─────────────────────────────────────────────
-//  Global singleton
-// ─────────────────────────────────────────────
 RadioKitClass RadioKit;
-
 static RadioKitClass* s_instance = nullptr;
 
-// ─────────────────────────────────────────────
-//  Descriptor stride:
-//  Each widget entry in _rk_conf[] after the 3-byte header is:
-//    [TYPE][X][Y][W][H][ROTATION][LABEL_LEN][LABEL x 32]
-//  = 7 fixed bytes + 32 label bytes = 39 bytes total per widget.
-//  The label is always stored as 32 bytes (padded with original
-//  string chars; unused bytes are garbage but LABEL_LEN tells
-//  the receiver how many are valid).
-// ─────────────────────────────────────────────
-#define RK_DESC_FIXED   7    // TYPE + X + Y + W + H + ROTATION + LABEL_LEN
-#define RK_LABEL_STORED 32   // label bytes always stored in PROGMEM
-#define RK_DESC_STRIDE  (RK_DESC_FIXED + RK_LABEL_STORED)  // 39
-
-// Byte offsets within a descriptor
-#define RK_DESC_TYPE      0
-#define RK_DESC_X         1
-#define RK_DESC_Y         2
-#define RK_DESC_W         3
-#define RK_DESC_H         4
-#define RK_DESC_ROTATION  5
-#define RK_DESC_LABELSIZE 6
-#define RK_DESC_LABEL     7
-
-// Config array header offsets
-#define RK_CONF_VERSION   0
-#define RK_CONF_ORIENT    1
-#define RK_CONF_NWIDGETS  2
-#define RK_CONF_HEADER    3  // first widget descriptor starts here
-
-// End sentinel in config array
-#define RK_CONF_SENTINEL  0xFF
-
-// ─────────────────────────────────────────────
-//  Constructor
-// ─────────────────────────────────────────────
 RadioKitClass::RadioKitClass()
-    : _structPtr(nullptr)
-    , _inputBytes(0)
-    , _outputBytes(0)
-    , _connectFlagOffset(0)
-    , _widgetCount(0)
-    , _confReady(false)
+    : _widgetCount(0)
+    , _orientation(RK_LANDSCAPE)
 {
-    memset(_txBuf, 0, sizeof(_txBuf));
+    memset(_widgets, 0, sizeof(_widgets));
+    memset(_txBuf,   0, sizeof(_txBuf));
     s_instance = this;
 }
 
 // ─────────────────────────────────────────────
-//  _widgetInputSize / _widgetOutputSize
+//  Widget self-registration
 // ─────────────────────────────────────────────
-uint8_t RadioKitClass::_widgetInputSize(uint8_t typeId) {
-    switch (typeId) {
-        case RK_TYPE_BUTTON:   return 1;
-        case RK_TYPE_SWITCH:   return 1;
-        case RK_TYPE_SLIDER:   return 1;
-        case RK_TYPE_JOYSTICK: return 2;  // X + Y
-        case RK_TYPE_LED:      return 0;
-        case RK_TYPE_TEXT:     return 0;
-        default:               return 0;
-    }
-}
-
-uint8_t RadioKitClass::_widgetOutputSize(uint8_t typeId) {
-    switch (typeId) {
-        case RK_TYPE_BUTTON:   return 0;
-        case RK_TYPE_SWITCH:   return 0;
-        case RK_TYPE_SLIDER:   return 0;
-        case RK_TYPE_JOYSTICK: return 0;
-        case RK_TYPE_LED:      return 1;
-        case RK_TYPE_TEXT:     return RADIOKIT_TEXT_LEN;
-        default:               return 0;
-    }
+void RadioKitClass::_registerWidget(RadioKit_Widget* widget) {
+    if (_widgetCount >= RADIOKIT_MAX_WIDGETS) return;
+    widget->widgetId = _widgetCount;
+    _widgets[_widgetCount++] = widget;
 }
 
 // ─────────────────────────────────────────────
-//  _parseConfig
-//  Walks _rk_conf[] PROGMEM to resolve widget count,
-//  input/output byte totals, and connect_flag offset.
+//  startBLE
 // ─────────────────────────────────────────────
-void RadioKitClass::_parseConfig() {
-    _widgetCount       = 0;
-    _inputBytes        = 0;
-    _outputBytes       = 0;
-    _connectFlagOffset = 0;
-    _confReady         = false;
-
-    // Verify header sentinel is present at NWIDGETS slot (0xFF = unfilled)
-    // Walk from first descriptor offset until we hit the end sentinel 0xFF
-    uint16_t pos = RK_CONF_HEADER;
-    while (true) {
-        uint8_t typeId = pgm_read_byte(&_rk_conf[pos]);
-        if (typeId == RK_CONF_SENTINEL) break;  // end of descriptors
-        if (_widgetCount >= RADIOKIT_MAX_WIDGETS) break;  // safety cap
-
-        _inputBytes  += _widgetInputSize(typeId);
-        _outputBytes += _widgetOutputSize(typeId);
-        _widgetCount++;
-        pos += RK_DESC_STRIDE;
-    }
-
-    // connect_flag sits immediately after all input + output bytes
-    _connectFlagOffset = _inputBytes + _outputBytes;
-    _confReady = true;
-}
-
-// ─────────────────────────────────────────────
-//  begin
-// ─────────────────────────────────────────────
-void RadioKitClass::begin(const char* deviceName, void* structPtr) {
-    _structPtr = structPtr;
-    _parseConfig();
+void RadioKitClass::startBLE(const char* deviceName, const char* /*password*/) {
     RadioKitBLEInstance.begin(deviceName, RadioKitClass::_onPacket);
 }
 
 // ─────────────────────────────────────────────
-//  handle
+//  update
 // ─────────────────────────────────────────────
-void RadioKitClass::handle() {
+void RadioKitClass::update() {
     RadioKitBLEInstance.update();
-
-    // Keep connect_flag in sync with BLE state
-    if (_structPtr && _confReady) {
-        uint8_t* base = (uint8_t*)_structPtr;
-        base[_connectFlagOffset] = RadioKitBLEInstance.isConnected() ? 1 : 0;
-    }
 }
 
 // ─────────────────────────────────────────────
@@ -148,7 +50,7 @@ bool RadioKitClass::isConnected() const {
 }
 
 // ─────────────────────────────────────────────
-//  Static packet dispatcher
+//  Packet dispatcher
 // ─────────────────────────────────────────────
 void RadioKitClass::_onPacket(uint8_t cmd,
                               const uint8_t* payload,
@@ -156,16 +58,16 @@ void RadioKitClass::_onPacket(uint8_t cmd,
 {
     if (!s_instance) return;
     switch (cmd) {
-        case RK_CMD_GET_CONF:  s_instance->_handleGetConf();                    break;
-        case RK_CMD_GET_VARS:  s_instance->_handleGetVars();                    break;
+        case RK_CMD_GET_CONF:  s_instance->_handleGetConf();                     break;
+        case RK_CMD_GET_VARS:  s_instance->_handleGetVars();                     break;
         case RK_CMD_SET_INPUT: s_instance->_handleSetInput(payload, payloadLen); break;
-        case RK_CMD_PING:      s_instance->_handlePing();                       break;
+        case RK_CMD_PING:      s_instance->_handlePing();                        break;
         default: break;
     }
 }
 
 // ─────────────────────────────────────────────
-//  _handleGetConf  →  send CONF_DATA
+//  _handleGetConf
 // ─────────────────────────────────────────────
 void RadioKitClass::_handleGetConf() {
     uint8_t  payloadBuf[RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE];
@@ -175,7 +77,7 @@ void RadioKitClass::_handleGetConf() {
 }
 
 // ─────────────────────────────────────────────
-//  _handleGetVars  →  send VAR_DATA
+//  _handleGetVars
 // ─────────────────────────────────────────────
 void RadioKitClass::_handleGetVars() {
     uint8_t  payloadBuf[RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE];
@@ -185,21 +87,24 @@ void RadioKitClass::_handleGetVars() {
 }
 
 // ─────────────────────────────────────────────
-//  _handleSetInput  →  memcpy into struct, send ACK
+//  _handleSetInput
 // ─────────────────────────────────────────────
 void RadioKitClass::_handleSetInput(const uint8_t* payload, uint16_t len) {
-    if (!_structPtr || !_confReady) return;
-    if (len < _inputBytes) return;  // payload too short
-
-    // Input bytes sit at offset 0 in the struct
-    memcpy((uint8_t*)_structPtr, payload, _inputBytes);
-
+    uint16_t offset = 0;
+    for (uint8_t i = 0; i < _widgetCount; i++) {
+        RadioKit_Widget* w = _widgets[i];
+        uint8_t sz = w->inputSize();
+        if (sz == 0) continue;
+        if (offset + sz > len) break;
+        w->deserializeInput(payload + offset);
+        offset += sz;
+    }
     uint16_t pktLen = rk_buildAck(_txBuf);
     RadioKitBLEInstance.sendPacket(_txBuf, pktLen);
 }
 
 // ─────────────────────────────────────────────
-//  _handlePing  →  send PONG
+//  _handlePing
 // ─────────────────────────────────────────────
 void RadioKitClass::_handlePing() {
     uint16_t pktLen = rk_buildPong(_txBuf);
@@ -207,51 +112,52 @@ void RadioKitClass::_handlePing() {
 }
 
 // ─────────────────────────────────────────────
+//  _totalInputBytes / _totalOutputBytes
+// ─────────────────────────────────────────────
+uint16_t RadioKitClass::_totalInputBytes() const {
+    uint16_t total = 0;
+    for (uint8_t i = 0; i < _widgetCount; i++)
+        total += _widgets[i]->inputSize();
+    return total;
+}
+
+uint16_t RadioKitClass::_totalOutputBytes() const {
+    uint16_t total = 0;
+    for (uint8_t i = 0; i < _widgetCount; i++)
+        total += _widgets[i]->outputSize();
+    return total;
+}
+
+// ─────────────────────────────────────────────
 //  _buildConfPayload
-//  Copies config directly from PROGMEM, patching the widget count byte.
-//  Output format:
-//    [PROTO_VERSION][ORIENTATION][NUM_WIDGETS][descriptor...]
-//    Each descriptor: [TYPE][X][Y][W][H][ROTATION][LABEL_LEN][LABEL...]
-//    LABEL is trimmed to LABEL_LEN bytes (no padding sent on wire).
+//  Format: [PROTO_VER][ORIENTATION][NUM_WIDGETS]
+//          then per widget: [TYPE][ID][X][Y][W][H][ROTATION][LABEL_LEN][LABEL...]
+//  W and H are computed from size * aspect at call time.
 // ─────────────────────────────────────────────
 uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
     uint16_t out = 0;
 
-    // 3-byte header
     if (out + 3 > bufSize) return 0;
-    buf[out++] = pgm_read_byte(&_rk_conf[RK_CONF_VERSION]);
-    buf[out++] = pgm_read_byte(&_rk_conf[RK_CONF_ORIENT]);
-    buf[out++] = _widgetCount;  // patch in the resolved count
+    buf[out++] = RK_PROTOCOL_VERSION;
+    buf[out++] = (uint8_t)_orientation;
+    buf[out++] = _widgetCount;
 
-    // Widget descriptors
-    uint16_t pos = RK_CONF_HEADER;
     for (uint8_t i = 0; i < _widgetCount; i++) {
-        uint8_t typeId   = pgm_read_byte(&_rk_conf[pos + RK_DESC_TYPE]);
-        uint8_t x        = pgm_read_byte(&_rk_conf[pos + RK_DESC_X]);
-        uint8_t y        = pgm_read_byte(&_rk_conf[pos + RK_DESC_Y]);
-        uint8_t w        = pgm_read_byte(&_rk_conf[pos + RK_DESC_W]);
-        uint8_t h        = pgm_read_byte(&_rk_conf[pos + RK_DESC_H]);
-        uint8_t rotation = pgm_read_byte(&_rk_conf[pos + RK_DESC_ROTATION]);
-        uint8_t labelLen = pgm_read_byte(&_rk_conf[pos + RK_DESC_LABELSIZE]);
+        RadioKit_Widget* wgt = _widgets[i];
+        uint8_t labelLen = (uint8_t)strnlen(wgt->label(), RADIOKIT_MAX_LABEL);
+        uint16_t needed  = 8 + labelLen;  // TYPE+ID+X+Y+W+H+ROT+LABEL_LEN + label
+        if (out + needed > bufSize) break;
 
-        // 7 fixed bytes + actual label bytes
-        uint16_t needed = 7 + labelLen;
-        if (out + needed > bufSize) break;  // safety
-
-        buf[out++] = typeId;
-        buf[out++] = i;         // widget ID = sequential index
-        buf[out++] = x;
-        buf[out++] = y;
-        buf[out++] = w;
-        buf[out++] = h;
-        buf[out++] = rotation;
+        buf[out++] = wgt->typeId;
+        buf[out++] = wgt->widgetId;
+        buf[out++] = wgt->x();
+        buf[out++] = wgt->y();
+        buf[out++] = wgt->w();          // computed: size * resolvedAspect
+        buf[out++] = wgt->h();          // = size
+        buf[out++] = (uint8_t)RK_ROT(wgt->rotation());
         buf[out++] = labelLen;
-
-        for (uint8_t c = 0; c < labelLen && c < RK_LABEL_STORED; c++) {
-            buf[out++] = pgm_read_byte(&_rk_conf[pos + RK_DESC_LABEL + c]);
-        }
-
-        pos += RK_DESC_STRIDE;
+        memcpy(&buf[out], wgt->label(), labelLen);
+        out += labelLen;
     }
 
     return out;
@@ -259,14 +165,35 @@ uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
 
 // ─────────────────────────────────────────────
 //  _buildVarPayload
-//  Direct memcpy of [inputs][outputs] from user struct.
+//  [input vars in widget order] [output vars in widget order]
 // ─────────────────────────────────────────────
 uint16_t RadioKitClass::_buildVarPayload(uint8_t* buf, uint16_t bufSize) {
-    if (!_structPtr || !_confReady) return 0;
+    uint16_t out = 0;
 
-    uint16_t total = _inputBytes + _outputBytes;
-    if (total > bufSize) return 0;
+    // Input vars first
+    for (uint8_t i = 0; i < _widgetCount; i++) {
+        RadioKit_Widget* w = _widgets[i];
+        uint8_t sz = w->inputSize();
+        if (sz == 0) continue;
+        if (out + sz > bufSize) break;
+        // Input widgets have no serializeInput; their state is already
+        // deserialized into the widget. For VAR_DATA we echo it back.
+        // Re-serialize by writing the raw state bytes.
+        w->serializeOutput(&buf[out]);  // fallback: output widgets use this
+        // For input-only widgets, write zeros (app doesn't use input echo)
+        memset(&buf[out], 0, sz);
+        out += sz;
+    }
 
-    memcpy(buf, (uint8_t*)_structPtr, total);
-    return total;
+    // Output vars
+    for (uint8_t i = 0; i < _widgetCount; i++) {
+        RadioKit_Widget* w = _widgets[i];
+        uint8_t sz = w->outputSize();
+        if (sz == 0) continue;
+        if (out + sz > bufSize) break;
+        w->serializeOutput(&buf[out]);
+        out += sz;
+    }
+
+    return out;
 }

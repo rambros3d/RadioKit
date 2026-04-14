@@ -1,15 +1,15 @@
-#ifndef RADIOKIT_WIDGET_SLIDER_H
-#define RADIOKIT_WIDGET_SLIDER_H
+#ifndef RADIOKIT_WIDGET_SWITCH_H
+#define RADIOKIT_WIDGET_SWITCH_H
 
 #include "Widget.h"
 
-class RadioKit_Slider : public RadioKit_Widget {
+class RadioKit_Switch : public RadioKit_Widget {
 public:
-    static constexpr float DEFAULT_ASPECT = 5.0f;
+    static constexpr float DEFAULT_ASPECT = 1.6f;
 
-    RadioKit_Slider(const char* label, uint8_t x, uint8_t y,
+    RadioKit_Switch(const char* label, uint8_t x, uint8_t y,
                     uint8_t size, float aspect = 0);
-    RadioKit_Slider(uint8_t x, uint8_t y,
+    RadioKit_Switch(uint8_t x, uint8_t y,
                     uint8_t size, float aspect = 0);
 
     uint8_t inputSize()  const override { return 1; }
@@ -17,13 +17,13 @@ public:
     void serializeOutput(uint8_t*)          const override {}
     void deserializeInput(const uint8_t* buf)     override;
 
-    uint8_t value() const { return _value; }
+    bool isOn() const { return _state; }
 
 protected:
     float defaultAspect() const override { return DEFAULT_ASPECT; }
 
 private:
-    uint8_t _value;
+    bool _state;
 };
 
-#endif // RADIOKIT_WIDGET_SLIDER_H
+#endif // RADIOKIT_WIDGET_SWITCH_H
