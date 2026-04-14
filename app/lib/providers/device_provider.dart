@@ -23,6 +23,7 @@ class DeviceProvider extends ChangeNotifier {
   DeviceInfo? _connectedDevice;
   DeviceConnectionState _connectionState = DeviceConnectionState.disconnected;
   List<WidgetConfig> _widgets = [];
+  int _orientation = kOrientationLandscape;
   RadioWidgetState? _widgetState;
   String? _errorMessage;
   bool _configReceived = false;
@@ -44,6 +45,7 @@ class DeviceProvider extends ChangeNotifier {
   DeviceInfo? get connectedDevice => _connectedDevice;
   DeviceConnectionState get connectionState => _connectionState;
   List<WidgetConfig> get widgets => List.unmodifiable(_widgets);
+  int get orientation => _orientation;
   RadioWidgetState? get widgetState => _widgetState;
   String? get errorMessage => _errorMessage;
   bool get isConnected =>
@@ -193,14 +195,15 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   void _handleConfData(List<int> payload) {
-    final widgets = ProtocolService.parseConfData(payload);
-    if (widgets == null) {
+    final conf = ProtocolService.parseConfData(payload);
+    if (conf == null) {
       debugPrint('RadioKit: Failed to parse CONF_DATA');
       return;
     }
 
-    _widgets = widgets;
-    _widgetState = RadioWidgetState.initial(widgets);
+    _widgets = conf.widgets;
+    _orientation = conf.orientation;
+    _widgetState = RadioWidgetState.initial(conf.widgets);
     _configReceived = true;
     _connectionState = DeviceConnectionState.connected;
     notifyListeners();

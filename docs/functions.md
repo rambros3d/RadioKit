@@ -1,404 +1,177 @@
 # RadioKit Library — Function Reference
 
-> **Note:** This document reflects the **planned v2.0 API** using the struct sync architecture. All items marked ⚠️ *pending implementation* are not yet in the codebase.
+> **Note:** This document reflects the **v2.0 Object-Oriented API**. This version uses auto-detecting widget objects and a flexible **Size & Aspect Ratio** layout model.
 
 ---
 
 ## Table of Contents
 
 1. [Setup & Sketch Structure](#1-setup--sketch-structure)
-2. [Config Block Macros](#2-config-block-macros)
-3. [Struct Field Types](#3-struct-field-types)
+2. [Common Widget Methods](#2-common-widget-methods)
+3. [Widget Class Reference](#3-widget-class-reference)
+   - [RadioKit_Button](#radiokit_button)
+   - [RadioKit_Switch](#radiokit_switch)
+   - [RadioKit_Slider](#radiokit_slider)
+   - [RadioKit_Joystick](#radiokit_joystick)
+   - [RadioKit_LED](#radiokit_led)
+   - [RadioKit_Text](#radiokit_text)
 4. [RadioKit (Main Object)](#4-radiokit-main-object)
-   - [begin()](#begin)
-   - [handle()](#handle)
+   - [startBLE()](#startble)
+   - [update()](#update)
    - [isConnected()](#isconnected)
-5. [LED Color Constants](#5-led-color-constants)
+5. [Coordinate System](#5-coordinate-system)
 6. [Constants & Enums](#6-constants--enums)
-7. [Coordinate System](#7-coordinate-system)
-8. [Edge Detection Helper](#8-edge-detection-helper)
-9. [Full Sketch Example](#9-full-sketch-example)
+7. [Full Sketch Example](#7-full-sketch-example)
 
 ---
 
 ## 1. Setup & Sketch Structure
 
-Every RadioKit sketch follows this four-part pattern:
+Every RadioKit sketch follows this simple three-part pattern. Widgets **register themselves automatically** upon declaration.
 
 ```cpp
 #include <RadioKit.h>
 
-// ── Part 1: Config block — widget layout ──────────────────────────────────
-RK_CONFIG_BEGIN(RK_LANDSCAPE)
-    RK_BUTTON  (20,  50, 25, 20, 0,  "Fire")
-    RK_LED     (20,  20, 12, 12, 0,  "Status")
-RK_CONFIG_END
+// ── Part 1: Widget declarations ──────────────────────────────────────────
+// Format: [Label (optional)], x, y, size (Height), [aspectRatio (optional)]
+// aspect = 0 (default) means "auto-calculate for this widget type"
+RadioKit_Button fireBtn("Fire", 20, 50, 25);
+RadioKit_LED    statusLed(20, 20, 12);
 
-// ── Part 2: Flat struct — one field per widget value ─────────────────────
-struct {
-    uint8_t fire;         // Button input
-    uint8_t statusLed;    // LED output
-    uint8_t connect_flag; // 1 = connected, 0 = disconnected (set by library)
-} rk;
-
-// ── Part 3: setup() ──────────────────────────────────────────────────────
+// ── Part 2: setup() ──────────────────────────────────────────────────────
 void setup() {
-    RadioKit.begin("MyDevice", &rk);
+    RadioKit.startBLE("MyDevice"); 
 }
 
-// ── Part 4: loop() ───────────────────────────────────────────────────────
+// ── Part 3: loop() ───────────────────────────────────────────────────────
 void loop() {
-    RadioKit.handle();
-    if (rk.fire) rk.statusLed = RK_LED_GREEN;
+    RadioKit.update();
+
+    if (fireBtn.isPressed()) {
+        statusLed.set(RadioKit_LED::GREEN);
+    }
 }
 ```
 
-> **Struct field order rule:** Input widget fields first (in config order), then output widget fields (in config order), then `connect_flag` last.
+---
+
+## 2. Common Widget Methods
+
+All widgets inherit these methods for runtime configuration.
+
+### `setPosition()`
+```cpp
+void setPosition(uint8_t x, uint8_t y);
+void setPosition(uint8_t x, uint8_t y, int16_t rotation);
+```
+Updates the widget's center point and optionally its rotation.
+
+### `setSize()`
+```cpp
+void setSize(uint8_t size);
+void setSize(uint8_t width, uint8_t height); // Automatically updates aspect ratio
+```
+Updates the widget's scale. If two values are provided, they set the width and height explicitly (updating the internal aspect ratio).
+
+### `show()` / `hide()`
+```cpp
+void show();
+void hide();
+```
+Controls the visibility of the widget in the app.
 
 ---
 
-## 2. Config Block Macros
+## 3. Widget Class Reference
 
-⚠️ *pending implementation*
+All constructors share a similar signature: **Label is optional** and comes first, followed by coordinates (`x`, `y`), then `size`, and finally an optional `aspectRatio`.
 
-The config block defines the UI layout. It compiles to a `PROGMEM` byte array that is sent to the app as the `CONF_DATA` packet.
+> **Note on Aspect Ratio**: A value of `0` (the default) tells the library to use the widget's ideal default ratio.
 
-### `RK_CONFIG_BEGIN(orientation)`
+### `RadioKit_Button`
+- **Constructors:**
+  - `RadioKit_Button(label, x, y, size, aspect = 0)`
+  - `RadioKit_Button(x, y, size, aspect = 0)`
+- **Default Aspect**: `2.5` (Landscape button)
 
-Opens the config block and sets the canvas orientation.
+### `RadioKit_Switch`
+- **Constructors:**
+  - `RadioKit_Switch(label, x, y, size, aspect = 0)`
+  - `RadioKit_Switch(x, y, size, aspect = 0)`
+- **Default Aspect**: `1.6`
 
-| Parameter | Values | Description |
-|---|---|---|
-| `orientation` | `RK_LANDSCAPE` / `RK_PORTRAIT` | Canvas orientation |
+### `RadioKit_Slider`
+- **Constructors:**
+  - `RadioKit_Slider(label, x, y, size, aspect = 0)`
+  - `RadioKit_Slider(x, y, size, aspect = 0)`
+- **Default Aspect**: `5.0` (Thin bar)
 
-### `RK_CONFIG_END`
+### `RadioKit_Joystick`
+- **Constructors:**
+  - `RadioKit_Joystick(label, x, y, size, aspect = 0)`
+  - `RadioKit_Joystick(x, y, size, aspect = 0)`
+- **Default Aspect**: `1.0` (Square)
 
-Closes the config block. Must follow `RK_CONFIG_BEGIN`.
+### `RadioKit_LED`
+- **Constructors:**
+  - `RadioKit_LED(label, x, y, size, aspect = 0)`
+  - `RadioKit_LED(x, y, size, aspect = 0)`
+- **Default Aspect**: `1.0` (Circular)
 
-### Widget Macros
-
-All widget macros share the same parameter signature:
-
-```cpp
-RK_WIDGET_TYPE(x, y, w, h, rotation, "Label")
-```
-
-| Parameter | Type | Description |
-|---|---|---|
-| `x` | `uint8_t` | Center X on virtual canvas |
-| `y` | `uint8_t` | Center Y on virtual canvas |
-| `w` | `uint8_t` | Widget width |
-| `h` | `uint8_t` | Widget height |
-| `rotation` | `int16_t` | Rotation in degrees `-180` to `+180` (default `0`) |
-| `"Label"` | string literal | Display label (max 32 chars) |
-
-| Macro | Widget type | Direction |
-|---|---|---|
-| `RK_BUTTON(x,y,w,h,rot,label)` | Momentary button | App → Arduino |
-| `RK_SWITCH(x,y,w,h,rot,label)` | Toggle switch | App → Arduino |
-| `RK_SLIDER(x,y,w,h,rot,label)` | Linear slider | App → Arduino |
-| `RK_JOYSTICK(x,y,w,h,rot,label)` | 2-axis joystick | App → Arduino |
-| `RK_LED(x,y,w,h,rot,label)` | LED indicator | Arduino → App |
-| `RK_TEXT(x,y,w,h,rot,label)` | Text display | Arduino → App |
-
-**Example:**
-```cpp
-RK_CONFIG_BEGIN(RK_LANDSCAPE)
-    RK_BUTTON  (20,  50, 25, 20,  0,  "Fire")
-    RK_JOYSTICK(160, 50, 35, 35,  0,  "Drive")
-    RK_SLIDER  (100, 15, 60, 12, 90,  "Throttle")  // rotated 90°
-    RK_LED     (20,  20, 12, 12,  0,  "Status")
-    RK_TEXT    (100, 80, 70, 15,  0,  "Sensor")
-RK_CONFIG_END
-```
-
----
-
-## 3. Struct Field Types
-
-Declare your struct fields in the **same order** as the config macros, inputs before outputs.
-
-| Config macro | Input field(s) in struct | Type(s) | Value range |
-|---|---|---|---|
-| `RK_BUTTON` | `uint8_t name` | `uint8_t` | `1` = pressed, `0` = released |
-| `RK_SWITCH` | `uint8_t name` | `uint8_t` | `1` = on, `0` = off |
-| `RK_SLIDER` | `uint8_t name` | `uint8_t` | `0`–`100` |
-| `RK_JOYSTICK` | `int8_t nameX, nameY` | `int8_t`, `int8_t` | `-100`–`+100` each |
-| `RK_LED` | *(output only)* `uint8_t name` | `uint8_t` | `0`–`4` (use `RK_LED_*` constants) |
-| `RK_TEXT` | *(output only)* `char name[32]` | `char[32]` | null-terminated string |
-
-**Example struct matching the config above:**
-```cpp
-struct {
-    // inputs — in config order
-    uint8_t fire;       // RK_BUTTON
-    int8_t  driveX;     // RK_JOYSTICK X
-    int8_t  driveY;     // RK_JOYSTICK Y
-    uint8_t throttle;   // RK_SLIDER
-    // outputs — in config order
-    uint8_t statusLed;       // RK_LED
-    char    sensorText[32];  // RK_TEXT
-    // meta
-    uint8_t connect_flag;
-} rk;
-```
+### `RadioKit_Text`
+- **Constructors:**
+  - `RadioKit_Text(label, x, y, size, aspect = 0)`
+  - `RadioKit_Text(x, y, size, aspect = 0)`
+- **Default Aspect**: `4.0`
 
 ---
 
 ## 4. RadioKit (Main Object)
 
-`RadioKit` is a global singleton. Never instantiate it — use `RadioKit.method()` directly.
-
----
-
-### `begin()`
-
+### `startBLE()`
 ```cpp
-void RadioKit.begin(const char* deviceName, void* structPtr);
+void RadioKit.startBLE(const char* deviceName, const char* password = nullptr);
 ```
 
-Initialises BLE, links the config array to the struct pointer, and starts advertising. Call once at the end of `setup()`.
-
-| Parameter | Type | Description |
-|---|---|---|
-| `deviceName` | `const char*` | BLE device name visible during scanning |
-| `structPtr` | `void*` | Pointer to your flat control struct (e.g. `&rk`) |
-
-**Example:**
+### `update()`
 ```cpp
-RadioKit.begin("CoolBot", &rk);
+void RadioKit.update();
 ```
 
 ---
 
-### `handle()`
+## 5. Coordinate System
 
-```cpp
-void RadioKit.handle();
-```
-
-Processes BLE events and protocol messages. **Must be called once every `loop()` iteration.** Internally handles `GET_CONF`, `GET_VARS`, `SET_INPUT`, `PING`, and `connect_flag` updates.
-
-**Example:**
-```cpp
-void loop() {
-    RadioKit.handle();
-    // your code here
-}
-```
+- **Units**: Relative 0–200 scale.
+- **Origin (0, 0)**: Bottom-left.
+- **Positions**: Center point.
 
 ---
 
-### `isConnected()`
-
-```cpp
-bool RadioKit.isConnected() const;
-```
-
-Returns `true` if a RadioKit app is currently connected. Equivalent to checking `rk.connect_flag == 1`.
-
-**Example:**
-```cpp
-if (!RadioKit.isConnected()) {
-    rk.statusLed = RK_LED_OFF;
-}
-```
-
----
-
-## 5. LED Color Constants
-
-Use these constants to set an `RK_LED` output field in your struct:
-
-```cpp
-#define RK_LED_OFF    0
-#define RK_LED_RED    1
-#define RK_LED_GREEN  2
-#define RK_LED_BLUE   3
-#define RK_LED_YELLOW 4
-```
-
-**Example:**
-```cpp
-rk.statusLed = RK_LED_GREEN;
-rk.statusLed = RK_LED_OFF;
-```
-
----
-
-## 6. Constants & Enums
-
-### Orientation ⚠️ *pending implementation*
-
-```cpp
-enum RadioKit_Orientation : uint8_t {
-    RK_LANDSCAPE = 0x00,   // Canvas: 200 wide × 100 tall
-    RK_PORTRAIT  = 0x01    // Canvas: 100 wide × 200 tall
-};
-```
-
-### Canvas Dimensions ⚠️ *pending implementation*
-
-```cpp
-#define RK_CANVAS_LANDSCAPE_W  200
-#define RK_CANVAS_LANDSCAPE_H  100
-#define RK_CANVAS_PORTRAIT_W   100
-#define RK_CANVAS_PORTRAIT_H   200
-```
-
-### Limits
-
-```cpp
-#define RADIOKIT_MAX_WIDGETS  16   // max widgets per sketch
-#define RADIOKIT_MAX_LABEL    32   // max label length (chars)
-#define RADIOKIT_TEXT_LEN     32   // max RK_TEXT string length
-```
-
-### Widget Type IDs (internal — protocol reference)
-
-```cpp
-#define RK_TYPE_BUTTON   0x01
-#define RK_TYPE_SWITCH   0x02
-#define RK_TYPE_SLIDER   0x03
-#define RK_TYPE_JOYSTICK 0x04
-#define RK_TYPE_LED      0x05
-#define RK_TYPE_TEXT     0x06
-```
-
----
-
-## 7. Coordinate System
-
-### Origin & Axes
-
-```
-(0, canvasH)  ┌──────────────────────┐  (canvasW, canvasH)
-              │                      │
-              │    Y increases ↑     │
-              │                      │
-              │    X increases →     │
-              │                      │
-       (0, 0) └──────────────────────┘  (canvasW, 0)
-              bottom-left is origin
-```
-
-- **`(0, 0)`** = bottom-left corner
-- **X** increases left → right
-- **Y** increases bottom → top
-
-### Widget Position
-
-`x` and `y` in the config macro refer to the **center** of the widget:
-
-```
-        ┌──────────┐
-        │          │  H
-        │  (x, y)  │
-        │  center  │
-        └──────────┘
-             W
-```
-
-### Rotation ⚠️ *pending implementation*
-
-- Macro parameter: `-180` to `+180` degrees
-- Wire storage: `int8_t` from `-90` to `+90` (÷2 on store, ×2 to recover)
-- Positive = counter-clockwise
-- Default = `0`
-
----
-
-## 8. Edge Detection Helper
-
-⚠️ *pending implementation*
-
-The struct sync approach gives you a raw `uint8_t` for buttons (1 = held, 0 = released). For one-shot trigger behaviour (equivalent to the old `pressed()`), use the `RK_RISING` macro:
-
-```cpp
-// Declare a previous-state variable for each button you want edge detection on
-uint8_t prev_fire = 0;
-
-void loop() {
-    RadioKit.handle();
-
-    if (RK_RISING(rk.fire, prev_fire)) {
-        // Fires exactly once per press, on the leading edge
-        triggerAction();
-    }
-}
-```
-
-`RK_RISING(current, prev)` expands to:
-```cpp
-(((current) && !(prev)) ? ((prev) = (current), true) : ((prev) = (current), false))
-```
-
----
-
-## 9. Full Sketch Example
+## 6. Full Sketch Example
 
 ```cpp
 #include <RadioKit.h>
 
-// ── Config ────────────────────────────────────────────────────────────────
-RK_CONFIG_BEGIN(RK_LANDSCAPE)
-    RK_BUTTON  (20,  50, 25, 20, 0, "Fire")
-    RK_SWITCH  (60,  50, 25, 15, 0, "Light")
-    RK_SLIDER  (100, 15, 60, 12, 0, "Speed")
-    RK_JOYSTICK(160, 50, 35, 35, 0, "Drive")
-    RK_LED     (20,  20, 12, 12, 0, "Status")
-    RK_TEXT    (100, 80, 70, 15, 0, "Sensor")
-RK_CONFIG_END
-
-// ── Struct ────────────────────────────────────────────────────────────────
-struct {
-    // inputs
-    uint8_t fire;
-    uint8_t light;
-    uint8_t speed;
-    int8_t  driveX;
-    int8_t  driveY;
-    // outputs
-    uint8_t statusLed;
-    char    sensorText[32];
-    // meta
-    uint8_t connect_flag;
-} rk;
-
-// Edge detection state
-uint8_t prev_fire = 0;
+RadioKit_Joystick joy("Drive", 160, 50, 35);
+RadioKit_LED      led(20, 20, 15);
+RadioKit_Slider   power("Power", 100, 20, 80);
 
 void setup() {
-    pinMode(RELAY_PIN, OUTPUT);
-    RadioKit.begin("DemoBot", &rk);
+    RadioKit.startBLE("RoboCar");
 }
 
 void loop() {
-    RadioKit.handle();
+    RadioKit.update();
 
-    // One-shot fire trigger
-    if (RK_RISING(rk.fire, prev_fire)) {
-        rk.statusLed = RK_LED_RED;
-    }
-
-    // Toggle relay with switch
-    digitalWrite(RELAY_PIN, rk.light ? HIGH : LOW);
-
-    // Motor speed from slider
-    analogWrite(MOTOR_PIN, map(rk.speed, 0, 100, 0, 255));
-
-    // Differential drive from joystick
-    int left  = constrain(rk.driveY + rk.driveX, -100, 100);
-    int right = constrain(rk.driveY - rk.driveX, -100, 100);
-    analogWrite(LEFT_MOTOR,  map(left,  -100, 100, 0, 255));
-    analogWrite(RIGHT_MOTOR, map(right, -100, 100, 0, 255));
-
-    // Push sensor reading to app
-    snprintf(rk.sensorText, 32, "A0=%d", analogRead(A0));
-
-    // Clear LED when disconnected
-    if (!RadioKit.isConnected()) {
-        rk.statusLed = RK_LED_OFF;
+    if (RadioKit.isConnected()) {
+        // Change aspect ratio based on joystick X
+        // size remains 35, box becomes wider/thinner
+        float ratio = 1.0f + (joy.getX() / 100.0f);
+        joy.setSize(35); // base size
+        
+        if (abs(joy.getX()) > 50) led.set(RadioKit_LED::RED);
+        else led.set(RadioKit_LED::BLUE);
     }
 }
 ```
