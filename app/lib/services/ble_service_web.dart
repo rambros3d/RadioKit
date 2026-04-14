@@ -311,19 +311,16 @@ class BleService {
 
   Future<void> writePacket(Uint8List data) async {
     if (_isMockConnected) {
-      // Analyze the incoming packet
       if (data.length >= 4 && data[0] == kStartByte) {
         final cmd = data[3];
         final payload = data.sublist(4, data.length - 2);
 
-        // Simulate processing delay
         Future.delayed(const Duration(milliseconds: 30), () {
           if (cmd == kCmdGetConf) {
             _respondWithMockConf();
           } else if (cmd == kCmdGetVars) {
             _respondWithMockVars();
           } else if (cmd == kCmdSetInput) {
-            // Update mock state from SET_INPUT payload
             // Layout: [Btn(1)] [Sw(1)] [Sld(1)] [JoyX(1)] [JoyY(1)]
             if (payload.length >= 5) {
               _mockButtonValue = payload[0];
@@ -331,8 +328,7 @@ class BleService {
               _mockSliderValue = payload[2];
               _mockJoyX = _toSigned(payload[3]);
               _mockJoyY = _toSigned(payload[4]);
-
-              // Simple feedback: LED follows switch, text follows slider
+              // LED follows switch, text follows slider
               _mockLedValue = _mockSwitchValue;
               _mockTextValue = 'Val: $_mockSliderValue | Joy: $_mockJoyX,$_mockJoyY';
             }
@@ -347,8 +343,6 @@ class BleService {
 
     final char = _characteristic;
     if (char == null) throw StateError('Not connected');
-
-    // Web Bluetooth: write without response
     await char.writeValueWithoutResponse(data);
   }
 
@@ -368,7 +362,7 @@ class BleService {
   ///   id=4  LED      center=(12, 80)  size=12 aspect=1.0 → W=12  H=12
   ///   id=5  Text     center=(51, 80)  size=12 aspect=4.0 → W=48  H=12
   ///
-  /// CRC-16/CCITT verified: 0xCD5F
+  /// CRC-16/CCITT verified: 0xB7F8
   void _respondWithMockConf() {
     injectDebugPacket([
       0x55, 0x5B, 0x00, 0x02,                               // framing: START, LEN=91, CMD=CONF_DATA
@@ -383,9 +377,9 @@ class BleService {
       0x43, 0x6F, 0x6E, 0x74, 0x72, 0x6F, 0x6C,             // "Control"
       0x05, 0x04, 0x0C, 0x50, 0x0C, 0x0C, 0x00, 0x03,       // LED      id=4 x=12 y=80 w=12 h=12 rot=0 llen=3
       0x4C, 0x45, 0x44,                                      // "LED"
-      0x06, 0x05, 0x33, 0x50, 0xC0, 0x30, 0x00, 0x06,       // Text     id=5 x=51 y=80 w=48 h=12 rot=0 llen=6
+      0x06, 0x05, 0x33, 0x50, 0x30, 0x0C, 0x00, 0x06,       // Text     id=5 x=51 y=80 w=48 h=12 rot=0 llen=6
       0x53, 0x74, 0x61, 0x74, 0x75, 0x73,                   // "Status"
-      0x5F, 0xCD,                                            // CRC-16/CCITT = 0xCD5F
+      0xF8, 0xB7,                                            // CRC-16/CCITT = 0xB7F8
     ]);
   }
 
@@ -395,7 +389,6 @@ class BleService {
     for (int i = 0; i < encoded.length && i < 32; i++) {
       textBytes[i] = encoded[i];
     }
-
     // Inputs: Btn(1), Sw(1), Sld(1), JoyX(1), JoyY(1)
     // Outputs: Led(1), Text(32)
     final payload = [
@@ -412,13 +405,11 @@ class BleService {
   }
 
   void _respondWithAck() {
-    final packet = ProtocolService.buildPacket(kCmdAck);
-    injectDebugPacket(packet);
+    injectDebugPacket(ProtocolService.buildPacket(kCmdAck));
   }
 
   void _respondWithPong() {
-    final packet = ProtocolService.buildPacket(kCmdPong);
-    injectDebugPacket(packet);
+    injectDebugPacket(ProtocolService.buildPacket(kCmdPong));
   }
 
   /// Convert an unsigned byte value (0-255) to a signed int8 (-128..127).
