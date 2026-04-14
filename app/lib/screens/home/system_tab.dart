@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/history_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/logo_icon.dart';
 
 class SystemTab extends StatelessWidget {
   const SystemTab({super.key});
@@ -14,11 +15,17 @@ class SystemTab extends StatelessWidget {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.settings_input_component_rounded, color: AppColors.brandOrange, size: 20),
-            SizedBox(width: 12),
-            Text('RADIO_KIT'),
+            const LogoIcon(),
+            const SizedBox(width: 12),
+            Text(
+              'RADIO_KIT',
+              style: GoogleFonts.audiowide(
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.0,
+              ),
+            ),
           ],
         ),
         actions: [
@@ -34,7 +41,7 @@ class SystemTab extends StatelessWidget {
         children: [
           const SizedBox(height: 16),
           Text(
-            'SYSTEM CONFIGURATION',
+            'SYSTEM_CONFIGURATION',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: AppColors.brandOrange,
               letterSpacing: 2.0,
@@ -42,7 +49,7 @@ class SystemTab extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'ENVIRONMENT',
+            'WORKSPACE',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w900,
               letterSpacing: -1.0,
@@ -50,11 +57,11 @@ class SystemTab extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           
-          _buildSectionTag(context, '01. APPLICATION'),
+          _buildSectionTag(context, '01. ENVIRONMENT'),
           _buildApplicationCard(context, themeProvider),
           
           const SizedBox(height: 32),
-          _buildSectionTag(context, '03. ABOUT'),
+          _buildSectionTag(context, '02. HARDWARE_METRICS'),
           _buildAboutCard(context),
           
           const SizedBox(height: 48),
@@ -96,7 +103,7 @@ class SystemTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SettingLabel(label: 'INTERFACE THEME', value: 'Kinetic Dark'),
+            const _SettingLabel(label: 'INTERFACE_THEME', value: 'Kinetic Dark'),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(4),
@@ -127,7 +134,7 @@ class SystemTab extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const _SettingLabel(label: 'SYSTEM LANGUAGE', value: 'English (US)'),
+                const _SettingLabel(label: 'SYSTEM_LANGUAGE', value: 'English (US)'),
                 Icon(Icons.language_rounded, color: AppColors.brandOrange.withOpacity(0.7), size: 20),
               ],
             ),
@@ -137,7 +144,7 @@ class SystemTab extends StatelessWidget {
               children: [
                 const Expanded(
                   child: _SettingLabel(
-                    label: 'TELEMETRY ALERTS', 
+                    label: 'TELEMETRY_ALERTS', 
                     value: 'Real-time status broadcasting'
                   ),
                 ),
@@ -162,7 +169,7 @@ class SystemTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SettingLabel(label: 'FIRMWARE VERSION', value: 'v4.2.0-STABLE'),
+            _SettingLabel(label: 'FIRMWARE_VERSION', value: 'v4.2.0-STABLE'),
           ],
         ),
       ),
@@ -194,7 +201,7 @@ class SystemTab extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'DANGER ZONE',
+                    'DANGER_ZONE',
                     style: GoogleFonts.exo2(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
@@ -222,7 +229,7 @@ class SystemTab extends StatelessWidget {
                 elevation: 0,
               ),
               onPressed: () => _confirmRemoveModels(context),
-              child: const Text('REMOVE MODELS', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+              child: Text('REMOVE_MODELS', style: GoogleFonts.changa(fontWeight: FontWeight.w700, letterSpacing: 1.2, fontSize: 13)),
             ),
           ),
         ],
@@ -250,7 +257,7 @@ class SystemTab extends StatelessWidget {
                 const SnackBar(content: Text('All models removed')),
               );
             },
-            child: const Text('REMOVE ALL', style: TextStyle(color: Colors.redAccent)),
+            child: Text('REMOVE_ALL', style: GoogleFonts.changa(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.0)),
           ),
         ],
       ),
@@ -306,10 +313,11 @@ class _ThemeToggleOption extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
+          style: GoogleFonts.changa(
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
             color: isActive ? Colors.white : Colors.white38,
+            letterSpacing: 1.0,
           ),
         ),
       ),

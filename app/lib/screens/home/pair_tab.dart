@@ -12,6 +12,7 @@ import '../../models/console_entry.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/console_log_view.dart';
 import '../control_screen.dart';
+import '../../widgets/logo_icon.dart';
 
 class PairTab extends StatefulWidget {
   const PairTab({super.key});
@@ -111,11 +112,11 @@ class _PairTabState extends State<PairTab> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Icon(Icons.memory_rounded, color: AppColors.brandOrange, size: 20),
+            const LogoIcon(),
             const SizedBox(width: 12),
             Text(
               'RADIO_KIT',
-              style: GoogleFonts.exo2(
+              style: GoogleFonts.audiowide(
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.0,
               ),
@@ -200,10 +201,11 @@ class _ToggleOption extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           label,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
+          style: GoogleFonts.changa(
+            fontWeight: FontWeight.w600,
             color: isActive ? Colors.black : Colors.white38,
             letterSpacing: 1.2,
+            fontSize: 12,
           ),
         ),
       ),
@@ -413,10 +415,10 @@ class _SerialTabState extends State<_SerialTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('HARDWARE INTERFACE', style: TextStyle(color: AppColors.brandOrange, fontSize: 9, fontWeight: FontWeight.bold)),
+            const Text('HARDWARE_INTERFACE', style: TextStyle(color: AppColors.brandOrange, fontSize: 9, fontWeight: FontWeight.bold)),
             const Text('CONFIGURATION', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
             const SizedBox(height: 24),
-            _buildDropdownLabel('SERIAL PORT'),
+            _buildDropdownLabel('SERIAL_PORT'),
             _buildDropdown<DeviceInfo?>(
               value: _selectedPort,
               items: serial.ports.map((p) => DropdownMenuItem(value: p, child: Text(p.displayName))).toList(),
@@ -424,7 +426,7 @@ class _SerialTabState extends State<_SerialTab> {
               hint: 'Select device...',
             ),
             const SizedBox(height: 16),
-            _buildDropdownLabel('BAUD RATE'),
+            _buildDropdownLabel('BAUD_RATE'),
             _buildDropdown<String>(
               value: _selectedBaud,
               items: ['9600', '19200', '38400', '57600', '115200'].map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
@@ -437,7 +439,7 @@ class _SerialTabState extends State<_SerialTab> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.brandOrange, foregroundColor: Colors.black),
                 onPressed: _selectedPort == null ? null : () => widget.onPortTapped(_selectedPort!),
-                child: const Text('CONNECT +', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text('CONNECT_+', style: GoogleFonts.changa(fontWeight: FontWeight.w700, letterSpacing: 1.2, fontSize: 13)),
               ),
             ),
           ],
@@ -487,8 +489,8 @@ class _SerialTabState extends State<_SerialTab> {
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('DRIVER STATUS', style: TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold)),
-                Text('FTDI_USB_BUS READY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text('DRIVER_STATUS', style: TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold)),
+                Text('FTDI_USB_BUS_READY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
               ],
             ),
           ],

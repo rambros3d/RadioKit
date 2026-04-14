@@ -10,6 +10,7 @@ import '../../models/device_info.dart';
 import '../../models/console_entry.dart';
 import '../../theme/app_theme.dart';
 import '../control_screen.dart';
+import '../../widgets/logo_icon.dart';
 
 class ModelsTab extends StatelessWidget {
   const ModelsTab({super.key});
@@ -20,11 +21,11 @@ class ModelsTab extends StatelessWidget {
       appBar: AppBar(
         title: Row(
           children: [
-            _LogoIcon(),
+            const LogoIcon(),
             const SizedBox(width: 12),
             Text(
-              'KINETIC_RM', 
-              style: GoogleFonts.exo2(
+              'RADIO_KIT', 
+              style: GoogleFonts.audiowide(
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.0,
               ),
@@ -44,7 +45,7 @@ class ModelsTab extends StatelessWidget {
         children: [
           const SizedBox(height: 16),
           Text(
-            'HARDWARE INVENTORY',
+            'HARDWARE_INVENTORY',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: AppColors.brandOrange,
               letterSpacing: 2.0,
@@ -63,7 +64,7 @@ class ModelsTab extends StatelessWidget {
           _ActiveLinkSection(),
           
           const SizedBox(height: 32),
-          _buildSectionTag(context, '02. PAIRED MODELS'),
+          _buildSectionTag(context, '02. PAIRED_MODELS'),
           _PairedModelsList(),
           const SizedBox(height: 32),
         ],
@@ -108,7 +109,7 @@ class _ActiveLinkSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTag(context, '01. ACTIVE LINK'),
+        _buildSectionTag(context, '01. ACTIVE_LINK'),
         Card(
           clipBehavior: Clip.antiAlias,
           color: Colors.white.withOpacity(0.05),
@@ -150,7 +151,7 @@ class _ActiveLinkSection extends StatelessWidget {
                               Row(
                                 children: [
                                   Text(
-                                    'TELEMETRY LIVE',
+                                    'TELEMETRY_LIVE',
                                     style: GoogleFonts.inter(
                                       color: AppColors.connected,
                                       fontWeight: FontWeight.bold,
@@ -182,7 +183,7 @@ class _ActiveLinkSection extends StatelessWidget {
                               Row(
                                 children: [
                                   Text(
-                                    '6X6 OFF-ROAD CHASSIS', // Placeholder
+                                    '6X6_OFF-ROAD_CHASSIS', // Placeholder
                                     style: TextStyle(
                                       color: AppColors.brandOrange.withOpacity(0.7),
                                       fontSize: 10,
@@ -240,7 +241,7 @@ class _ActiveLinkSection extends StatelessWidget {
                             MaterialPageRoute(builder: (_) => const ControlScreen()),
                           );
                         },
-                        child: const Text('OPEN CONTROLLER', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                        child: Text('OPEN_CONTROLLER', style: GoogleFonts.changa(fontWeight: FontWeight.w700, letterSpacing: 1.2, fontSize: 13)),
                       ),
                     ),
                   ],
@@ -408,42 +409,3 @@ class _PairedModelsList extends StatelessWidget {
   }
 }
 
-class _LogoIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _dot(AppColors.brandOrange),
-            _dot(AppColors.brandOrange),
-            _dot(AppColors.brandOrange),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _dot(AppColors.brandOrange),
-            _dot(Colors.white10),
-            _dot(AppColors.brandOrange),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _dot(Color color) {
-    return Container(
-      width: 4,
-      height: 6,
-      margin: const EdgeInsets.symmetric(horizontal: 1),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(1),
-      ),
-    );
-  }
-}
