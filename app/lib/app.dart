@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/ble_provider.dart';
+import 'providers/serial_provider.dart';
 import 'providers/device_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/scan_screen.dart';
@@ -16,24 +17,26 @@ class RadioKitApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // ThemeProvider manages the Light/Dark mode state
         ChangeNotifierProvider<ThemeProvider>(
           create: (_) => ThemeProvider(),
         ),
-
         // BleProvider owns the BleService instance
         ChangeNotifierProvider<BleProvider>(
           create: (_) => BleProvider(),
         ),
-
-        // DeviceProvider shares the BleService from BleProvider
-        ChangeNotifierProxyProvider<BleProvider, DeviceProvider>(
+        // SerialProvider owns the SerialService instance
+        ChangeNotifierProvider<SerialProvider>(
+          create: (_) => SerialProvider(),
+        ),
+        // DeviceProvider is transport-agnostic; starts with BLE transport.
+        // ScanScreen swaps the transport before calling connectToDevice().
+        ChangeNotifierProxyProvider2<BleProvider, SerialProvider, DeviceProvider>(
           create: (context) => DeviceProvider(
-            bleService: context.read<BleProvider>().bleService,
+            transport: context.read<BleProvider>().bleService,
           ),
-          update: (context, bleProvider, previous) =>
+          update: (context, bleProvider, serialProvider, previous) =>
               previous ??
-              DeviceProvider(bleService: bleProvider.bleService),
+              DeviceProvider(transport: bleProvider.bleService),
         ),
       ],
       child: Consumer<ThemeProvider>(
@@ -41,10 +44,8 @@ class RadioKitApp extends StatelessWidget {
           return MaterialApp(
             title: 'RadioKit',
             debugShowCheckedModeBanner: false,
-            // Use the brand themes
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
-            // Link the theme mode to the provider
             themeMode: themeProvider.themeMode,
             home: const ScanScreen(),
           );

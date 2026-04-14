@@ -1,5 +1,5 @@
 name: radiokit
-description: RadioKit - BLE companion app for Arduino RadioKit library
+description: RadioKit - BLE & USB Serial companion app for Arduino RadioKit library
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -16,6 +16,12 @@ dependencies:
 
   # BLE: web (Web Bluetooth API — Chrome/Edge)
   flutter_web_bluetooth: ^1.1.0
+
+  # Serial: native (Android USB-CDC + desktop)
+  usb_serial: ^2.7.0
+
+  # Serial: web (Web Serial API — Chrome/Edge)
+  flutter_web_serial: ^0.1.2
 
   # State management
   provider: ^6.1.2

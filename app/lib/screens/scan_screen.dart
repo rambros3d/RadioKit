@@ -2,15 +2,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/ble_provider.dart';
+import '../providers/serial_provider.dart';
 import '../providers/device_provider.dart';
 import '../models/device_info.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
 import 'control_screen.dart';
 
-/// BLE device scanner screen.
+/// Device scanner screen — BLE tab and USB Serial tab.
 ///
-/// Shows discovered RadioKit devices and allows the user to tap one to connect.
+/// Selecting a device from either tab swaps the [DeviceProvider] transport
+/// to the appropriate [TransportService] before connecting.
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
 
@@ -18,12 +20,15 @@ class ScanScreen extends StatefulWidget {
   State<ScanScreen> createState() => _ScanScreenState();
 }
 
-class _ScanScreenState extends State<ScanScreen> {
+class _ScanScreenState extends State<ScanScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
   @override
   void initState() {
     super.initState();
-    // On native, start scanning automatically.
-    // On web, the user taps a button to trigger the browser device picker.
+    _tabController = TabController(length: 2, vsync: this);
+
     if (!kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.read<BleProvider>().startScan();
@@ -31,16 +36,45 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
-  Future<void> _onDeviceTapped(DeviceInfo device) async {
-    final bleProvider = context.read<BleProvider>();
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Connection helpers
+  // ---------------------------------------------------------------------------
+
+  Future<void> _connectBle(DeviceInfo device) async {
+    final bleProvider    = context.read<BleProvider>();
     final deviceProvider = context.read<DeviceProvider>();
 
-    // Stop scanning before connecting
     await bleProvider.stopScan();
-
     if (!mounted) return;
 
-    // Show connecting indicator
+    // Swap transport to BLE
+    deviceProvider.setTransport(bleProvider.bleService);
+
+    await _connect(device, deviceProvider);
+  }
+
+  Future<void> _connectSerial(DeviceInfo device) async {
+    final serialProvider = context.read<SerialProvider>();
+    final deviceProvider = context.read<DeviceProvider>();
+
+    await serialProvider.stopScan();
+    if (!mounted) return;
+
+    // Swap transport to Serial
+    deviceProvider.setTransport(serialProvider.serialService);
+
+    await _connect(device, deviceProvider);
+  }
+
+  Future<void> _connect(DeviceInfo device, DeviceProvider deviceProvider) async {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Connecting to ${device.displayName}...'),
@@ -52,7 +86,6 @@ class _ScanScreenState extends State<ScanScreen> {
     await deviceProvider.connectToDevice(device);
 
     if (!mounted) return;
-
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     if (deviceProvider.connectionState == DeviceConnectionState.connected) {
@@ -71,83 +104,80 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Row(
+          children: [
+            _RadioKitLogo(),
+            SizedBox(width: 10),
+            Text('RadioKit'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              context.watch<ThemeProvider>().isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+            ),
+            tooltip: 'Toggle Theme',
+            onPressed: () => context.read<ThemeProvider>().toggleTheme(),
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(icon: Icon(Icons.bluetooth_rounded), text: 'Bluetooth'),
+            Tab(icon: Icon(Icons.usb_rounded), text: 'USB Serial'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _BleTab(onDeviceTapped: _connectBle),
+          _SerialTab(onPortTapped: _connectSerial),
+        ],
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// BLE Tab
+// ===========================================================================
+
+class _BleTab extends StatelessWidget {
+  final Future<void> Function(DeviceInfo) onDeviceTapped;
+
+  const _BleTab({required this.onDeviceTapped});
+
   @override
   Widget build(BuildContext context) {
     return Consumer<BleProvider>(
       builder: (context, bleProvider, _) {
-        return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: AppBar(
-            title: const Row(
-              children: [
-                _RadioKitLogo(),
-                SizedBox(width: 10),
-                Text('RadioKit'),
-              ],
-            ),
-            actions: [
-              // On web, scanning is triggered via button — no toolbar action
-              if (!kIsWeb)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: bleProvider.isScanning
-                      ? const _ScanningIndicator()
-                      : IconButton(
-                          icon: const Icon(Icons.refresh_rounded),
-                          tooltip: 'Rescan',
-                          onPressed: () => bleProvider.startScan(),
-                        ),
-                ),
-              
-              IconButton(
-                icon: Icon(
-                  context.watch<ThemeProvider>().isDarkMode
-                      ? Icons.light_mode_rounded
-                      : Icons.dark_mode_rounded,
-                ),
-                tooltip: 'Toggle Theme',
-                onPressed: () => context.read<ThemeProvider>().toggleTheme(),
-              ),
-            ],
-          ),
-          body: RefreshIndicator(
-            color: Theme.of(context).colorScheme.primary,
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            onRefresh: () => bleProvider.startScan(),
-            child: _buildBody(bleProvider),
-          ),
-        );
+        if (bleProvider.errorMessage != null) {
+          return _buildErrorState(context, bleProvider.errorMessage!);
+        }
+        if (kIsWeb) {
+          return _buildWebPickerState(context, bleProvider);
+        }
+        if (bleProvider.devices.isEmpty) {
+          return _buildEmptyState(context, bleProvider);
+        }
+        return _buildDeviceList(context, bleProvider);
       },
     );
   }
 
-  Widget _buildBody(BleProvider bleProvider) {
-    if (bleProvider.errorMessage != null) {
-      return _buildErrorState(bleProvider.errorMessage!);
-    }
-
-    // Web: show the one-shot browser picker UI
-    if (kIsWeb) {
-      return _buildWebPickerState(bleProvider);
-    }
-
-    if (bleProvider.devices.isEmpty) {
-      return _buildEmptyState(bleProvider.isScanning);
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: bleProvider.devices.length,
-      itemBuilder: (context, index) {
-        return _DeviceCard(
-          device: bleProvider.devices[index],
-          onTap: () => _onDeviceTapped(bleProvider.devices[index]),
-        );
-      },
-    );
-  }
-
-  Widget _buildWebPickerState(BleProvider bleProvider) {
+  Widget _buildWebPickerState(BuildContext context, BleProvider bleProvider) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -156,10 +186,7 @@ class _ScanScreenState extends State<ScanScreen> {
           children: [
             const _RadioKitLogo(),
             const SizedBox(height: 32),
-            Text(
-              'RadioKit Web',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            Text('RadioKit Web', style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 12),
             FutureBuilder<bool>(
               future: bleProvider.isAvailable,
@@ -168,17 +195,17 @@ class _ScanScreenState extends State<ScanScreen> {
                 final isAvailable = snapshot.data ?? false;
 
                 String message = 'Ready to connect';
-                IconData icon = Icons.check_circle_outline_rounded;
-                Color color = AppColors.connected;
+                IconData icon   = Icons.check_circle_outline_rounded;
+                Color color     = AppColors.connected;
 
                 if (!isSupported) {
                   message = 'Browser does not support Web Bluetooth';
-                  icon = Icons.error_outline_rounded;
-                  color = Theme.of(context).colorScheme.error;
+                  icon    = Icons.error_outline_rounded;
+                  color   = Theme.of(context).colorScheme.error;
                 } else if (!isAvailable && snapshot.connectionState == ConnectionState.done) {
                   message = 'Bluetooth hardware not found or disabled';
-                  icon = Icons.bluetooth_disabled_rounded;
-                  color = Theme.of(context).colorScheme.error;
+                  icon    = Icons.bluetooth_disabled_rounded;
+                  color   = Theme.of(context).colorScheme.error;
                 }
 
                 return Container(
@@ -222,54 +249,63 @@ class _ScanScreenState extends State<ScanScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 28, vertical: 16),
-                      textStyle: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w600),
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                     icon: const Icon(Icons.bluetooth_searching_rounded),
-                    label: const Text('Connect to Device'),
-                    onPressed: () => _startWebConnect(bleProvider),
+                    label: const Text('Connect via Bluetooth'),
+                    onPressed: () async {
+                      await bleProvider.startScan();
+                      if (bleProvider.devices.isNotEmpty) {
+                        await onDeviceTapped(bleProvider.devices.first);
+                      }
+                    },
                   ),
             const SizedBox(height: 32),
             _DemoModeButton(
-              onPressed: () => _startDemoMode(bleProvider),
+              onPressed: () {
+                bleProvider.useMockDevice();
+                onDeviceTapped(bleProvider.devices.first);
+              },
             ),
-
           ],
         ),
       ),
     );
   }
 
-  Future<void> _startWebConnect(BleProvider bleProvider) async {
-    // Trigger the browser's device picker
-    await bleProvider.startScan();
-
-    if (!mounted) return;
-
-    final devices = bleProvider.devices;
-    if (devices.isNotEmpty) {
-      // A device was selected — connect immediately
-      await _onDeviceTapped(devices.first);
-    }
+  Widget _buildDeviceList(BuildContext context, BleProvider bleProvider) {
+    return RefreshIndicator(
+      color: Theme.of(context).colorScheme.primary,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      onRefresh: () => bleProvider.startScan(),
+      child: Column(
+        children: [
+          if (bleProvider.isScanning)
+            LinearProgressIndicator(
+              color: Theme.of(context).colorScheme.primary,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+            ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: bleProvider.devices.length,
+              itemBuilder: (context, index) {
+                return _DeviceCard(
+                  device: bleProvider.devices[index],
+                  icon: Icons.bluetooth_rounded,
+                  subtitle: bleProvider.devices[index].id,
+                  onTap: () => onDeviceTapped(bleProvider.devices[index]),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  void _startDemoMode(BleProvider bleProvider) async {
-    // 1. Inject the mock device into the list
-    bleProvider.useMockDevice();
-    
-    // 2. Tapping it will trigger the standard connection flow
-    // which eventually calls BleService._handleMockConnect
-    final device = bleProvider.devices.first;
-    await _onDeviceTapped(device);
-  }
-
-  void _startMockConnect(BleProvider bleProvider) {
-    bleProvider.useMockDevice();
-  }
-
-  Widget _buildEmptyState(bool isScanning) {
+  Widget _buildEmptyState(BuildContext context, BleProvider bleProvider) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -277,7 +313,7 @@ class _ScanScreenState extends State<ScanScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              isScanning
+              bleProvider.isScanning
                   ? Icons.bluetooth_searching_rounded
                   : Icons.bluetooth_disabled_rounded,
               size: 72,
@@ -285,23 +321,32 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              isScanning ? 'Scanning for devices...' : 'No RadioKit devices found.',
+              bleProvider.isScanning
+                  ? 'Scanning for devices...'
+                  : 'No RadioKit devices found.',
               style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              isScanning
-                  ? 'Make sure your Arduino device is powered on and running the RadioKit library.'
-                  : 'No RadioKit devices found. Make sure your device is powered on.',
+              bleProvider.isScanning
+                  ? 'Make sure your Arduino is powered on and running the RadioKit library.'
+                  : 'Tap the refresh icon or pull down to rescan.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
-            if (isScanning) ...[
+            if (bleProvider.isScanning) ...[
               const SizedBox(height: 32),
               const CircularProgressIndicator(
                 color: AppColors.brandOrange,
                 strokeWidth: 2,
+              ),
+            ] else ...[
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Scan Again'),
+                onPressed: () => bleProvider.startScan(),
               ),
             ],
           ],
@@ -310,38 +355,21 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
-  Widget _buildErrorState(String message) {
+  Widget _buildErrorState(BuildContext context, String message) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.bluetooth_disabled_rounded,
-              size: 72,
-              color: Theme.of(context).colorScheme.error,
-            ),
+            Icon(Icons.bluetooth_disabled_rounded,
+                size: 72, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 24),
-            Text(
-              'Bluetooth Error',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Bluetooth Error', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
-            Text(
-              message,
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.settings_rounded),
-              label: const Text('Open Settings'),
-              onPressed: () {
-                // openAppSettings() from permission_handler
-                // This would open system settings to enable BLE permissions
-              },
-            ),
+            Text(message,
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -349,58 +377,215 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Sub-widgets
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// Serial Tab
+// ===========================================================================
 
-class _ScanningIndicator extends StatefulWidget {
-  const _ScanningIndicator();
+class _SerialTab extends StatelessWidget {
+  final Future<void> Function(DeviceInfo) onPortTapped;
 
-  @override
-  State<_ScanningIndicator> createState() => _ScanningIndicatorState();
-}
-
-class _ScanningIndicatorState extends State<_ScanningIndicator>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  const _SerialTab({required this.onPortTapped});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      child: SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(
-          color: Theme.of(context).colorScheme.primary,
-          strokeWidth: 2.5,
+    return Consumer<SerialProvider>(
+      builder: (context, serialProvider, _) {
+        if (!serialProvider.isSupported) {
+          return _buildUnsupported(context);
+        }
+        if (serialProvider.errorMessage != null) {
+          return _buildErrorState(context, serialProvider.errorMessage!);
+        }
+        if (kIsWeb) {
+          return _buildWebPickerState(context, serialProvider);
+        }
+        if (serialProvider.ports.isEmpty) {
+          return _buildEmptyState(context, serialProvider);
+        }
+        return _buildPortList(context, serialProvider);
+      },
+    );
+  }
+
+  Widget _buildWebPickerState(BuildContext context, SerialProvider serialProvider) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.usb_rounded, size: 72,
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+            const SizedBox(height: 32),
+            Text('USB Serial', style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 12),
+            Text(
+              'Click the button to open the browser\'s serial port picker.\n'
+              'Connect your Arduino via USB, then select the COM/tty port.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            serialProvider.isScanning
+                ? CircularProgressIndicator(color: Theme.of(context).colorScheme.primary)
+                : ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    icon: const Icon(Icons.usb_rounded),
+                    label: const Text('Select Serial Port'),
+                    onPressed: () async {
+                      await serialProvider.startScan();
+                      if (serialProvider.ports.isNotEmpty) {
+                        await onPortTapped(serialProvider.ports.first);
+                      }
+                    },
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPortList(BuildContext context, SerialProvider serialProvider) {
+    return Column(
+      children: [
+        if (serialProvider.isScanning)
+          LinearProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+          ),
+        ListTile(
+          dense: true,
+          leading: Icon(Icons.refresh_rounded,
+              color: Theme.of(context).colorScheme.primary),
+          title: Text('Refresh ports',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          onTap: () => serialProvider.startScan(),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: serialProvider.ports.length,
+            itemBuilder: (context, index) {
+              final port = serialProvider.ports[index];
+              return _DeviceCard(
+                device: port,
+                icon: Icons.usb_rounded,
+                subtitle: port.id,
+                onTap: () => onPortTapped(port),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, SerialProvider serialProvider) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.usb_off_rounded, size: 72,
+                color: Theme.of(context).disabledColor),
+            const SizedBox(height: 24),
+            Text(
+              serialProvider.isScanning
+                  ? 'Scanning USB ports...'
+                  : 'No USB Serial devices found.',
+              style: Theme.of(context).textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Connect your Arduino via USB and make sure the RadioKit sketch is running.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Scan Again'),
+              onPressed: () => serialProvider.startScan(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUnsupported(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.usb_off_rounded, size: 72,
+                color: Theme.of(context).disabledColor),
+            const SizedBox(height: 24),
+            Text('USB Serial Not Supported',
+                style: Theme.of(context).textTheme.titleMedium,
+                textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            Text(
+              'USB Serial is available on Android and on Chrome/Edge (Web Serial API).\n'
+              'This platform does not support it.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.usb_off_rounded, size: 72,
+                color: Theme.of(context).colorScheme.error),
+            const SizedBox(height: 24),
+            Text('Serial Error', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            Text(message,
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Device list card showing name, ID, and signal strength.
+// ===========================================================================
+// Shared sub-widgets
+// ===========================================================================
+
+/// Generic device/port list card.
 class _DeviceCard extends StatelessWidget {
   final DeviceInfo device;
+  final IconData icon;
+  final String subtitle;
   final VoidCallback onTap;
 
-  const _DeviceCard({required this.device, required this.onTap});
+  const _DeviceCard({
+    required this.device,
+    required this.icon,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -412,7 +597,6 @@ class _DeviceCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // BLE icon
               Container(
                 width: 44,
                 height: 44,
@@ -420,16 +604,10 @@ class _DeviceCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  Icons.bluetooth_rounded,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  size: 22,
-                ),
+                child: Icon(icon,
+                    color: Theme.of(context).colorScheme.onPrimary, size: 22),
               ),
-
               const SizedBox(width: 14),
-
-              // Device info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,7 +620,7 @@ class _DeviceCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      device.id,
+                      subtitle,
                       style: Theme.of(context).textTheme.labelSmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -450,21 +628,19 @@ class _DeviceCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              const SizedBox(width: 12),
-
-              // Signal strength + RSSI
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _SignalBars(bars: device.signalBars),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${device.rssi} dBm',
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                ],
-              ),
+              // Show RSSI bars only for BLE (serial rssi == 0)
+              if (device.rssi != 0) ...[
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _SignalBars(bars: device.signalBars),
+                    const SizedBox(height: 3),
+                    Text('${device.rssi} dBm',
+                        style: Theme.of(context).textTheme.labelSmall),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -473,10 +649,8 @@ class _DeviceCard extends StatelessWidget {
   }
 }
 
-/// Signal strength bar indicator (1-4 bars).
 class _SignalBars extends StatelessWidget {
   final int bars;
-
   const _SignalBars({required this.bars});
 
   @override
@@ -500,7 +674,6 @@ class _SignalBars extends StatelessWidget {
   }
 }
 
-/// Inline SVG-style RadioKit logo mark.
 class _RadioKitLogo extends StatelessWidget {
   const _RadioKitLogo();
 
@@ -516,7 +689,7 @@ class _RadioKitLogo extends StatelessWidget {
 class _LogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final r = size.width / 2;
+    final r      = size.width / 2;
     final center = Offset(r, r);
 
     final outerRingPaint = Paint()
@@ -534,37 +707,24 @@ class _LogoPainter extends CustomPainter {
       ..strokeWidth = 2.0
       ..strokeCap = StrokeCap.round;
 
-    // Outer circle
     canvas.drawCircle(center, r - 2, outerRingPaint);
-
-    // Inner dot
     canvas.drawCircle(center, 4, innerDotPaint);
-
-    // Radio wave arcs (left side)
     canvas.drawArc(
       Rect.fromCenter(center: center, width: r * 1.0, height: r * 1.0),
-      2.5,
-      1.3,
-      false,
-      signalPaint,
+      2.5, 1.3, false, signalPaint,
     );
-
-    // Radio wave arcs (right side — mirror)
     canvas.drawArc(
       Rect.fromCenter(center: center, width: r * 1.0, height: r * 1.0),
-      -0.8,
-      1.3,
-      false,
-      signalPaint,
+      -0.8, 1.3, false, signalPaint,
     );
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
 class _DemoModeButton extends StatelessWidget {
   final VoidCallback onPressed;
-
   const _DemoModeButton({required this.onPressed});
 
   @override
@@ -574,17 +734,18 @@ class _DemoModeButton extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 320),
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+          side: BorderSide(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+              borderRadius: BorderRadius.circular(12)),
         ),
         onPressed: onPressed,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.dashboard_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+            Icon(Icons.dashboard_rounded,
+                color: Theme.of(context).colorScheme.primary, size: 20),
             const SizedBox(width: 12),
             Text(
               'Try Interactive Demo',

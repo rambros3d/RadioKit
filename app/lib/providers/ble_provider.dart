@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/device_info.dart';
 import '../services/ble_service.dart';
-// permission_handler is not available on web; import conditionally
 import 'package:permission_handler/permission_handler.dart'
     if (dart.library.js_interop) '../utils/permission_handler_stub.dart';
 
@@ -28,10 +27,6 @@ class BleProvider extends ChangeNotifier {
   // Permissions
   // ---------------------------------------------------------------------------
 
-  /// Request all required BLE permissions.
-  ///
-  /// On web, permissions are handled by the browser device picker,
-  /// so this always returns true.
   Future<bool> requestPermissions() async {
     if (kIsWeb) return true;
 
@@ -61,7 +56,6 @@ class BleProvider extends ChangeNotifier {
   // Scanning
   // ---------------------------------------------------------------------------
 
-  /// Start scanning for RadioKit BLE devices.
   Future<void> startScan() async {
     if (_isScanning) return;
 
@@ -77,10 +71,9 @@ class BleProvider extends ChangeNotifier {
 
     _scanSubscription = _bleService.startScan().listen(
       (device) {
-        // Only add if not already present (same ID)
         final idx = _devices.indexWhere((d) => d.id == device.id);
         if (idx >= 0) {
-          _devices[idx] = device; // Update RSSI
+          _devices[idx] = device;
         } else {
           _devices.add(device);
         }
@@ -93,13 +86,11 @@ class BleProvider extends ChangeNotifier {
       },
     );
 
-    // Auto-stop scan after 10 seconds
     Future.delayed(const Duration(seconds: 10), () {
       if (_isScanning) stopScan();
     });
   }
 
-  /// Stop an active scan.
   Future<void> stopScan() async {
     await _scanSubscription?.cancel();
     _scanSubscription = null;
@@ -108,7 +99,6 @@ class BleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// [Debug only] Add a mock device for testing the UI.
   void useMockDevice() {
     final mock = DeviceInfo(
       id: 'MOCK-UUID-1234',
@@ -118,10 +108,6 @@ class BleProvider extends ChangeNotifier {
     _devices = [mock];
     notifyListeners();
   }
-
-  // ---------------------------------------------------------------------------
-  // Cleanup
-  // ---------------------------------------------------------------------------
 
   @override
   void dispose() {

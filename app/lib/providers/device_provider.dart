@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/device_info.dart';
 import '../models/widget_config.dart';
 import '../models/protocol.dart';
-import '../services/ble_service.dart';
+import '../services/transport_service.dart';
 import '../services/protocol_service.dart';
 
 /// Connection state for the currently connected device.
@@ -17,8 +17,11 @@ enum DeviceConnectionState {
 
 /// Manages the connected device, widget configuration, and variable
 /// polling/update loop.
+///
+/// Transport-agnostic: works with both [BleService] and [SerialService]
+/// through the [TransportService] abstraction.
 class DeviceProvider extends ChangeNotifier {
-  final BleService _bleService;
+  TransportService _transport;
 
   DeviceInfo? _connectedDevice;
   DeviceConnectionState _connectionState = DeviceConnectionState.disconnected;
@@ -28,15 +31,13 @@ class DeviceProvider extends ChangeNotifier {
   String? _errorMessage;
   bool _configReceived = false;
 
-  // Timers for polling and ping
   Timer? _pollTimer;
   Timer? _pingTimer;
   Timer? _confTimeoutTimer;
 
-  // Completer for waiting on CONF_DATA response
   Completer<void>? _confCompleter;
 
-  DeviceProvider({required BleService bleService}) : _bleService = bleService;
+  DeviceProvider({required TransportService transport}) : _transport = transport;
 
   // ---------------------------------------------------------------------------
   // Getters
@@ -48,14 +49,25 @@ class DeviceProvider extends ChangeNotifier {
   int get orientation => _orientation;
   RadioWidgetState? get widgetState => _widgetState;
   String? get errorMessage => _errorMessage;
-  bool get isConnected =>
-      _connectionState == DeviceConnectionState.connected;
+  bool get isConnected => _connectionState == DeviceConnectionState.connected;
+
+  // ---------------------------------------------------------------------------
+  // Transport swap
+  // ---------------------------------------------------------------------------
+
+  /// Called by [app.dart] when the user switches between BLE and Serial.
+  void setTransport(TransportService transport) {
+    if (identical(_transport, transport)) return;
+    _transport = transport;
+    // Attach callbacks to the new transport immediately
+    _transport.onPacketReceived = _handlePacket;
+    _transport.onConnectionLost = _handleConnectionLost;
+  }
 
   // ---------------------------------------------------------------------------
   // Connection
   // ---------------------------------------------------------------------------
 
-  /// Connect to [device] and fetch its UI configuration.
   Future<void> connectToDevice(DeviceInfo device) async {
     _connectionState = DeviceConnectionState.connecting;
     _connectedDevice = device;
@@ -63,12 +75,11 @@ class DeviceProvider extends ChangeNotifier {
     _configReceived = false;
     notifyListeners();
 
-    // Set up packet handling callbacks
-    _bleService.onPacketReceived = _handlePacket;
-    _bleService.onConnectionLost = _handleConnectionLost;
+    _transport.onPacketReceived = _handlePacket;
+    _transport.onConnectionLost = _handleConnectionLost;
 
     try {
-      await _bleService.connect(device.id);
+      await _transport.connect(device.id);
     } catch (e) {
       _errorMessage = 'Connection failed: $e';
       _connectionState = DeviceConnectionState.error;
@@ -76,11 +87,9 @@ class DeviceProvider extends ChangeNotifier {
       return;
     }
 
-    // Request UI configuration
     await _requestConfig();
   }
 
-  /// Request CONF_DATA from the device. Retries up to 2 times on timeout.
   Future<void> _requestConfig() async {
     _connectionState = DeviceConnectionState.fetchingConfig;
     notifyListeners();
@@ -89,7 +98,7 @@ class DeviceProvider extends ChangeNotifier {
       _confCompleter = Completer<void>();
 
       try {
-        await _bleService.writePacket(ProtocolService.buildGetConf());
+        await _transport.writePacket(ProtocolService.buildGetConf());
       } catch (e) {
         _errorMessage = 'Failed to send GET_CONF: $e';
         _connectionState = DeviceConnectionState.error;
@@ -97,9 +106,7 @@ class DeviceProvider extends ChangeNotifier {
         return;
       }
 
-      // Wait for CONF_DATA or timeout
-      _confTimeoutTimer =
-          Timer(kConfTimeout, () {
+      _confTimeoutTimer = Timer(kConfTimeout, () {
         if (_confCompleter != null && !_confCompleter!.isCompleted) {
           _confCompleter!.completeError(TimeoutException('CONF_DATA timeout'));
         }
@@ -108,17 +115,12 @@ class DeviceProvider extends ChangeNotifier {
       try {
         await _confCompleter!.future;
         _confTimeoutTimer?.cancel();
-        // Successfully received config
         _startPolling();
         return;
       } on TimeoutException {
         _confTimeoutTimer?.cancel();
-        if (attempt < 2) {
-          // Retry
-          continue;
-        }
-        _errorMessage =
-            'Timed out waiting for device configuration. Please reconnect.';
+        if (attempt < 2) continue;
+        _errorMessage = 'Timed out waiting for device configuration. Please reconnect.';
         _connectionState = DeviceConnectionState.error;
         notifyListeners();
         return;
@@ -140,22 +142,17 @@ class DeviceProvider extends ChangeNotifier {
     _pollTimer?.cancel();
     _pingTimer?.cancel();
 
-    // Poll GET_VARS every 100ms
     _pollTimer = Timer.periodic(kGetVarsInterval, (_) async {
-      if (!_bleService.isConnected) return;
-      try {
-        await _bleService.writePacket(ProtocolService.buildGetVars());
-      } catch (_) {
-        // Disconnection will be handled by onConnectionLost callback
-      }
+      if (!_transport.isConnected) return;
+      try { await _transport.writePacket(ProtocolService.buildGetVars()); }
+      catch (_) {}
     });
 
-    // PING every 2 seconds
+    // PING every 2 s — keeps the Serial session alive (3 s timeout on firmware)
     _pingTimer = Timer.periodic(kPingInterval, (_) async {
-      if (!_bleService.isConnected) return;
-      try {
-        await _bleService.writePacket(ProtocolService.buildPing());
-      } catch (_) {}
+      if (!_transport.isConnected) return;
+      try { await _transport.writePacket(ProtocolService.buildPing()); }
+      catch (_) {}
     });
   }
 
@@ -175,22 +172,15 @@ class DeviceProvider extends ChangeNotifier {
       case kCmdConfData:
         _handleConfData(packet.payload);
         break;
-
       case kCmdVarData:
         _handleVarData(packet.payload);
         break;
-
       case kCmdAck:
-        // Acknowledgment for SET_INPUT — no action needed
         break;
-
       case kCmdPong:
-        // Pong received — connection is healthy
         break;
-
       default:
-        debugPrint(
-            'RadioKit: Unknown command 0x${packet.cmd.toRadixString(16)}');
+        debugPrint('RadioKit: Unknown command 0x${packet.cmd.toRadixString(16)}');
     }
   }
 
@@ -200,27 +190,23 @@ class DeviceProvider extends ChangeNotifier {
       debugPrint('RadioKit: Failed to parse CONF_DATA');
       return;
     }
-
-    _widgets = conf.widgets;
-    _orientation = conf.orientation;
-    _widgetState = RadioWidgetState.initial(conf.widgets);
+    _widgets      = conf.widgets;
+    _orientation  = conf.orientation;
+    _widgetState  = RadioWidgetState.initial(conf.widgets);
     _configReceived = true;
     _connectionState = DeviceConnectionState.connected;
     notifyListeners();
-
     if (_confCompleter != null && !_confCompleter!.isCompleted) {
       _confCompleter!.complete();
     }
   }
 
   void _handleVarData(List<int> payload) {
-    final currentState = _widgetState;
-    if (currentState == null) return;
-
-    final newState =
-        ProtocolService.parseVarData(payload, _widgets, currentState);
-    if (newState != null) {
-      _widgetState = newState;
+    final current = _widgetState;
+    if (current == null) return;
+    final next = ProtocolService.parseVarData(payload, _widgets, current);
+    if (next != null) {
+      _widgetState = next;
       notifyListeners();
     }
   }
@@ -236,19 +222,15 @@ class DeviceProvider extends ChangeNotifier {
   // Widget interaction
   // ---------------------------------------------------------------------------
 
-  /// Update an input widget's value and send SET_INPUT to the device.
   Future<void> setInputValue(int widgetId, List<int> values) async {
-    final currentState = _widgetState;
-    if (currentState == null) return;
-
-    final newState = currentState.copyWithInput(widgetId, values);
-    _widgetState = newState;
+    final current = _widgetState;
+    if (current == null) return;
+    final next = current.copyWithInput(widgetId, values);
+    _widgetState = next;
     notifyListeners();
-
-    if (!_bleService.isConnected) return;
+    if (!_transport.isConnected) return;
     try {
-      await _bleService
-          .writePacket(ProtocolService.buildSetInput(_widgets, newState));
+      await _transport.writePacket(ProtocolService.buildSetInput(_widgets, next));
     } catch (e) {
       debugPrint('RadioKit: Failed to send SET_INPUT: $e');
     }
@@ -260,12 +242,12 @@ class DeviceProvider extends ChangeNotifier {
 
   Future<void> disconnect() async {
     _stopPolling();
-    await _bleService.disconnect();
-    _connectionState = DeviceConnectionState.disconnected;
-    _connectedDevice = null;
-    _widgets = [];
-    _widgetState = null;
-    _errorMessage = null;
+    await _transport.disconnect();
+    _connectionState  = DeviceConnectionState.disconnected;
+    _connectedDevice  = null;
+    _widgets          = [];
+    _widgetState      = null;
+    _errorMessage     = null;
     notifyListeners();
   }
 
