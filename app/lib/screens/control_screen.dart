@@ -1,7 +1,10 @@
 import 'dart:math' show pi;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/device_provider.dart';
+import '../providers/debug_provider.dart';
+import '../services/debug_transport.dart';
 import '../models/widget_config.dart';
 import '../models/protocol.dart';
 import '../theme/app_theme.dart';
@@ -11,20 +14,13 @@ import '../widgets/slider_widget.dart';
 import '../widgets/joystick_widget.dart';
 import '../widgets/led_widget.dart';
 import '../widgets/text_widget.dart';
+import 'debug_screen.dart';
 
 /// Dynamic widget rendering screen for the connected RadioKit device.
 ///
-/// Renders widgets on an orientation-aware virtual canvas:
-///   Landscape: 200 × 100  (origin bottom-left, Y increases upward)
-///   Portrait:  100 × 200
-///
-/// Each widget [x, y] is its CENTER point in virtual space.
-/// Coordinate transform to Flutter screen pixels:
-///   scaleX  = physicalW / canvasW
-///   scaleY  = physicalH / canvasH
-///   screenX = x * scaleX
-///   screenY = (canvasH - y) * scaleY   ← Y-axis flip
-///   topLeft = (screenX - w/2 * scaleX,  screenY - h/2 * scaleY)
+/// A floating debug FAB is shown in assert (debug) builds only.
+/// Tapping it wraps the current transport in a [DebugTransport] and
+/// pushes [DebugScreen].
 class ControlScreen extends StatefulWidget {
   const ControlScreen({super.key});
 
@@ -33,6 +29,8 @@ class ControlScreen extends StatefulWidget {
 }
 
 class _ControlScreenState extends State<ControlScreen> {
+  bool _debugWrapped = false;
+
   @override
   void initState() {
     super.initState();
@@ -42,17 +40,16 @@ class _ControlScreenState extends State<ControlScreen> {
   }
 
   void _listenForDisconnect() {
-    final deviceProvider = context.read<DeviceProvider>();
-    deviceProvider.addListener(_checkConnection);
+    context.read<DeviceProvider>().addListener(_checkConnection);
   }
 
   void _checkConnection() {
     if (!mounted) return;
-    final deviceProvider = context.read<DeviceProvider>();
-    if (deviceProvider.connectionState == DeviceConnectionState.disconnected &&
-        !deviceProvider.isConnected) {
-      deviceProvider.removeListener(_checkConnection);
-      final reason = deviceProvider.errorMessage ?? 'Device disconnected';
+    final dp = context.read<DeviceProvider>();
+    if (dp.connectionState == DeviceConnectionState.disconnected &&
+        !dp.isConnected) {
+      dp.removeListener(_checkConnection);
+      final reason = dp.errorMessage ?? 'Device disconnected';
       Navigator.of(context).popUntil((route) => route.isFirst);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -66,25 +63,41 @@ class _ControlScreenState extends State<ControlScreen> {
 
   @override
   void dispose() {
-    final deviceProvider = context.read<DeviceProvider>();
-    deviceProvider.removeListener(_checkConnection);
+    context.read<DeviceProvider>().removeListener(_checkConnection);
     super.dispose();
   }
 
   Future<void> _disconnect() async {
-    final deviceProvider = context.read<DeviceProvider>();
-    deviceProvider.removeListener(_checkConnection);
-    await deviceProvider.disconnect();
-    if (mounted) {
-      Navigator.of(context).popUntil((route) => route.isFirst);
+    final dp = context.read<DeviceProvider>();
+    dp.removeListener(_checkConnection);
+    await dp.disconnect();
+    if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  /// Wrap the current transport in [DebugTransport] (idempotent),
+  /// attach it to [DebugProvider], then open [DebugScreen].
+  void _openDebug() {
+    final dp     = context.read<DeviceProvider>();
+    final debugP = context.read<DebugProvider>();
+
+    if (!_debugWrapped) {
+      final inner   = dp.currentTransport;
+      final wrapped = DebugTransport(inner: inner, sink: debugP);
+      dp.setTransport(wrapped);
+      debugP.attachTransport(wrapped);
+      _debugWrapped = true;
     }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const DebugScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<DeviceProvider>(
       builder: (context, deviceProvider, _) {
-        final device = deviceProvider.connectedDevice;
+        final device      = deviceProvider.connectedDevice;
         final isConnected = deviceProvider.isConnected;
 
         return Scaffold(
@@ -123,6 +136,13 @@ class _ControlScreenState extends State<ControlScreen> {
               ],
             ),
             actions: [
+              // Debug monitor button — debug builds only
+              if (kDebugMode)
+                IconButton(
+                  icon: const Icon(Icons.bug_report_rounded),
+                  tooltip: 'Debug Monitor',
+                  onPressed: _openDebug,
+                ),
               TextButton.icon(
                 icon: const Icon(Icons.bluetooth_disabled_rounded, size: 18),
                 label: const Text('Disconnect'),
@@ -159,9 +179,7 @@ class _ControlScreenState extends State<ControlScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const CircularProgressIndicator(
-            color: AppColors.brandOrange,
-            strokeWidth: 2,
-          ),
+              color: AppColors.brandOrange, strokeWidth: 2),
           const SizedBox(height: 20),
           Text(message, style: Theme.of(context).textTheme.bodyMedium),
         ],
@@ -197,17 +215,13 @@ class _ControlScreenState extends State<ControlScreen> {
               },
             ),
             const SizedBox(height: 12),
-            TextButton(
-              onPressed: _disconnect,
-              child: const Text('Go Back'),
-            ),
+            TextButton(onPressed: _disconnect, child: const Text('Go Back')),
           ],
         ),
       ),
     );
   }
 
-  /// Returns the virtual canvas (width, height) based on orientation.
   (double, double) _canvasDimensions(int orientation) {
     if (orientation == kOrientationPortrait) {
       return (kCanvasPortraitW, kCanvasPortraitH);
@@ -215,7 +229,6 @@ class _ControlScreenState extends State<ControlScreen> {
     return (kCanvasLandscapeW, kCanvasLandscapeH);
   }
 
-  /// Build the main widget canvas.
   Widget _buildCanvas(DeviceProvider deviceProvider) {
     final orientation = deviceProvider.orientation;
 
@@ -223,7 +236,6 @@ class _ControlScreenState extends State<ControlScreen> {
       builder: (context, constraints) {
         final (canvasVW, canvasVH) = _canvasDimensions(orientation);
 
-        // Fit the virtual canvas into available space, preserving aspect ratio.
         const padding = 16.0;
         final availW = constraints.maxWidth  - padding * 2;
         final availH = constraints.maxHeight - padding * 2;
@@ -258,18 +270,13 @@ class _ControlScreenState extends State<ControlScreen> {
                   CustomPaint(
                     size: Size(physW, physH),
                     painter: _GridPainter(
-                      color:
-                          Theme.of(context).dividerColor.withOpacity(0.3),
-                    ),
+                        color: Theme.of(context)
+                            .dividerColor
+                            .withOpacity(0.3)),
                   ),
                   ...deviceProvider.widgets.map((config) {
                     return _buildPositionedWidget(
-                      config,
-                      scaleX,
-                      scaleY,
-                      canvasVH,
-                      deviceProvider,
-                    );
+                        config, scaleX, scaleY, canvasVH, deviceProvider);
                   }),
                 ],
               ),
@@ -280,12 +287,6 @@ class _ControlScreenState extends State<ControlScreen> {
     );
   }
 
-  /// Position and rotate a widget from its virtual-canvas center coordinates.
-  ///
-  /// Transform steps:
-  ///   1. Y-axis flip: screenY = (canvasH - virtualY) * scaleY
-  ///   2. Center → top-left: subtract half scaled size
-  ///   3. Wrap in Transform.rotate with center alignment
   Widget _buildPositionedWidget(
     WidgetConfig config,
     double scaleX,
@@ -295,18 +296,12 @@ class _ControlScreenState extends State<ControlScreen> {
   ) {
     final scaledW = config.w * scaleX;
     final scaledH = config.h * scaleY;
-
-    // X: left-to-right, origin bottom-left
     final screenX = config.x * scaleX;
-    // Y: flip so that y=0 maps to bottom of physical canvas
     final screenY = (canvasVH - config.y) * scaleY;
-
-    final left = screenX - scaledW / 2;
-    final top  = screenY - scaledH / 2;
-
+    final left    = screenX - scaledW / 2;
+    final top     = screenY - scaledH / 2;
     final angleRad = config.rotationDegrees * pi / 180.0;
-
-    final state = deviceProvider.widgetState;
+    final state   = deviceProvider.widgetState;
 
     return Positioned(
       left: left,
@@ -322,57 +317,40 @@ class _ControlScreenState extends State<ControlScreen> {
   }
 
   Widget _buildWidgetForConfig(
-      WidgetConfig config,
-      RadioWidgetState? state,
-      DeviceProvider deviceProvider) {
+      WidgetConfig config, RadioWidgetState? state, DeviceProvider dp) {
     switch (config.typeId) {
       case kWidgetButton:
         final value = state?.inputValues[config.widgetId]?.first ?? 0;
         return ButtonWidget(
-          config: config,
-          value: value,
-          onChanged: (v) =>
-              deviceProvider.setInputValue(config.widgetId, [v]),
+          config: config, value: value,
+          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
         );
-
       case kWidgetSwitch:
         final value = state?.inputValues[config.widgetId]?.first ?? 0;
         return SwitchWidget(
-          config: config,
-          value: value,
-          onChanged: (v) =>
-              deviceProvider.setInputValue(config.widgetId, [v]),
+          config: config, value: value,
+          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
         );
-
       case kWidgetSlider:
         final value = state?.inputValues[config.widgetId]?.first ?? 0;
         return SliderWidget(
-          config: config,
-          value: value,
-          onChanged: (v) =>
-              deviceProvider.setInputValue(config.widgetId, [v]),
+          config: config, value: value,
+          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
         );
-
       case kWidgetJoystick:
         final values = state?.inputValues[config.widgetId] ?? [0, 0];
-        final x = values.isNotEmpty ? values[0] : 0;
-        final y = values.length > 1 ? values[1] : 0;
         return JoystickWidget(
           config: config,
-          x: x,
-          y: y,
-          onChanged: (x, y) =>
-              deviceProvider.setInputValue(config.widgetId, [x, y]),
+          x: values.isNotEmpty ? values[0] : 0,
+          y: values.length > 1 ? values[1] : 0,
+          onChanged: (x, y) => dp.setInputValue(config.widgetId, [x, y]),
         );
-
       case kWidgetLed:
         final value = state?.outputValues[config.widgetId] ?? 0;
         return LedWidget(config: config, value: value as int);
-
       case kWidgetText:
         final value = state?.outputValues[config.widgetId] ?? '';
         return TextWidget(config: config, text: value.toString());
-
       default:
         return Container(
           decoration: BoxDecoration(
@@ -381,11 +359,9 @@ class _ControlScreenState extends State<ControlScreen> {
             border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Center(
-            child: Text(
-              'Unknown\n${config.widgetId}',
-              style: Theme.of(context).textTheme.labelSmall,
-              textAlign: TextAlign.center,
-            ),
+            child: Text('Unknown\n${config.widgetId}',
+                style: Theme.of(context).textTheme.labelSmall,
+                textAlign: TextAlign.center),
           ),
         );
     }
@@ -398,7 +374,6 @@ class _ControlScreenState extends State<ControlScreen> {
 
 class _GridPainter extends CustomPainter {
   final Color color;
-
   _GridPainter({required this.color});
 
   @override
@@ -406,18 +381,12 @@ class _GridPainter extends CustomPainter {
     final paint = Paint()
       ..color = color
       ..strokeWidth = 0.5;
-
     const spacing = 50.0;
-    final cols = (size.width / spacing).ceil();
-    final rows = (size.height / spacing).ceil();
-
-    for (int i = 0; i <= cols; i++) {
-      final x = i * spacing;
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    for (int i = 0; i <= (size.width / spacing).ceil(); i++) {
+      canvas.drawLine(Offset(i * spacing, 0), Offset(i * spacing, size.height), paint);
     }
-    for (int i = 0; i <= rows; i++) {
-      final y = i * spacing;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    for (int i = 0; i <= (size.height / spacing).ceil(); i++) {
+      canvas.drawLine(Offset(0, i * spacing), Offset(size.width, i * spacing), paint);
     }
   }
 

@@ -1,15 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/ble_provider.dart';
 import 'providers/serial_provider.dart';
 import 'providers/device_provider.dart';
+import 'providers/debug_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/scan_screen.dart';
 
 /// Root application widget.
-///
-/// Sets up the Provider tree, theme, and initial route.
 class RadioKitApp extends StatelessWidget {
   const RadioKitApp({super.key});
 
@@ -20,16 +20,17 @@ class RadioKitApp extends StatelessWidget {
         ChangeNotifierProvider<ThemeProvider>(
           create: (_) => ThemeProvider(),
         ),
-        // BleProvider owns the BleService instance
         ChangeNotifierProvider<BleProvider>(
           create: (_) => BleProvider(),
         ),
-        // SerialProvider owns the SerialService instance
         ChangeNotifierProvider<SerialProvider>(
           create: (_) => SerialProvider(),
         ),
-        // DeviceProvider is transport-agnostic; starts with BLE transport.
-        // ScanScreen swaps the transport before calling connectToDevice().
+        // DebugProvider is always registered; DebugTransport is only
+        // activated in debug builds (see control_screen.dart FAB).
+        ChangeNotifierProvider<DebugProvider>(
+          create: (_) => DebugProvider(),
+        ),
         ChangeNotifierProxyProvider2<BleProvider, SerialProvider, DeviceProvider>(
           create: (context) => DeviceProvider(
             transport: context.read<BleProvider>().bleService,

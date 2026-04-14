@@ -6,7 +6,6 @@ import '../models/protocol.dart';
 import '../services/transport_service.dart';
 import '../services/protocol_service.dart';
 
-/// Connection state for the currently connected device.
 enum DeviceConnectionState {
   disconnected,
   connecting,
@@ -16,10 +15,7 @@ enum DeviceConnectionState {
 }
 
 /// Manages the connected device, widget configuration, and variable
-/// polling/update loop.
-///
-/// Transport-agnostic: works with both [BleService] and [SerialService]
-/// through the [TransportService] abstraction.
+/// polling/update loop. Transport-agnostic.
 class DeviceProvider extends ChangeNotifier {
   TransportService _transport;
 
@@ -34,7 +30,6 @@ class DeviceProvider extends ChangeNotifier {
   Timer? _pollTimer;
   Timer? _pingTimer;
   Timer? _confTimeoutTimer;
-
   Completer<void>? _confCompleter;
 
   DeviceProvider({required TransportService transport}) : _transport = transport;
@@ -43,23 +38,25 @@ class DeviceProvider extends ChangeNotifier {
   // Getters
   // ---------------------------------------------------------------------------
 
-  DeviceInfo? get connectedDevice => _connectedDevice;
+  DeviceInfo? get connectedDevice    => _connectedDevice;
   DeviceConnectionState get connectionState => _connectionState;
-  List<WidgetConfig> get widgets => List.unmodifiable(_widgets);
-  int get orientation => _orientation;
-  RadioWidgetState? get widgetState => _widgetState;
-  String? get errorMessage => _errorMessage;
-  bool get isConnected => _connectionState == DeviceConnectionState.connected;
+  List<WidgetConfig> get widgets     => List.unmodifiable(_widgets);
+  int get orientation                => _orientation;
+  RadioWidgetState? get widgetState  => _widgetState;
+  String? get errorMessage           => _errorMessage;
+  bool get isConnected               => _connectionState == DeviceConnectionState.connected;
+
+  /// Exposes the current transport so [ControlScreen] can wrap it in
+  /// [DebugTransport] without a full reconnect.
+  TransportService get currentTransport => _transport;
 
   // ---------------------------------------------------------------------------
   // Transport swap
   // ---------------------------------------------------------------------------
 
-  /// Called by [app.dart] when the user switches between BLE and Serial.
   void setTransport(TransportService transport) {
     if (identical(_transport, transport)) return;
     _transport = transport;
-    // Attach callbacks to the new transport immediately
     _transport.onPacketReceived = _handlePacket;
     _transport.onConnectionLost = _handleConnectionLost;
   }
@@ -71,17 +68,17 @@ class DeviceProvider extends ChangeNotifier {
   Future<void> connectToDevice(DeviceInfo device) async {
     _connectionState = DeviceConnectionState.connecting;
     _connectedDevice = device;
-    _errorMessage = null;
-    _configReceived = false;
+    _errorMessage    = null;
+    _configReceived  = false;
     notifyListeners();
 
-    _transport.onPacketReceived = _handlePacket;
-    _transport.onConnectionLost = _handleConnectionLost;
+    _transport.onPacketReceived  = _handlePacket;
+    _transport.onConnectionLost  = _handleConnectionLost;
 
     try {
       await _transport.connect(device.id);
     } catch (e) {
-      _errorMessage = 'Connection failed: $e';
+      _errorMessage    = 'Connection failed: $e';
       _connectionState = DeviceConnectionState.error;
       notifyListeners();
       return;
@@ -100,7 +97,7 @@ class DeviceProvider extends ChangeNotifier {
       try {
         await _transport.writePacket(ProtocolService.buildGetConf());
       } catch (e) {
-        _errorMessage = 'Failed to send GET_CONF: $e';
+        _errorMessage    = 'Failed to send GET_CONF: $e';
         _connectionState = DeviceConnectionState.error;
         notifyListeners();
         return;
@@ -120,13 +117,13 @@ class DeviceProvider extends ChangeNotifier {
       } on TimeoutException {
         _confTimeoutTimer?.cancel();
         if (attempt < 2) continue;
-        _errorMessage = 'Timed out waiting for device configuration. Please reconnect.';
+        _errorMessage    = 'Timed out waiting for device configuration. Please reconnect.';
         _connectionState = DeviceConnectionState.error;
         notifyListeners();
         return;
       } catch (e) {
         _confTimeoutTimer?.cancel();
-        _errorMessage = 'Error receiving config: $e';
+        _errorMessage    = 'Error receiving config: $e';
         _connectionState = DeviceConnectionState.error;
         notifyListeners();
         return;
@@ -148,7 +145,6 @@ class DeviceProvider extends ChangeNotifier {
       catch (_) {}
     });
 
-    // PING every 2 s — keeps the Serial session alive (3 s timeout on firmware)
     _pingTimer = Timer.periodic(kPingInterval, (_) async {
       if (!_transport.isConnected) return;
       try { await _transport.writePacket(ProtocolService.buildPing()); }
@@ -157,10 +153,8 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   void _stopPolling() {
-    _pollTimer?.cancel();
-    _pollTimer = null;
-    _pingTimer?.cancel();
-    _pingTimer = null;
+    _pollTimer?.cancel(); _pollTimer = null;
+    _pingTimer?.cancel(); _pingTimer = null;
   }
 
   // ---------------------------------------------------------------------------
@@ -169,31 +163,22 @@ class DeviceProvider extends ChangeNotifier {
 
   void _handlePacket(ParsedPacket packet) {
     switch (packet.cmd) {
-      case kCmdConfData:
-        _handleConfData(packet.payload);
-        break;
-      case kCmdVarData:
-        _handleVarData(packet.payload);
-        break;
-      case kCmdAck:
-        break;
-      case kCmdPong:
-        break;
+      case kCmdConfData: _handleConfData(packet.payload); break;
+      case kCmdVarData:  _handleVarData(packet.payload);  break;
+      case kCmdAck:      break;
+      case kCmdPong:     break;
       default:
-        debugPrint('RadioKit: Unknown command 0x${packet.cmd.toRadixString(16)}');
+        debugPrint('RadioKit: Unknown cmd 0x${packet.cmd.toRadixString(16)}');
     }
   }
 
   void _handleConfData(List<int> payload) {
     final conf = ProtocolService.parseConfData(payload);
-    if (conf == null) {
-      debugPrint('RadioKit: Failed to parse CONF_DATA');
-      return;
-    }
-    _widgets      = conf.widgets;
-    _orientation  = conf.orientation;
-    _widgetState  = RadioWidgetState.initial(conf.widgets);
-    _configReceived = true;
+    if (conf == null) { debugPrint('RadioKit: Failed to parse CONF_DATA'); return; }
+    _widgets         = conf.widgets;
+    _orientation     = conf.orientation;
+    _widgetState     = RadioWidgetState.initial(conf.widgets);
+    _configReceived  = true;
     _connectionState = DeviceConnectionState.connected;
     notifyListeners();
     if (_confCompleter != null && !_confCompleter!.isCompleted) {
@@ -205,16 +190,13 @@ class DeviceProvider extends ChangeNotifier {
     final current = _widgetState;
     if (current == null) return;
     final next = ProtocolService.parseVarData(payload, _widgets, current);
-    if (next != null) {
-      _widgetState = next;
-      notifyListeners();
-    }
+    if (next != null) { _widgetState = next; notifyListeners(); }
   }
 
   void _handleConnectionLost(String reason) {
     _stopPolling();
     _connectionState = DeviceConnectionState.disconnected;
-    _errorMessage = reason;
+    _errorMessage    = reason;
     notifyListeners();
   }
 
@@ -243,11 +225,11 @@ class DeviceProvider extends ChangeNotifier {
   Future<void> disconnect() async {
     _stopPolling();
     await _transport.disconnect();
-    _connectionState  = DeviceConnectionState.disconnected;
-    _connectedDevice  = null;
-    _widgets          = [];
-    _widgetState      = null;
-    _errorMessage     = null;
+    _connectionState = DeviceConnectionState.disconnected;
+    _connectedDevice = null;
+    _widgets         = [];
+    _widgetState     = null;
+    _errorMessage    = null;
     notifyListeners();
   }
 
