@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
@@ -7,7 +6,9 @@ import 'providers/serial_provider.dart';
 import 'providers/device_provider.dart';
 import 'providers/debug_provider.dart';
 import 'providers/theme_provider.dart';
-import 'screens/scan_screen.dart';
+import 'providers/history_provider.dart';
+import 'providers/console_provider.dart';
+import 'screens/home_screen.dart';
 
 /// Root application widget.
 class RadioKitApp extends StatelessWidget {
@@ -31,6 +32,12 @@ class RadioKitApp extends StatelessWidget {
         ChangeNotifierProvider<DebugProvider>(
           create: (_) => DebugProvider(),
         ),
+        ChangeNotifierProvider<HistoryProvider>(
+          create: (_) => HistoryProvider(),
+        ),
+        ChangeNotifierProvider<ConsoleProvider>(
+          create: (_) => ConsoleProvider(),
+        ),
         ChangeNotifierProxyProvider3<BleProvider, SerialProvider, DebugProvider, DeviceProvider>(
           create: (context) => DeviceProvider(
             transport: context.read<BleProvider>().bleService,
@@ -52,7 +59,7 @@ class RadioKitApp extends StatelessWidget {
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: themeProvider.themeMode,
-            home: const ScanScreen(),
+            home: const HomeScreen(),
           );
         },
       ),

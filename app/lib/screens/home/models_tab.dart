@@ -1,0 +1,449 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../providers/device_provider.dart';
+import '../../providers/history_provider.dart';
+import '../../providers/ble_provider.dart';
+import '../../providers/serial_provider.dart';
+import '../../providers/console_provider.dart';
+import '../../models/device_info.dart';
+import '../../models/console_entry.dart';
+import '../../theme/app_theme.dart';
+import '../control_screen.dart';
+
+class ModelsTab extends StatelessWidget {
+  const ModelsTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            _LogoIcon(),
+            const SizedBox(width: 12),
+            Text(
+              'KINETIC_RM', 
+              style: GoogleFonts.exo2(
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search_rounded, size: 20),
+            onPressed: () {},
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          const SizedBox(height: 16),
+          Text(
+            'HARDWARE INVENTORY',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.brandOrange,
+              letterSpacing: 2.0,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'WORKSPACE',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1.0,
+            ),
+          ),
+          const SizedBox(height: 32),
+          
+          _ActiveLinkSection(),
+          
+          const SizedBox(height: 32),
+          _buildSectionTag(context, '02. PAIRED MODELS'),
+          _PairedModelsList(),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTag(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            color: AppColors.brandOrange,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: AppColors.brandOrange,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActiveLinkSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final deviceProvider = context.watch<DeviceProvider>();
+    final isConnected = deviceProvider.isConnected;
+
+    if (!isConnected) return const SizedBox.shrink();
+
+    final device = deviceProvider.connectedDevice!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTag(context, '01. ACTIVE LINK'),
+        Card(
+          clipBehavior: Clip.antiAlias,
+          color: Colors.white.withOpacity(0.05),
+          child: Stack(
+            children: [
+              // Ghost Icon Background
+              Positioned(
+                right: -20,
+                bottom: -20,
+                child: Icon(
+                  Icons.local_shipping_rounded,
+                  size: 160,
+                  color: Colors.white.withOpacity(0.03),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2A2A2A),
+                            border: Border.all(color: AppColors.brandOrange.withOpacity(0.3)),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Icon(Icons.local_shipping_rounded,
+                              color: AppColors.brandOrange, size: 32),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'TELEMETRY LIVE',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.connected,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.connected,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                device.displayName.toUpperCase(),
+                                style: GoogleFonts.exo2(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.5,
+                                    ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Text(
+                                    '6X6 OFF-ROAD CHASSIS', // Placeholder
+                                    style: TextStyle(
+                                      color: AppColors.brandOrange.withOpacity(0.7),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.brandOrange.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(2),
+                                      border: Border.all(color: AppColors.brandOrange.withOpacity(0.3)),
+                                    ),
+                                    child: const Text('UNIT 02', // Placeholder
+                                      style: TextStyle(color: AppColors.brandOrange, fontSize: 8, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Divider(height: 1, color: Colors.white12),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const _TelemetryItem(label: 'LATENCY', value: '24', unit: 'ms'),
+                        _TelemetryItem(
+                          label: 'SIGNAL',
+                          value: device.rssi != 0 ? '${device.rssi}' : '--',
+                          unit: 'dBm',
+                        ),
+                        const _TelemetryItem(label: 'BATTERY', value: '88', unit: '%', color: AppColors.connected),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.brandOrange,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const ControlScreen()),
+                          );
+                        },
+                        child: const Text('OPEN CONTROLLER', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionTag(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            color: AppColors.brandOrange,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: AppColors.brandOrange,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TelemetryItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  final Color? color;
+
+  const _TelemetryItem({
+    required this.label,
+    required this.value,
+    required this.unit,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              value,
+              style: GoogleFonts.exo2(
+                    color: color ?? AppColors.brandOrange,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              unit,
+              style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _PairedModelsList extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final history = context.watch<HistoryProvider>();
+    final devices = history.pairedDevices;
+
+    if (devices.isEmpty) {
+      return Card(
+        color: Colors.white.withOpacity(0.05),
+        child: const Padding(
+          padding: EdgeInsets.all(32),
+          child: Center(
+            child: Text('No saved models yet.', style: TextStyle(color: Colors.white24)),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: devices.map((device) {
+        return Card(
+          color: Colors.white.withOpacity(0.05),
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                device.type == 'ble' ? Icons.airplanemode_active : Icons.smart_toy_rounded,
+                color: AppColors.brandOrange.withOpacity(0.7),
+              ),
+            ),
+            title: Text(
+              device.name.toUpperCase(),
+              style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+            ),
+            subtitle: Text(
+              'LAST SEEN: ${device.lastConnected.hour}:${device.lastConnected.minute.toString().padLeft(2, '0')}',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+            onTap: () => _handleReconnect(context, device),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Future<void> _handleReconnect(BuildContext context, PairedDevice device) async {
+    final console = context.read<ConsoleProvider>();
+    final ble = context.read<BleProvider>();
+    final serial = context.read<SerialProvider>();
+    final deviceProvider = context.read<DeviceProvider>();
+
+    console.log('RE-INITIALIZING SOURCE: ${device.type.toUpperCase()}', level: ConsoleLogLevel.info);
+    
+    if (device.type == 'ble') {
+      deviceProvider.setTransport(ble.bleService);
+    } else {
+      deviceProvider.setTransport(serial.serialService);
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Reconnecting to ${device.name}...')),
+    );
+
+    try {
+      await deviceProvider.connectToDevice(device.toDeviceInfo());
+      if (deviceProvider.isConnected) {
+        console.log('RESYNC SUCCESSFUL: ${device.name}', level: ConsoleLogLevel.success);
+      } else {
+        final error = deviceProvider.errorMessage ?? 'Connection failed';
+        console.log('RESYNC FAILED: $error', level: ConsoleLogLevel.error);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed: $error'), backgroundColor: Colors.redAccent),
+        );
+      }
+    } catch (e) {
+      console.log('RUNTIME ERROR: $e', level: ConsoleLogLevel.error);
+    }
+  }
+}
+
+class _LogoIcon extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _dot(AppColors.brandOrange),
+            _dot(AppColors.brandOrange),
+            _dot(AppColors.brandOrange),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _dot(AppColors.brandOrange),
+            _dot(Colors.white10),
+            _dot(AppColors.brandOrange),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _dot(Color color) {
+    return Container(
+      width: 4,
+      height: 6,
+      margin: const EdgeInsets.symmetric(horizontal: 1),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(1),
+      ),
+    );
+  }
+}

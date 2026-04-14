@@ -17,7 +17,7 @@
  *
  * Hardware:
  *   - Any ESP32 dev board connected via USB
- *   - Built-in LED on GPIO 2 (change LED_PIN if needed)
+ *   - Built-in LED on GPIO 7 (change LED_PIN if needed)
  *
  * Usage:
  *   1. Flash to ESP32
@@ -38,7 +38,7 @@
 // ── Widget declarations ───────────────────────────────────────────
 //                          label        x    y  size
 RadioKit_Button btn("Press", 20, 50, 20);
-RadioKit_Switch sw("LED", 60, 50, 20);
+RadioKit_Switch sw("LED", 60, 80, 20);
 RadioKit_Slider sld("Level", 100, 50, 12, 8.0);
 RadioKit_Joystick joy("Stick", 160, 50, 40);
 RadioKit_LED statusLED(20, 20, 14);
@@ -62,12 +62,15 @@ void loop() {
   if (btn.isPressed()) {
     digitalWrite(LED_PIN, HIGH);
     delay(80);
+  } else {
     digitalWrite(LED_PIN, LOW);
   }
 
   // Switch: hold LED on
   if (sw.isOn()) {
     digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, LOW);
   }
 
   // Status LED: reflects slider level

@@ -1,0 +1,318 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../providers/theme_provider.dart';
+import '../../providers/history_provider.dart';
+import '../../theme/app_theme.dart';
+
+class SystemTab extends StatelessWidget {
+  const SystemTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: const Row(
+          children: [
+            Icon(Icons.settings_input_component_rounded, color: AppColors.brandOrange, size: 20),
+            SizedBox(width: 12),
+            Text('RADIO_KIT'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sensors_rounded, size: 20),
+            onPressed: () {},
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          const SizedBox(height: 16),
+          Text(
+            'SYSTEM CONFIGURATION',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.brandOrange,
+              letterSpacing: 2.0,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'ENVIRONMENT',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1.0,
+            ),
+          ),
+          const SizedBox(height: 32),
+          
+          _buildSectionTag(context, '01. APPLICATION'),
+          _buildApplicationCard(context, themeProvider),
+          
+          const SizedBox(height: 32),
+          _buildSectionTag(context, '03. ABOUT'),
+          _buildAboutCard(context),
+          
+          const SizedBox(height: 48),
+          _buildDangerZone(context),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTag(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            color: AppColors.brandOrange,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: AppColors.brandOrange,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApplicationCard(BuildContext context, ThemeProvider themeProvider) {
+    return Card(
+      color: Colors.white.withOpacity(0.05),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SettingLabel(label: 'INTERFACE THEME', value: 'Kinetic Dark'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _ThemeToggleOption(
+                      label: 'DARK',
+                      isActive: themeProvider.isDarkMode,
+                      onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
+                    ),
+                  ),
+                  Expanded(
+                    child: _ThemeToggleOption(
+                      label: 'LIGHT',
+                      isActive: !themeProvider.isDarkMode,
+                      onTap: () => themeProvider.setThemeMode(ThemeMode.light),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const _SettingLabel(label: 'SYSTEM LANGUAGE', value: 'English (US)'),
+                Icon(Icons.language_rounded, color: AppColors.brandOrange.withOpacity(0.7), size: 20),
+              ],
+            ),
+            const Divider(height: 32, color: Colors.white10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  child: _SettingLabel(
+                    label: 'TELEMETRY ALERTS', 
+                    value: 'Real-time status broadcasting'
+                  ),
+                ),
+                Switch(
+                  value: true,
+                  onChanged: (v) {},
+                  activeColor: AppColors.brandOrange,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAboutCard(BuildContext context) {
+    return Card(
+      color: Colors.white.withOpacity(0.05),
+      child: const Padding(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SettingLabel(label: 'FIRMWARE VERSION', value: 'v4.2.0-STABLE'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDangerZone(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(Icons.warning_amber_rounded, size: 64, color: Colors.white10),
+                  Icon(Icons.priority_high_rounded, size: 24, color: Colors.redAccent),
+                ],
+              ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'DANGER ZONE',
+                    style: GoogleFonts.exo2(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.redAccent.withOpacity(0.9),
+                    ),
+                  ),
+                  const Text(
+                    'This will remove all paired models',
+                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                elevation: 0,
+              ),
+              onPressed: () => _confirmRemoveModels(context),
+              child: const Text('REMOVE MODELS', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmRemoveModels(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('Confirm Reset'),
+        content: const Text('Are you sure you want to remove all saved models? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL', style: TextStyle(color: Colors.white38)),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<HistoryProvider>().deleteAll();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('All models removed')),
+              );
+            },
+            child: const Text('REMOVE ALL', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingLabel extends StatelessWidget {
+  final String label;
+  final String value;
+  const _SettingLabel({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white38, fontSize: 10, letterSpacing: 0.5),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+}
+
+class _ThemeToggleOption extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _ThemeToggleOption({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 32,
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white.withOpacity(0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: isActive ? Colors.white : Colors.white38,
+          ),
+        ),
+      ),
+    );
+  }
+}
