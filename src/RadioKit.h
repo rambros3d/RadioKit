@@ -7,7 +7,7 @@
  *
  * Sketch pattern:
  *   1. Declare widget objects globally (they self-register)
- *   2. Call RadioKit.startBLE("DeviceName") in setup()
+ *   2. Call RadioKit.startBLE() OR RadioKit.startSerial() in setup()
  *   3. Call RadioKit.update() every loop() iteration
  *   4. Read/write widget values directly
  */
@@ -17,38 +17,40 @@
 
 #include "RadioKitConfig.h"
 #include "RadioKitProtocol.h"
+#include "connection/RadioKitTransport.h"
 #include "connection/RadioKitBLE.h"
+#include "connection/RadioKitSerial.h"
 
-// Forward-declare base class so RadioKitClass can hold widget pointers
-// before RadioKitWidgets.h is included.
 class RadioKit_Widget;
 
-// ─────────────────────────────────────────────
-//  RadioKitClass — singleton accessed as "RadioKit"
-// ─────────────────────────────────────────────
 class RadioKitClass {
 public:
     RadioKitClass();
 
-    // ── Setup ──────────────────────────────────────────────────────────────
+    // ── Setup ────────────────────────────────────────────────────────────
 
     /**
      * Initialise BLE and start advertising.
-     * All widget declarations must appear before this call.
-     *
-     * @param deviceName  BLE name visible during scanning
-     * @param password    Optional connection password (nullptr = open)
+     * @param deviceName  Name visible during BLE scanning.
+     * @param password    Optional connection password (nullptr = open).
      */
     void startBLE(const char* deviceName, const char* password = nullptr);
 
+    /**
+     * Initialise USB Serial transport.
+     * @param stream  Any Arduino Stream — Serial, Serial1, SoftwareSerial, …
+     * @param baud    Baud rate. Default 115200. Pass 0 if stream is pre-initialised.
+     */
+    void startSerial(Stream& stream, uint32_t baud = 115200);
+
     // ── Main loop ───────────────────────────────────────────────────────────
 
-    /** Process BLE events and protocol messages. Call once per loop(). */
+    /** Process transport events and incoming packets. Call once per loop(). */
     void update();
 
     // ── Status ───────────────────────────────────────────────────────────────
 
-    /** Returns true if a Flutter app is currently connected. */
+    /** Returns true if a peer is connected (BLE) or recently active (Serial). */
     bool isConnected() const;
 
     /** Returns the number of registered widgets. */
@@ -56,16 +58,14 @@ public:
 
     // ── Internal ────────────────────────────────────────────────────────────
 
-    /**
-     * Called by RadioKit_Widget constructor to self-register.
-     * Do not call from sketches.
-     */
+    /** Called by RadioKit_Widget constructor to self-register. */
     void _registerWidget(RadioKit_Widget* widget);
 
 private:
-    RadioKit_Widget* _widgets[RADIOKIT_MAX_WIDGETS];
-    uint8_t          _widgetCount;
+    RadioKit_Widget*     _widgets[RADIOKIT_MAX_WIDGETS];
+    uint8_t              _widgetCount;
     RadioKit_Orientation _orientation;
+    RadioKitTransport*   _transport;    ///< Points to BLE or Serial instance
 
     uint8_t _txBuf[RK_MAX_PACKET_SIZE];
 
@@ -84,11 +84,8 @@ private:
     uint16_t _totalOutputBytes() const;
 };
 
-// ─────────────────────────────────────────────
 extern RadioKitClass RadioKit;
 
-// Widget classes must be included AFTER RadioKitClass is declared
-// so that Widget.cpp can call RadioKit._registerWidget().
 #include "RadioKitWidgets.h"
 
 #endif // RADIOKIT_H
