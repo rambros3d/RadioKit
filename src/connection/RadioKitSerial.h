@@ -45,6 +45,7 @@ private:
     Stream*           _stream;
     RK_PacketCallback _cb;
     uint32_t          _lastPacketMs;
+    uint32_t          _lastByteMs;     ///< Time of last byte received
     bool              _everReceived;
 };
 

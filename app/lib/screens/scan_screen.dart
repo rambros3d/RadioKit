@@ -8,6 +8,7 @@ import '../models/device_info.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
 import 'control_screen.dart';
+import 'debug_screen.dart';
 
 /// Device scanner screen — BLE tab and USB Serial tab.
 ///
@@ -89,7 +90,7 @@ class _ScanScreenState extends State<ScanScreen>
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     if (deviceProvider.connectionState == DeviceConnectionState.connected) {
-      Navigator.of(context).pushReplacement(
+      Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const ControlScreen()),
       );
     } else {
@@ -129,6 +130,13 @@ class _ScanScreenState extends State<ScanScreen>
             ),
             tooltip: 'Toggle Theme',
             onPressed: () => context.read<ThemeProvider>().toggleTheme(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.bug_report_rounded),
+            tooltip: 'Debug Monitor',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const DebugScreen()),
+            ),
           ),
         ],
         bottom: TabBar(
@@ -438,9 +446,9 @@ class _SerialTab extends StatelessWidget {
                     icon: const Icon(Icons.usb_rounded),
                     label: const Text('Select Serial Port'),
                     onPressed: () async {
-                      await serialProvider.startScan();
-                      if (serialProvider.ports.isNotEmpty) {
-                        await onPortTapped(serialProvider.ports.first);
+                      final port = await serialProvider.startScan();
+                      if (port != null && context.mounted) {
+                        await onPortTapped(port);
                       }
                     },
                   ),

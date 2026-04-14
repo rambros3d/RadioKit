@@ -44,7 +44,10 @@ void setup() {
     myServo.write(90);  // centre on boot
 
     RadioKit.startBLE("ServoControl");
-    // RadioKit.startSerial(Serial);   // ← swap for USB testing
+    
+    // To test over USB Serial: comment out startBLE and uncomment these:
+    // Serial.begin(115200);
+    // RadioKit.startSerial(Serial);
 }
 
 // ────────────────────────────────────────────────────────────

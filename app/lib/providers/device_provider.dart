@@ -5,6 +5,7 @@ import '../models/widget_config.dart';
 import '../models/protocol.dart';
 import '../services/transport_service.dart';
 import '../services/protocol_service.dart';
+import '../services/debug_transport.dart';
 
 enum DeviceConnectionState {
   disconnected,
@@ -30,9 +31,14 @@ class DeviceProvider extends ChangeNotifier {
   Timer? _pollTimer;
   Timer? _pingTimer;
   Timer? _confTimeoutTimer;
+  DebugLogSink? _debugSink;
   Completer<void>? _confCompleter;
 
-  DeviceProvider({required TransportService transport}) : _transport = transport;
+  DeviceProvider({
+    required TransportService transport,
+    DebugLogSink? debugSink,
+  })  : _transport = transport,
+        _debugSink = debugSink;
 
   // ---------------------------------------------------------------------------
   // Getters
@@ -55,8 +61,13 @@ class DeviceProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   void setTransport(TransportService transport) {
-    if (identical(_transport, transport)) return;
-    _transport = transport;
+    var next = transport;
+    if (_debugSink != null) {
+      next = DebugTransport(inner: transport, sink: _debugSink!);
+    }
+
+    if (identical(_transport, next)) return;
+    _transport = next;
     _transport.onPacketReceived = _handlePacket;
     _transport.onConnectionLost = _handleConnectionLost;
   }
@@ -75,8 +86,16 @@ class DeviceProvider extends ChangeNotifier {
     _transport.onPacketReceived  = _handlePacket;
     _transport.onConnectionLost  = _handleConnectionLost;
 
+    // Ensure we are logging if a sink is available
+    if (_debugSink != null && _transport is! DebugTransport) {
+      _transport = DebugTransport(inner: _transport, sink: _debugSink!);
+      _transport.onPacketReceived = _handlePacket;
+      _transport.onConnectionLost = _handleConnectionLost;
+    }
+
     try {
       await _transport.connect(device.id);
+      if (_connectionState == DeviceConnectionState.disconnected) return;
     } catch (e) {
       _errorMessage    = 'Connection failed: $e';
       _connectionState = DeviceConnectionState.error;
@@ -112,10 +131,12 @@ class DeviceProvider extends ChangeNotifier {
       try {
         await _confCompleter!.future;
         _confTimeoutTimer?.cancel();
+        if (_connectionState == DeviceConnectionState.disconnected) return;
         _startPolling();
         return;
       } on TimeoutException {
         _confTimeoutTimer?.cancel();
+        if (_connectionState == DeviceConnectionState.disconnected) return;
         if (attempt < 2) continue;
         _errorMessage    = 'Timed out waiting for device configuration. Please reconnect.';
         _connectionState = DeviceConnectionState.error;
@@ -123,6 +144,7 @@ class DeviceProvider extends ChangeNotifier {
         return;
       } catch (e) {
         _confTimeoutTimer?.cancel();
+        if (_connectionState == DeviceConnectionState.disconnected) return;
         _errorMessage    = 'Error receiving config: $e';
         _connectionState = DeviceConnectionState.error;
         notifyListeners();
@@ -223,14 +245,20 @@ class DeviceProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   Future<void> disconnect() async {
-    _stopPolling();
-    await _transport.disconnect();
     _connectionState = DeviceConnectionState.disconnected;
+    notifyListeners(); // Update UI immediately
+
+    _stopPolling();
+    _confTimeoutTimer?.cancel();
+    if (_confCompleter != null && !_confCompleter!.isCompleted) {
+      _confCompleter!.completeError(TimeoutException('Disconnected by user'));
+    }
+    await _transport.disconnect();
     _connectedDevice = null;
     _widgets         = [];
     _widgetState     = null;
     _errorMessage    = null;
-    notifyListeners();
+    notifyListeners(); // Update again once transport is clean
   }
 
   // ---------------------------------------------------------------------------

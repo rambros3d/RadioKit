@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
+import 'package:flutter/foundation.dart';
 import 'dart:typed_data';
 import 'package:webserial/webserial.dart';
 import '../models/device_info.dart';
@@ -32,6 +34,7 @@ class SerialService implements TransportService {
   bool _connected = false;
   bool _reading = false;
   bool _pickerOpen = false;
+  ReadableStreamDefaultReader? _reader;
 
   final List<int> _receiveBuffer = [];
 
@@ -84,8 +87,8 @@ class SerialService implements TransportService {
 
       // Build a display ID from vendor/product IDs when available
       final info = port.getInfo();
-      final vid = info.usbVendorId.toRadixString(16).padLeft(4, '0');
-      final pid = info.usbProductId.toRadixString(16).padLeft(4, '0');
+      final vid = (info as JSObject).getProperty<JSNumber?>('usbVendorId'.toJS)?.toDartInt.toRadixString(16).padLeft(4, '0') ?? '0000';
+      final pid = (info as JSObject).getProperty<JSNumber?>('usbProductId'.toJS)?.toDartInt.toRadixString(16).padLeft(4, '0') ?? '0000';
       final id = 'serial:$vid:$pid';
 
       controller.add(DeviceInfo(
@@ -127,6 +130,16 @@ class SerialService implements TransportService {
     );
     await port.open(options).toDart;
 
+    // Set DTR and RTS to true (required by many boards to send data)
+    try {
+      await port.setSignals(JSSerialOutputSignals(
+        dataTerminalReady: true,
+        requestToSend: true,
+      )).toDart;
+    } catch (e) {
+      debugPrint('RadioKit: Failed to set DTR/RTS signals: $e');
+    }
+
     _receiveBuffer.clear();
     _connected = false;
     _reading = true;
@@ -147,6 +160,7 @@ class SerialService implements TransportService {
     }
 
     final reader = readable.getReader() as ReadableStreamDefaultReader;
+    _reader = reader;
 
     try {
       while (_reading) {
@@ -165,6 +179,7 @@ class SerialService implements TransportService {
       if (_reading) _handleDisconnect('Serial read error: $e');
     } finally {
       try { reader.releaseLock(); } catch (_) {}
+      if (_reader == reader) _reader = null;
     }
   }
 
@@ -240,8 +255,33 @@ class SerialService implements TransportService {
     _reading = false;
     _connected = false;
     _sessionTimer?.cancel();
-    try { await _port?.close().toDart; } catch (_) {}
-    _port = null;
+    
+    // Grab local references and nullify immediately
+    final reader = _reader;
+    final port   = _port;
+    _reader = null;
+    _port   = null;
+
+    if (reader != null) {
+      try {
+        // Timeout cancel after 500ms to avoid browser/driver hangs
+        await reader.cancel().toDart.timeout(const Duration(milliseconds: 500));
+      } catch (e) {
+        debugPrint('RadioKit: Error/Timeout cancelling serial reader: $e');
+      } finally {
+        try { reader.releaseLock(); } catch (_) {}
+      }
+    }
+
+    if (port != null) {
+      try {
+        // Timeout close after 500ms to avoid browser/driver hangs
+        await port.close().toDart.timeout(const Duration(milliseconds: 500));
+      } catch (e) {
+        debugPrint('RadioKit: Error/Timeout closing serial port: $e');
+      }
+    }
+    
     _receiveBuffer.clear();
   }
 

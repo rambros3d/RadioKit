@@ -27,9 +27,12 @@ class SerialProvider extends ChangeNotifier {
 
   /// On native: enumerates attached USB-CDC devices and populates [ports].
   /// On web: opens the browser port picker (one-shot).
-  Future<void> startScan() async {
-    if (_isScanning) return;
+  ///
+  /// Returns the first discovered port (especially useful for web).
+  Future<DeviceInfo?> startScan() async {
+    if (_isScanning) return _ports.isNotEmpty ? _ports.first : null;
 
+    final completer = Completer<DeviceInfo?>();
     _ports = [];
     _errorMessage = null;
     _isScanning = true;
@@ -46,17 +49,22 @@ class SerialProvider extends ChangeNotifier {
           _ports.add(port);
         }
         notifyListeners();
+        if (!completer.isCompleted) completer.complete(port);
       },
       onError: (error) {
         _errorMessage = 'Serial scan error: $error';
         _isScanning = false;
         notifyListeners();
+        if (!completer.isCompleted) completer.complete(null);
       },
       onDone: () {
         _isScanning = false;
         notifyListeners();
+        if (!completer.isCompleted) completer.complete(null);
       },
     );
+
+    return completer.future;
   }
 
   /// Stop an active scan (no-op on web where the picker is one-shot).

@@ -46,6 +46,7 @@ RadioKit_Text uptimeText("Uptime", 80, 20, 10);
 
 // ────────────────────────────────────────────────────────────
 void setup() {
+  Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 

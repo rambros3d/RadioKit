@@ -10,17 +10,22 @@ RadioKitClass RadioKit;
 static RadioKitClass* s_instance = nullptr;
 
 RadioKitClass::RadioKitClass()
-    : _widgetCount(0)
-    , _orientation(RK_LANDSCAPE)
+    : _orientation(RK_LANDSCAPE)
     , _transport(nullptr)
 {
-    memset(_widgets, 0, sizeof(_widgets));
-    memset(_txBuf,   0, sizeof(_txBuf));
-    s_instance = this;
+    // If s_instance is already set, it means a widget self-registered
+    // during static initialization. In that case, DO NOT reset _widgetCount.
+    if (s_instance == nullptr) {
+        _widgetCount = 0;
+        memset(_widgets, 0, sizeof(_widgets));
+        memset(_txBuf,   0, sizeof(_txBuf));
+        s_instance = this;
+    }
 }
 
 // ─────────────────────────────────────────────
 void RadioKitClass::_registerWidget(RadioKit_Widget* widget) {
+    if (s_instance == nullptr) s_instance = this;
     if (_widgetCount >= RADIOKIT_MAX_WIDGETS) return;
     widget->widgetId = _widgetCount;
     _widgets[_widgetCount++] = widget;

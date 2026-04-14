@@ -49,7 +49,10 @@ void setup() {
     analogWrite(PWM_RIGHT_PIN, 0);
 
     RadioKit.startBLE("RobotDrive");
-    // RadioKit.startSerial(Serial);   // ← swap for USB testing
+    
+    // To test over USB Serial: comment out startBLE and uncomment these:
+    // Serial.begin(115200);
+    // RadioKit.startSerial(Serial);
 }
 
 // ────────────────────────────────────────────────────────────

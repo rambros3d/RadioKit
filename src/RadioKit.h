@@ -39,9 +39,9 @@ public:
     /**
      * Initialise USB Serial transport.
      * @param stream  Any Arduino Stream — Serial, Serial1, SoftwareSerial, …
-     * @param baud    Baud rate. Default 115200. Pass 0 if stream is pre-initialised.
+     * @param baud    Legacy parameter. Pass 0. Stream should be pre-initialised with begin().
      */
-    void startSerial(Stream& stream, uint32_t baud = 115200);
+    void startSerial(Stream& stream, uint32_t baud = 0);
 
     // ── Main loop ───────────────────────────────────────────────────────────
 

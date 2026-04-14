@@ -116,7 +116,7 @@ bool rk_rxFeedByte(uint8_t byte,
         case RX_LENGTH_HI:
             s_rxBuf[s_rxBytesRead++] = byte;
             s_rxExpectedLen |= ((uint16_t)byte << 8); // high byte
-            // Sanity check
+            // Sanity check length immediately
             if (s_rxExpectedLen < RK_MIN_PACKET ||
                 s_rxExpectedLen > RK_RX_BUFFER_SIZE) {
                 rk_rxReset();
@@ -160,18 +160,24 @@ bool rk_rxFeedByte(uint8_t byte,
             // Compute CRC over CMD + PAYLOAD  (offsets 3 .. 3+1+payloadLen)
             uint16_t computedCrc = rk_crc16(&s_rxBuf[3], 1 + s_rxPayloadLen);
 
-            rk_rxReset(); // ready for next packet
-
             if (receivedCrc != computedCrc) {
-                // CRC mismatch — discard
+                // CRC mismatch — discard and reset
+                rk_rxReset();
                 return false;
             }
 
             // Packet is valid — fill output parameters
-            // s_rxBuf layout: [START][LEN_LO][LEN_HI][CMD][PAYLOAD...][CRC_LO][CRC_HI]
+            // Layout: [START][LEN_LO][LEN_HI][CMD][PAYLOAD...][CRC_LO][CRC_HI]
             outCmd        = s_rxBuf[3];
             outPayload    = &s_rxBuf[4];
             outPayloadLen = s_rxPayloadLen;
+
+            // Important: we keep the buffer intact so the caller can read outPayload.
+            // We only reset the state variables for the NEXT packet.
+            s_rxState       = RX_WAIT_START;
+            s_rxBytesRead   = 0;
+            s_rxExpectedLen = 0;
+            // Note: s_rxPayloadLen is preserved until next RX_CMD
             return true;
         }
 

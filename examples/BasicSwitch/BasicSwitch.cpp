@@ -25,34 +25,37 @@
 #include <RadioKit.h>
 
 // ── Pin definitions ───────────────────────────────────────────
-#define LED_PIN 2   // Built-in LED on most ESP32 dev boards
+#define LED_PIN 7 // Built-in LED on most ESP32 dev boards
 
 // ── Widget declarations (self-register on construction) ────────────────
 //                          label      x    y   size  aspect
-RadioKit_Switch lightSwitch("Light",  100,  50,  20);
-RadioKit_LED    statusLED  (           20,  20,  14);
-RadioKit_Text   stateText  ("State",  100,  20,  10);
+RadioKit_Switch lightSwitch("Light", 100, 50, 20);
+RadioKit_LED statusLED(20, 20, 14);
+RadioKit_Text stateText("State", 100, 20, 10);
 
 // ────────────────────────────────────────────────────────────
 void setup() {
-    pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN, LOW);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
 
-    RadioKit.startBLE("LightSwitch");
-    // RadioKit.startSerial(Serial);   // ← swap this in to test over USB
+  RadioKit.startBLE("LightSwitch");
+
+  // To test over USB Serial: comment out startBLE and uncomment these:
+  // Serial.begin(115200);
+  // RadioKit.startSerial(Serial);
 }
 
 // ────────────────────────────────────────────────────────────
 void loop() {
-    RadioKit.update();
+  RadioKit.update();
 
-    if (lightSwitch.isOn()) {
-        digitalWrite(LED_PIN, HIGH);
-        statusLED.set(RadioKit_LED::GREEN);
-        stateText.set("ON");
-    } else {
-        digitalWrite(LED_PIN, LOW);
-        statusLED.set(RadioKit_LED::OFF);
-        stateText.set("OFF");
-    }
+  if (lightSwitch.isOn()) {
+    digitalWrite(LED_PIN, HIGH);
+    statusLED.set(RadioKit_LED::GREEN);
+    stateText.set("ON");
+  } else {
+    digitalWrite(LED_PIN, LOW);
+    statusLED.set(RadioKit_LED::OFF);
+    stateText.set("OFF");
+  }
 }

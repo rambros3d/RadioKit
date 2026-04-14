@@ -70,8 +70,8 @@ class _ControlScreenState extends State<ControlScreen> {
   Future<void> _disconnect() async {
     final dp = context.read<DeviceProvider>();
     dp.removeListener(_checkConnection);
-    await dp.disconnect();
     if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+    await dp.disconnect();
   }
 
   /// Wrap the current transport in [DebugTransport] (idempotent),
@@ -168,6 +168,8 @@ class _ControlScreenState extends State<ControlScreen> {
             deviceProvider.errorMessage ?? 'Unknown error', deviceProvider);
       case DeviceConnectionState.connected:
         return _buildCanvas(deviceProvider);
+      case DeviceConnectionState.disconnected:
+        return _buildLoadingState('Disconnecting...');
       default:
         return _buildLoadingState('Connecting...');
     }

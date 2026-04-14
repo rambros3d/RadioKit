@@ -40,6 +40,7 @@ RadioKit_LED     status (        20, 20, 12);
 
 // ── Part 2: setup() ────────────────────────────────────────────────────
 void setup() {
+    Serial.begin(115200);                // Required for Serial mode
     RadioKit.startBLE("MyDevice");       // BLE mode
     // RadioKit.startSerial(Serial);     // — or — USB Serial mode
 }
@@ -246,28 +247,29 @@ Initialises NimBLE and starts advertising. Call once at end of `setup()`.
 
 ### `startSerial()`
 ```cpp
-void RadioKit.startSerial(Stream& stream, uint32_t baud = 115200);
+void RadioKit.startSerial(Stream& stream, uint32_t baud = 0);
 ```
-Initialises the USB Serial transport.
+Initialises the USB Serial transport. 
+
+> [!IMPORTANT]
+> You MUST call `Serial.begin(baud)` in your `setup()` before calling `startSerial()`. The library no longer initialises the hardware peripheral automatically to prevent conflicts on chips like the ESP32-S3.
 
 | Parameter | Description |
 |---|---|
 | `stream` | Any Arduino `Stream`: `Serial`, `Serial1`, `SoftwareSerial`, … |
-| `baud` | Baud rate. Pass `0` if the stream is already initialised. |
+| `baud` | Legacy parameter. Set to `0` (default) as initialization is now handled by the user. |
 
 `isConnected()` returns `true` for **3 seconds** after the last valid packet. The app must send `PING` at least every 2 s to maintain the session.
 
 **Example:**
 ```cpp
 // USB (Chrome Web Serial / Android)
+Serial.begin(115200);
 RadioKit.startSerial(Serial);
 
 // Hardware UART at custom baud
-RadioKit.startSerial(Serial1, 9600);
-
-// Pre-initialised stream (pass baud=0)
-Serial.begin(115200);
-RadioKit.startSerial(Serial, 0);
+Serial1.begin(9600);
+RadioKit.startSerial(Serial1);
 ```
 
 ---
@@ -330,6 +332,7 @@ RadioKit_LED      status(           20, 20, 12);
 RadioKit_Text     sensor("Sensor", 100, 80, 12);
 
 void setup() {
+    Serial.begin(115200);               // Initialize Serial for console or RadioKit
     RadioKit.startBLE("RoboCar");       // swap for startSerial(Serial) to test over USB
 }
 

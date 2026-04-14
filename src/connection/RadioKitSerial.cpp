@@ -13,22 +13,14 @@ RadioKitSerialTransport::RadioKitSerialTransport()
     , _lastPacketMs(0), _everReceived(false)
 {}
 
-void RadioKitSerialTransport::begin(Stream& stream, uint32_t baud,
+void RadioKitSerialTransport::begin(Stream& stream, uint32_t /*baud*/,
                                     RK_PacketCallback cb)
 {
     _stream       = &stream;
     _cb           = cb;
     _lastPacketMs = 0;
+    _lastByteMs   = 0;
     _everReceived = false;
-
-    if (baud > 0) {
-        // Cast to HardwareSerial* if possible; fall back to Stream.begin
-        // Arduino's HardwareSerial inherits Stream but exposes begin(baud).
-        // We use a safe cast — non-HardwareSerial streams are pre-inited.
-        if (HardwareSerial* hs = static_cast<HardwareSerial*>(_stream)) {
-            hs->begin(baud);
-        }
-    }
 
     rk_rxReset();
 }
@@ -48,11 +40,18 @@ void RadioKitSerialTransport::update() {
 
     while (_stream->available() > 0) {
         uint8_t byte = (uint8_t)_stream->read();
+        _lastByteMs = millis();
         if (rk_rxFeedByte(byte, cmd, payload, payloadLen)) {
             _lastPacketMs = millis();
             _everReceived = true;
             if (_cb) _cb(cmd, payload, payloadLen);
         }
+    }
+
+    // Recover from junk: if we are mid-packet but haven't seen an incoming byte
+    // for 100ms, assume it was noise and reset the framing state.
+    if ((millis() - _lastByteMs) > 100) {
+        rk_rxReset();
     }
 }
 

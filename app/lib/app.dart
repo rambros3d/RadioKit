@@ -31,13 +31,17 @@ class RadioKitApp extends StatelessWidget {
         ChangeNotifierProvider<DebugProvider>(
           create: (_) => DebugProvider(),
         ),
-        ChangeNotifierProxyProvider2<BleProvider, SerialProvider, DeviceProvider>(
+        ChangeNotifierProxyProvider3<BleProvider, SerialProvider, DebugProvider, DeviceProvider>(
           create: (context) => DeviceProvider(
             transport: context.read<BleProvider>().bleService,
+            debugSink: context.read<DebugProvider>(),
           ),
-          update: (context, bleProvider, serialProvider, previous) =>
+          update: (context, bleProvider, serialProvider, debugProvider, previous) =>
               previous ??
-              DeviceProvider(transport: bleProvider.bleService),
+              DeviceProvider(
+                transport: bleProvider.bleService,
+                debugSink: debugProvider,
+              ),
         ),
       ],
       child: Consumer<ThemeProvider>(
