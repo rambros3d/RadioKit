@@ -38,10 +38,10 @@ class LedWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.widgetCard,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _isOn ? _ledColor.withOpacity(0.5) : AppColors.widgetBorder,
+          color: _isOn ? _ledColor.withOpacity(0.5) : Theme.of(context).dividerColor,
           width: 1.5,
         ),
       ),
@@ -99,7 +99,7 @@ class LedWidget extends StatelessWidget {
             Text(
               config.label,
               style: TextStyle(
-                color: _isOn ? AppColors.textPrimary : AppColors.textDisabled,
+                color: _isOn ? Theme.of(context).textTheme.titleMedium?.color : Theme.of(context).disabledColor,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.3,
@@ -114,7 +114,7 @@ class LedWidget extends StatelessWidget {
           Text(
             _colorName,
             style: TextStyle(
-              color: _isOn ? _ledColor : AppColors.textDisabled,
+              color: _isOn ? _ledColor : Theme.of(context).disabledColor,
               fontSize: 10,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.8,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/ble_provider.dart';
 import '../providers/device_provider.dart';
 import '../models/device_info.dart';
+import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
 import 'control_screen.dart';
 
@@ -44,7 +45,7 @@ class _ScanScreenState extends State<ScanScreen> {
       SnackBar(
         content: Text('Connecting to ${device.displayName}...'),
         duration: const Duration(seconds: 3),
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
 
@@ -63,7 +64,7 @@ class _ScanScreenState extends State<ScanScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
-          backgroundColor: AppColors.disconnected,
+          backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 4),
         ),
       );
@@ -75,7 +76,7 @@ class _ScanScreenState extends State<ScanScreen> {
     return Consumer<BleProvider>(
       builder: (context, bleProvider, _) {
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             title: const Row(
               children: [
@@ -97,11 +98,21 @@ class _ScanScreenState extends State<ScanScreen> {
                           onPressed: () => bleProvider.startScan(),
                         ),
                 ),
+              
+              IconButton(
+                icon: Icon(
+                  context.watch<ThemeProvider>().isDarkMode
+                      ? Icons.light_mode_rounded
+                      : Icons.dark_mode_rounded,
+                ),
+                tooltip: 'Toggle Theme',
+                onPressed: () => context.read<ThemeProvider>().toggleTheme(),
+              ),
             ],
           ),
           body: RefreshIndicator(
-            color: AppColors.highlight,
-            backgroundColor: AppColors.surface,
+            color: Theme.of(context).colorScheme.primary,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             onRefresh: () => bleProvider.startScan(),
             child: _buildBody(bleProvider),
           ),
@@ -150,42 +161,66 @@ class _ScanScreenState extends State<ScanScreen> {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 12),
+            FutureBuilder<bool>(
+              future: bleProvider.isAvailable,
+              builder: (context, snapshot) {
+                final isSupported = bleProvider.isSupported;
+                final isAvailable = snapshot.data ?? false;
+
+                String message = 'Ready to connect';
+                IconData icon = Icons.check_circle_outline_rounded;
+                Color color = AppColors.connected;
+
+                if (!isSupported) {
+                  message = 'Browser does not support Web Bluetooth';
+                  icon = Icons.error_outline_rounded;
+                  color = Theme.of(context).colorScheme.error;
+                } else if (!isAvailable && snapshot.connectionState == ConnectionState.done) {
+                  message = 'Bluetooth hardware not found or disabled';
+                  icon = Icons.bluetooth_disabled_rounded;
+                  color = Theme.of(context).colorScheme.error;
+                }
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: color.withOpacity(0.5)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, size: 16, color: color),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          message,
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 32),
             Text(
               'Click the button below to open the browser Bluetooth device picker.\n'
               'Make sure your Arduino is powered on and running the RadioKit sketch.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.primary),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.info_outline_rounded,
-                      size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      'Requires Chrome or Edge on desktop, or Chrome on Android.\n'
-                      'Web Bluetooth is not available in Firefox or Safari.',
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 32),
             bleProvider.isScanning
-                ? const CircularProgressIndicator(color: AppColors.highlight)
+                ? CircularProgressIndicator(color: Theme.of(context).colorScheme.primary)
                 : ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.highlight,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 28, vertical: 16),
@@ -196,6 +231,11 @@ class _ScanScreenState extends State<ScanScreen> {
                     label: const Text('Connect to Device'),
                     onPressed: () => _startWebConnect(bleProvider),
                   ),
+            const SizedBox(height: 32),
+            _DemoModeButton(
+              onPressed: () => _startDemoMode(bleProvider),
+            ),
+
           ],
         ),
       ),
@@ -215,6 +255,20 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
+  void _startDemoMode(BleProvider bleProvider) async {
+    // 1. Inject the mock device into the list
+    bleProvider.useMockDevice();
+    
+    // 2. Tapping it will trigger the standard connection flow
+    // which eventually calls BleService._handleMockConnect
+    final device = bleProvider.devices.first;
+    await _onDeviceTapped(device);
+  }
+
+  void _startMockConnect(BleProvider bleProvider) {
+    bleProvider.useMockDevice();
+  }
+
   Widget _buildEmptyState(bool isScanning) {
     return Center(
       child: Padding(
@@ -227,7 +281,7 @@ class _ScanScreenState extends State<ScanScreen> {
                   ? Icons.bluetooth_searching_rounded
                   : Icons.bluetooth_disabled_rounded,
               size: 72,
-              color: AppColors.textDisabled,
+              color: Theme.of(context).disabledColor,
             ),
             const SizedBox(height: 24),
             Text(
@@ -246,7 +300,7 @@ class _ScanScreenState extends State<ScanScreen> {
             if (isScanning) ...[
               const SizedBox(height: 32),
               const CircularProgressIndicator(
-                color: AppColors.highlight,
+                color: AppColors.brandOrange,
                 strokeWidth: 2,
               ),
             ],
@@ -263,10 +317,10 @@ class _ScanScreenState extends State<ScanScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.bluetooth_disabled_rounded,
               size: 72,
-              color: AppColors.disconnected,
+              color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(height: 24),
             Text(
@@ -333,7 +387,7 @@ class _ScanningIndicatorState extends State<_ScanningIndicator>
         width: 20,
         height: 20,
         child: CircularProgressIndicator(
-          color: AppColors.highlight,
+          color: Theme.of(context).colorScheme.primary,
           strokeWidth: 2.5,
         ),
       ),
@@ -363,12 +417,12 @@ class _DeviceCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.bluetooth_rounded,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onPrimary,
                   size: 22,
                 ),
               ),
@@ -437,7 +491,7 @@ class _SignalBars extends StatelessWidget {
           height: 6.0 + i * 3.0,
           margin: const EdgeInsets.only(left: 2),
           decoration: BoxDecoration(
-            color: active ? AppColors.connected : AppColors.textDisabled,
+            color: active ? AppColors.connected : Theme.of(context).disabledColor,
             borderRadius: BorderRadius.circular(1.5),
           ),
         );
@@ -466,16 +520,16 @@ class _LogoPainter extends CustomPainter {
     final center = Offset(r, r);
 
     final outerRingPaint = Paint()
-      ..color = AppColors.highlight
+      ..color = AppColors.brandOrange
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
 
     final innerDotPaint = Paint()
-      ..color = AppColors.highlight
+      ..color = AppColors.brandOrange
       ..style = PaintingStyle.fill;
 
     final signalPaint = Paint()
-      ..color = AppColors.highlight.withOpacity(0.6)
+      ..color = AppColors.brandOrange.withOpacity(0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
       ..strokeCap = StrokeCap.round;
@@ -507,4 +561,42 @@ class _LogoPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+class _DemoModeButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _DemoModeButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 320),
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.dashboard_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+            const SizedBox(width: 12),
+            Text(
+              'Try Interactive Demo',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).textTheme.titleMedium?.color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

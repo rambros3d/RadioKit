@@ -82,7 +82,7 @@ class _ControlScreenState extends State<ControlScreen> {
         final isConnected = deviceProvider.isConnected;
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             automaticallyImplyLeading: false,
             title: Row(
@@ -122,7 +122,7 @@ class _ControlScreenState extends State<ControlScreen> {
                 icon: const Icon(Icons.bluetooth_disabled_rounded, size: 18),
                 label: const Text('Disconnect'),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.disconnected,
+                  foregroundColor: Theme.of(context).colorScheme.error,
                 ),
                 onPressed: _disconnect,
               ),
@@ -157,7 +157,7 @@ class _ControlScreenState extends State<ControlScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const CircularProgressIndicator(
-            color: AppColors.highlight,
+            color: AppColors.brandOrange,
             strokeWidth: 2,
           ),
           const SizedBox(height: 20),
@@ -178,7 +178,7 @@ class _ControlScreenState extends State<ControlScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline_rounded,
-                size: 64, color: AppColors.disconnected),
+                size: 64, color: AppColors.brandRed),
             const SizedBox(height: 20),
             Text('Connection Error',
                 style: Theme.of(context).textTheme.titleMedium),
@@ -220,8 +220,8 @@ class _ControlScreenState extends State<ControlScreen> {
             width: canvasSize,
             height: canvasSize,
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: Border.all(color: AppColors.widgetBorder, width: 1),
+              color: Theme.of(context).colorScheme.surface,
+              border: Border.all(color: Theme.of(context).dividerColor, width: 1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: ClipRRect(
@@ -231,7 +231,9 @@ class _ControlScreenState extends State<ControlScreen> {
                   // Grid background
                   CustomPaint(
                     size: Size(canvasSize, canvasSize),
-                    painter: _GridPainter(),
+                    painter: _GridPainter(
+                      color: Theme.of(context).dividerColor.withOpacity(0.3),
+                    ),
                   ),
 
                   // Positioned widgets
@@ -276,7 +278,7 @@ class _ControlScreenState extends State<ControlScreen> {
   }
 
   Widget _buildWidgetForConfig(
-      WidgetConfig config, WidgetState? state, DeviceProvider deviceProvider) {
+      WidgetConfig config, RadioWidgetState? state, DeviceProvider deviceProvider) {
     switch (config.typeId) {
       case kWidgetButton:
         final value = state?.inputValues[config.widgetId]?.first ?? 0;
@@ -328,9 +330,9 @@ class _ControlScreenState extends State<ControlScreen> {
       default:
         return Container(
           decoration: BoxDecoration(
-            color: AppColors.widgetCard,
+            color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.widgetBorder),
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Center(
             child: Text(
@@ -349,10 +351,14 @@ class _ControlScreenState extends State<ControlScreen> {
 // ---------------------------------------------------------------------------
 
 class _GridPainter extends CustomPainter {
+  final Color color;
+
+  _GridPainter({required this.color});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.widgetBorder.withOpacity(0.3)
+      ..color = color
       ..strokeWidth = 0.5;
 
     const spacing = 50.0; // 50px grid

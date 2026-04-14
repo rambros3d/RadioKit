@@ -1,3 +1,14 @@
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+libdeps/
+build/
+.cache/
+.dummy
+compile_commands.json
+build_log.txt
+
 # Flutter
 app/.dart_tool/
 app/.packages
@@ -8,6 +19,10 @@ app/.flutter-plugins
 app/.flutter-plugins-dependencies
 app/pubspec.lock
 app/.metadata
+app/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+.gemini/
+.cursor/
+.agent/
 
 # Android
 app/android/.gradle/
@@ -21,6 +36,11 @@ app/ios/Pods/
 app/ios/.symlinks/
 app/ios/Flutter/Flutter.framework
 app/ios/Flutter/Flutter.podspec
+app/ios/Flutter/Generated.xcconfig
+app/ios/Flutter/flutter_export_environment.sh
+app/ios/Flutter/ephemeral/
+app/ios/Runner/GeneratedPluginRegistrant.h
+app/ios/Runner/GeneratedPluginRegistrant.m
 app/ios/Runner.xcworkspace/
 
 # IDE
@@ -30,6 +50,7 @@ app/ios/Runner.xcworkspace/
 *.swp
 *.swo
 *~
+*.log
 
 # macOS
 .DS_Store

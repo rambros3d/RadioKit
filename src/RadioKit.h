@@ -14,7 +14,7 @@
 
 #include "RadioKitWidgets.h"
 #include "RadioKitProtocol.h"
-#include "RadioKitBLE.h"
+#include "connection/RadioKitBLE.h"
 
 // ─────────────────────────────────────────────
 //  RadioKitClass — singleton accessed as "RadioKit"

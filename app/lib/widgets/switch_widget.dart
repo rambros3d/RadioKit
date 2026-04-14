@@ -23,18 +23,18 @@ class SwitchWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.widgetCard,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _isOn
-              ? AppColors.highlight.withOpacity(0.6)
-              : AppColors.widgetBorder,
+              ? Theme.of(context).colorScheme.primary.withOpacity(0.6)
+              : Theme.of(context).dividerColor,
           width: 1.5,
         ),
         boxShadow: [
           if (_isOn)
             BoxShadow(
-              color: AppColors.highlight.withOpacity(0.15),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
               blurRadius: 8,
               spreadRadius: 1,
             ),
@@ -54,8 +54,8 @@ class SwitchWidget extends StatelessWidget {
                   config.label,
                   style: TextStyle(
                     color: _isOn
-                        ? AppColors.textPrimary
-                        : AppColors.textSecondary,
+                        ? Theme.of(context).textTheme.titleMedium?.color
+                        : Theme.of(context).textTheme.bodyMedium?.color,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.3,
@@ -75,8 +75,8 @@ class SwitchWidget extends StatelessWidget {
                     _isOn ? 'ON' : 'OFF',
                     style: TextStyle(
                       color: _isOn
-                          ? AppColors.highlight
-                          : AppColors.textDisabled,
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).disabledColor,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.2,
@@ -90,8 +90,8 @@ class SwitchWidget extends StatelessWidget {
                     height: 24,
                     decoration: BoxDecoration(
                       color: _isOn
-                          ? AppColors.highlightDim
-                          : AppColors.widgetBorder,
+                          ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                          : Theme.of(context).dividerColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: AnimatedAlign(
@@ -106,8 +106,8 @@ class SwitchWidget extends StatelessWidget {
                           height: 20,
                           decoration: BoxDecoration(
                             color: _isOn
-                                ? AppColors.highlight
-                                : AppColors.textDisabled,
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).disabledColor,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(

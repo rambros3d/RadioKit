@@ -21,6 +21,9 @@ class BleProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   BleService get bleService => _bleService;
 
+  bool get isSupported => _bleService.isSupported;
+  Future<bool> get isAvailable => _bleService.isAvailable;
+
   // ---------------------------------------------------------------------------
   // Permissions
   // ---------------------------------------------------------------------------
@@ -102,6 +105,17 @@ class BleProvider extends ChangeNotifier {
     _scanSubscription = null;
     await _bleService.stopScan();
     _isScanning = false;
+    notifyListeners();
+  }
+
+  /// [Debug only] Add a mock device for testing the UI.
+  void useMockDevice() {
+    final mock = DeviceInfo(
+      id: 'MOCK-UUID-1234',
+      name: 'RadioKit Mock Device',
+      rssi: -45,
+    );
+    _devices = [mock];
     notifyListeners();
   }
 

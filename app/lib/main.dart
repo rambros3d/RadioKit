@@ -11,13 +11,11 @@ void main() {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Transparent status bar
+  // Transparent status bar with adaptive brightness
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Color(0xFF1A1A2E),
-      systemNavigationBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
     ),
   );
 

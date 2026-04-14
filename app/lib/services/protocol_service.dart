@@ -68,7 +68,7 @@ class ProtocolService {
   ///
   /// The payload packs all input variables in widget-ID order.
   static Uint8List buildSetInput(
-      List<WidgetConfig> widgets, WidgetState state) {
+      List<WidgetConfig> widgets, RadioWidgetState state) {
     final payload = <int>[];
 
     // Sort widgets by widgetId to maintain registration order
@@ -192,8 +192,8 @@ class ProtocolService {
   ///
   /// Layout: [INPUT_VARS...] [OUTPUT_VARS...]
   /// Variables are packed in widget-ID order, sizes per widget type.
-  static WidgetState? parseVarData(
-      List<int> payload, List<WidgetConfig> widgets, WidgetState current) {
+  static RadioWidgetState? parseVarData(
+      List<int> payload, List<WidgetConfig> widgets, RadioWidgetState current) {
     int offset = 0;
 
     // Sort by widgetId to match registration order

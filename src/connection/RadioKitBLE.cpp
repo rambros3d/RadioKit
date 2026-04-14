@@ -1,16 +1,13 @@
 /**
  * RadioKitBLE.cpp
- * BLE transport layer implementation using ESP32 Arduino BLE library.
+ * BLE transport layer implementation using NimBLE-Arduino.
  */
 
 #include "RadioKitBLE.h"
-#include "RadioKitProtocol.h"
+#include "../RadioKitProtocol.h"
 
-// ESP32 BLE headers
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-#include <BLE2902.h>
+// NimBLE headers
+#include <NimBLEDevice.h>
 
 // ─────────────────────────────────────────────
 //  Singleton instance
@@ -18,28 +15,28 @@
 RadioKitBLE RadioKitBLEInstance;
 
 // ─────────────────────────────────────────────
-//  BLE Server callbacks (connection events)
+//  BLE Server callbacks
 // ─────────────────────────────────────────────
-class RKServerCallbacks : public BLEServerCallbacks {
+class RKServerCallbacks : public NimBLEServerCallbacks {
 public:
-    void onConnect(BLEServer* /*pServer*/) override {
+    void onConnect(NimBLEServer* pServer) override {
         RadioKitBLEInstance._onConnect();
     }
-    void onDisconnect(BLEServer* /*pServer*/) override {
+    void onDisconnect(NimBLEServer* pServer) override {
         RadioKitBLEInstance._onDisconnect();
     }
 };
 
 // ─────────────────────────────────────────────
-//  BLE Characteristic callbacks (data received)
+//  BLE Characteristic callbacks
 // ─────────────────────────────────────────────
-class RKCharCallbacks : public BLECharacteristicCallbacks {
+class RKCharCallbacks : public NimBLECharacteristicCallbacks {
 public:
-    void onWrite(BLECharacteristic* pChar) override {
-        std::string value = pChar->getValue();
-        if (!value.empty()) {
+    void onWrite(NimBLECharacteristic* pChar) override {
+        NimBLEAttValue value = pChar->getValue();
+        if (value.length() > 0) {
             RadioKitBLEInstance._onWrite(
-                (const uint8_t*)value.data(),
+                value.data(),
                 value.length()
             );
         }
@@ -63,39 +60,37 @@ void RadioKitBLE::begin(const char* deviceName, RK_PacketCallback onPacket) {
     _connected      = false;
     _needRestartAdv = false;
 
-    // Initialise BLE stack
-    BLEDevice::init(deviceName);
+    // Initialise NimBLE stack
+    NimBLEDevice::init(deviceName);
 
     // Create server
-    _server = BLEDevice::createServer();
+    _server = NimBLEDevice::createServer();
     _server->setCallbacks(new RKServerCallbacks());
 
     // Create service
-    BLEService* pService = _server->createService(RK_BLE_SERVICE_UUID);
+    NimBLEService* pService = _server->createService(RK_BLE_SERVICE_UUID);
 
-    // Create characteristic with READ + WRITE + NOTIFY properties
+    // Create characteristic
     _characteristic = pService->createCharacteristic(
         RK_BLE_CHARACTERISTIC_UUID,
-        BLECharacteristic::PROPERTY_READ   |
-        BLECharacteristic::PROPERTY_WRITE  |
-        BLECharacteristic::PROPERTY_NOTIFY
+        NIMBLE_PROPERTY::READ   |
+        NIMBLE_PROPERTY::WRITE  |
+        NIMBLE_PROPERTY::NOTIFY
     );
-
-    // Add CCCD descriptor to enable notifications from the client side
-    _characteristic->addDescriptor(new BLE2902());
 
     // Register write callback
     _characteristic->setCallbacks(new RKCharCallbacks());
 
-    // Start service and begin advertising
+    // Start service
     pService->start();
 
-    BLEAdvertising* pAdv = BLEDevice::getAdvertising();
+    // Setup advertising
+    NimBLEAdvertising* pAdv = NimBLEDevice::getAdvertising();
     pAdv->addServiceUUID(RK_BLE_SERVICE_UUID);
     pAdv->setScanResponse(true);
-    pAdv->setMinPreferred(0x06);  // iOS connection hint
+    pAdv->setMinPreferred(0x06);
     pAdv->setMinPreferred(0x12);
-    BLEDevice::startAdvertising();
+    pAdv->start();
 }
 
 void RadioKitBLE::sendPacket(const uint8_t* buf, uint16_t len) {
@@ -108,29 +103,25 @@ void RadioKitBLE::sendPacket(const uint8_t* buf, uint16_t len) {
         if (chunkLen > RK_BLE_MTU) {
             chunkLen = RK_BLE_MTU;
         }
-        _characteristic->setValue(const_cast<uint8_t*>(buf + offset), chunkLen);
+        
+        _characteristic->setValue(buf + offset, chunkLen);
         _characteristic->notify();
         offset += chunkLen;
 
-        // Small yield between fragments to avoid overwhelming the BLE stack
         if (offset < len) {
-            delay(10);
+            delay(5); // NimBLE is faster, reduced delay
         }
     }
 }
 
 void RadioKitBLE::update() {
-    // Restart advertising after a client disconnects
     if (_needRestartAdv) {
         _needRestartAdv = false;
-        delay(500); // brief pause before re-advertising
-        BLEDevice::startAdvertising();
+        delay(500);
+        NimBLEDevice::getAdvertising()->start();
     }
 }
 
-// ─────────────────────────────────────────────
-//  Internal callbacks called from BLE event handlers
-// ─────────────────────────────────────────────
 void RadioKitBLE::_onConnect() {
     _connected = true;
 }
@@ -138,7 +129,7 @@ void RadioKitBLE::_onConnect() {
 void RadioKitBLE::_onDisconnect() {
     _connected      = false;
     _needRestartAdv = true;
-    rk_rxReset();  // flush receive parser on disconnect
+    rk_rxReset();
 }
 
 void RadioKitBLE::_onWrite(const uint8_t* data, size_t len) {

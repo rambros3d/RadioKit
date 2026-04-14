@@ -23,7 +23,7 @@ class DeviceProvider extends ChangeNotifier {
   DeviceInfo? _connectedDevice;
   DeviceConnectionState _connectionState = DeviceConnectionState.disconnected;
   List<WidgetConfig> _widgets = [];
-  WidgetState? _widgetState;
+  RadioWidgetState? _widgetState;
   String? _errorMessage;
   bool _configReceived = false;
 
@@ -44,7 +44,7 @@ class DeviceProvider extends ChangeNotifier {
   DeviceInfo? get connectedDevice => _connectedDevice;
   DeviceConnectionState get connectionState => _connectionState;
   List<WidgetConfig> get widgets => List.unmodifiable(_widgets);
-  WidgetState? get widgetState => _widgetState;
+  RadioWidgetState? get widgetState => _widgetState;
   String? get errorMessage => _errorMessage;
   bool get isConnected =>
       _connectionState == DeviceConnectionState.connected;
@@ -200,7 +200,7 @@ class DeviceProvider extends ChangeNotifier {
     }
 
     _widgets = widgets;
-    _widgetState = WidgetState.initial(widgets);
+    _widgetState = RadioWidgetState.initial(widgets);
     _configReceived = true;
     _connectionState = DeviceConnectionState.connected;
     notifyListeners();

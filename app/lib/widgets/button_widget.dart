@@ -77,11 +77,13 @@ class _ButtonWidgetState extends State<ButtonWidget>
         onTapCancel: _onTapCancel,
         child: Container(
           decoration: BoxDecoration(
-            color: _isPressed ? AppColors.highlightDim : AppColors.highlight,
+            color: _isPressed 
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.8) 
+                : Theme.of(context).colorScheme.primary,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: AppColors.highlight
+                color: Theme.of(context).colorScheme.primary
                     .withOpacity(_isPressed ? 0.2 : 0.4),
                 blurRadius: _isPressed ? 4 : 12,
                 spreadRadius: _isPressed ? 0 : 2,
@@ -90,8 +92,8 @@ class _ButtonWidgetState extends State<ButtonWidget>
             ],
             border: Border.all(
               color: _isPressed
-                  ? AppColors.highlightDim
-                  : AppColors.highlight.withOpacity(0.8),
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.9)
+                  : Theme.of(context).colorScheme.primary.withOpacity(0.8),
               width: 1.5,
             ),
           ),
@@ -103,7 +105,7 @@ class _ButtonWidgetState extends State<ButtonWidget>
                 if (widget.config.label.isNotEmpty) ...[
                   Icon(
                     Icons.radio_button_checked_rounded,
-                    color: AppColors.textPrimary
+                    color: Theme.of(context).colorScheme.onPrimary
                         .withOpacity(_isPressed ? 0.7 : 1.0),
                     size: 22,
                   ),
@@ -111,7 +113,7 @@ class _ButtonWidgetState extends State<ButtonWidget>
                   Text(
                     widget.config.label,
                     style: TextStyle(
-                      color: AppColors.textPrimary
+                      color: Theme.of(context).colorScheme.onPrimary
                           .withOpacity(_isPressed ? 0.7 : 1.0),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -124,7 +126,7 @@ class _ButtonWidgetState extends State<ButtonWidget>
                 ] else
                   Icon(
                     Icons.radio_button_checked_rounded,
-                    color: AppColors.textPrimary
+                    color: Theme.of(context).colorScheme.onPrimary
                         .withOpacity(_isPressed ? 0.7 : 1.0),
                     size: 28,
                   ),

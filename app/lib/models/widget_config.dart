@@ -46,7 +46,7 @@ class WidgetConfig {
 }
 
 /// Holds the current state (values) for all widgets.
-class WidgetState {
+class RadioWidgetState {
   /// Input variable values keyed by widgetId.
   /// Button: int (0 or 1)
   /// Switch: int (0 or 1)
@@ -59,12 +59,12 @@ class WidgetState {
   /// Text: String
   final Map<int, dynamic> outputValues;
 
-  const WidgetState({
+  const RadioWidgetState({
     required this.inputValues,
     required this.outputValues,
   });
 
-  factory WidgetState.initial(List<WidgetConfig> widgets) {
+  factory RadioWidgetState.initial(List<WidgetConfig> widgets) {
     final inputs = <int, List<int>>{};
     final outputs = <int, dynamic>{};
 
@@ -85,18 +85,18 @@ class WidgetState {
       }
     }
 
-    return WidgetState(inputValues: inputs, outputValues: outputs);
+    return RadioWidgetState(inputValues: inputs, outputValues: outputs);
   }
 
-  WidgetState copyWithInput(int widgetId, List<int> values) {
+  RadioWidgetState copyWithInput(int widgetId, List<int> values) {
     final newInputs = Map<int, List<int>>.from(inputValues);
     newInputs[widgetId] = values;
-    return WidgetState(inputValues: newInputs, outputValues: outputValues);
+    return RadioWidgetState(inputValues: newInputs, outputValues: outputValues);
   }
 
-  WidgetState copyWithOutput(int widgetId, dynamic value) {
+  RadioWidgetState copyWithOutput(int widgetId, dynamic value) {
     final newOutputs = Map<int, dynamic>.from(outputValues);
     newOutputs[widgetId] = value;
-    return WidgetState(inputValues: inputValues, outputValues: newOutputs);
+    return RadioWidgetState(inputValues: inputValues, outputValues: newOutputs);
   }
 }

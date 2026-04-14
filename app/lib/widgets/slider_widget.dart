@@ -21,9 +21,9 @@ class SliderWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.widgetCard,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.widgetBorder, width: 1.5),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 1.5),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -37,8 +37,8 @@ class SliderWidget extends StatelessWidget {
                 Expanded(
                   child: Text(
                     config.label.isNotEmpty ? config.label : 'Slider',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.3,
@@ -51,13 +51,13 @@ class SliderWidget extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.highlight.withOpacity(0.15),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     value.toString(),
-                    style: const TextStyle(
-                      color: AppColors.highlight,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
@@ -71,8 +71,8 @@ class SliderWidget extends StatelessWidget {
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 4,
-                thumbRadius: 8,
-                overlayRadius: 14,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
               ),
               child: Slider(
                 value: value.toDouble(),

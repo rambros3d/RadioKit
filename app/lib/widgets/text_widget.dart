@@ -19,9 +19,9 @@ class TextWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.widgetBorder, width: 1.5),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 1.5),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
@@ -39,8 +39,8 @@ class TextWidget extends StatelessWidget {
             Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondary,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(11),
                   topRight: Radius.circular(11),
@@ -48,8 +48,8 @@ class TextWidget extends StatelessWidget {
               ),
               child: Text(
                 config.label,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondary,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.8,
@@ -68,16 +68,16 @@ class TextWidget extends StatelessWidget {
                 child: text.isEmpty
                     ? Text(
                         '—',
-                        style: const TextStyle(
-                          color: AppColors.textDisabled,
+                        style: TextStyle(
+                          color: Theme.of(context).disabledColor,
                           fontSize: 14,
                           fontStyle: FontStyle.italic,
                         ),
                       )
                     : Text(
                         text,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           fontFamily: 'monospace',

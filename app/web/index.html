@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1A1A2E">
+  <meta name="theme-color" content="#3A3939">
   <meta name="description" content="RadioKit — control your Arduino over BLE from the browser">
 
   <title>RadioKit</title>
@@ -21,10 +21,19 @@
   <style>
     body {
       margin: 0;
-      background-color: #1A1A2E;
-      color: #E0E0E0;
+      background-color: #3A3939; /* Brand Charcoal */
+      color: #FCFCFC; /* Brand White */
       font-family: sans-serif;
+      transition: background-color 0.3s ease;
     }
+
+    @media (prefers-color-scheme: light) {
+      body {
+        background-color: #FCFCFC;
+        color: #3A3939;
+      }
+    }
+
     /* Loading indicator shown before Flutter initialises */
     #loading {
       display: flex;
@@ -37,12 +46,14 @@
     #loading p {
       font-size: 14px;
       opacity: 0.6;
+      font-weight: 500;
+      letter-spacing: 0.5px;
     }
     .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid #0F3460;
-      border-top-color: #E94560;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #908E8E; /* Neutral Gray */
+      border-top-color: #F57A06; /* Brand Orange */
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }

@@ -109,9 +109,9 @@ class _JoystickWidgetState extends State<JoystickWidget>
 
         return Container(
           decoration: BoxDecoration(
-            color: AppColors.joystickTrack,
+            color: Theme.of(context).colorScheme.surfaceVariant,
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.widgetBorder, width: 2),
+            border: Border.all(color: Theme.of(context).dividerColor, width: 2),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.4),
@@ -130,7 +130,7 @@ class _JoystickWidgetState extends State<JoystickWidget>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: AppColors.widgetBorder.withOpacity(0.5),
+                      color: Theme.of(context).dividerColor.withOpacity(0.5),
                       width: 1),
                 ),
               ),
@@ -144,8 +144,8 @@ class _JoystickWidgetState extends State<JoystickWidget>
                   bottom: 6,
                   child: Text(
                     config.label,
-                    style: const TextStyle(
-                      color: AppColors.textDisabled,
+                    style: TextStyle(
+                      color: Theme.of(context).disabledColor,
                       fontSize: 10,
                       letterSpacing: 0.3,
                     ),
@@ -166,13 +166,13 @@ class _JoystickWidgetState extends State<JoystickWidget>
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          AppColors.joystickThumb,
-                          AppColors.joystickThumb.withOpacity(0.7),
+                          AppColors.brandOrange,
+                          AppColors.brandOrange.withOpacity(0.7),
                         ],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.highlight.withOpacity(0.4),
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
                           blurRadius: 8,
                           spreadRadius: 1,
                         ),
@@ -210,16 +210,22 @@ class _Crosshair extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomPaint(
       size: Size(size, size),
-      painter: _CrosshairPainter(),
+      painter: _CrosshairPainter(
+        color: Theme.of(context).dividerColor.withOpacity(0.4),
+      ),
     );
   }
 }
 
 class _CrosshairPainter extends CustomPainter {
+  final Color color;
+
+  _CrosshairPainter({required this.color});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.widgetBorder.withOpacity(0.4)
+      ..color = color
       ..strokeWidth = 1.0;
 
     final cx = size.width / 2;

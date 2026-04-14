@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/ble_provider.dart';
 import 'providers/device_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/scan_screen.dart';
 
 /// Root application widget.
@@ -15,6 +16,11 @@ class RadioKitApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // ThemeProvider manages the Light/Dark mode state
+        ChangeNotifierProvider<ThemeProvider>(
+          create: (_) => ThemeProvider(),
+        ),
+
         // BleProvider owns the BleService instance
         ChangeNotifierProvider<BleProvider>(
           create: (_) => BleProvider(),
@@ -30,11 +36,19 @@ class RadioKitApp extends StatelessWidget {
               DeviceProvider(bleService: bleProvider.bleService),
         ),
       ],
-      child: MaterialApp(
-        title: 'RadioKit',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark,
-        home: const ScanScreen(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'RadioKit',
+            debugShowCheckedModeBanner: false,
+            // Use the brand themes
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            // Link the theme mode to the provider
+            themeMode: themeProvider.themeMode,
+            home: const ScanScreen(),
+          );
+        },
       ),
     );
   }
