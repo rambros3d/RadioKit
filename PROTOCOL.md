@@ -1,202 +1,143 @@
-# RadioKit Binary Protocol Specification v2.0
+# RadioKit BLE Protocol — v0x02
 
 ## Overview
 
-RadioKit uses a simple binary protocol over BLE (UART service) to exchange UI configuration and variable data between an Arduino device and a Flutter app.
-
-**BLE Service UUID:** `0000FFE0-0000-1000-8000-00805F9B34FB`  
-**BLE Characteristic UUID:** `0000FFE1-0000-1000-8000-00805F9B34FB`
+RadioKit uses a compact binary protocol over BLE (single characteristic, notify + write).
+All multi-byte integers are **little-endian**.
 
 ---
 
-## Packet Format
-
-All packets share this structure:
+## Packet Structure
 
 ```
-[START] [LENGTH_LO] [LENGTH_HI] [CMD] [PAYLOAD...] [CRC_LO] [CRC_HI]
+[START][LENGTH_LO][LENGTH_HI][CMD][PAYLOAD...][CRC_LO][CRC_HI]
+  0x55    total      total
 ```
 
 | Field | Size | Description |
 |---|---|---|
-| START | 1 byte | Always `0x55` |
-| LENGTH | 2 bytes | Total packet length (little-endian), including header + CRC |
-| CMD | 1 byte | Command identifier |
-| PAYLOAD | N bytes | Command-specific data |
-| CRC | 2 bytes | CRC-16/CCITT over CMD + PAYLOAD (little-endian) |
+| `START` | 1 | Always `0x55` |
+| `LENGTH` | 2 | Total packet length (all bytes including START, LENGTH, CRC) |
+| `CMD` | 1 | Command byte |
+| `PAYLOAD` | 0–N | Command-specific payload |
+| `CRC` | 2 | CRC-16/CCITT-FALSE over `CMD + PAYLOAD` |
 
-**Minimum packet size:** 6 bytes (start + length + cmd + crc, no payload)
-
----
-
-## CRC-16 Calculation
-
-CRC-16/CCITT (poly `0x1021`, init `0xFFFF`) computed over CMD + PAYLOAD bytes.
+Minimum packet size: **6 bytes** (no payload).
 
 ---
 
-## Commands
+## Command Bytes
 
-| CMD | Name | Direction | Description |
+| Value | Name | Direction | Description |
 |---|---|---|---|
-| `0x01` | GET_CONF | App → Arduino | Request UI configuration |
-| `0x02` | CONF_DATA | Arduino → App | UI configuration response |
-| `0x03` | GET_VARS | App → Arduino | Request current variable values |
-| `0x04` | VAR_DATA | Arduino → App | Current variable values |
-| `0x05` | SET_INPUT | App → Arduino | Set input variable values |
-| `0x06` | ACK | Arduino → App | Acknowledgment |
-| `0x07` | PING | App → Arduino | Keep-alive ping |
-| `0x08` | PONG | Arduino → App | Keep-alive pong |
+| `0x10` | `GET_CONF` | App → Arduino | Request configuration descriptor |
+| `0x11` | `CONF_DATA` | Arduino → App | Configuration descriptor response |
+| `0x20` | `GET_VARS` | App → Arduino | Request current variable state |
+| `0x21` | `VAR_DATA` | Arduino → App | Variable state response |
+| `0x30` | `SET_INPUT` | App → Arduino | Push input widget values |
+| `0x31` | `ACK` | Arduino → App | Acknowledge SET_INPUT |
+| `0xF0` | `PING` | App → Arduino | Connectivity check |
+| `0xF1` | `PONG` | Arduino → App | Ping response |
 
 ---
 
-## Coordinate System
+## CONF_DATA Payload
 
-### Virtual Canvas
+Sent in response to `GET_CONF`. Describes every widget.
 
-All widget positions are expressed in a virtual coordinate system whose size depends on orientation:
-
-| Orientation | Wire Byte | Canvas Width | Canvas Height |
-|---|---|---|---|
-| Landscape | `0x00` | 200 | 100 |
-| Portrait | `0x01` | 100 | 200 |
-
-All coordinate and size values are `uint8_t` (0–255, max canvas dimension is 200).
-
-### Axis Convention
+### Header (3 bytes)
 
 ```
-(0, canvasH)  ┌──────────────────────┐  (canvasW, canvasH)
-              │                      │
-              │    Y increases ↑     │
-              │                      │
-              │    X increases →     │
-              │                      │
-       (0, 0) └──────────────────────┘  (canvasW, 0)
-              bottom-left is origin
+[PROTO_VERSION][ORIENTATION][NUM_WIDGETS]
 ```
 
-- **`(0, 0)`** = bottom-left corner (standard Cartesian convention)
-- **X** increases rightward
-- **Y** increases upward (opposite of typical screen coordinates)
-
-### Widget Position
-
-`X` and `Y` in the descriptor refer to the **center point** of the widget:
-
-- A widget at `(X, Y)` with size `(W, H)` occupies:
-  - Horizontally: `X − W/2` to `X + W/2`
-  - Vertically: `Y − H/2` to `Y + H/2`
-
-### Flutter Render Transform
-
-To convert virtual coords to screen pixel coords:
-
-```
-scaleX  = screenWidth  / canvasWidth
-scaleY  = screenHeight / canvasHeight
-screenX = X * scaleX
-screenY = (canvasHeight - Y) * scaleY   ← Y-axis flip
-topLeft = (screenX - W/2 * scaleX, screenY - H/2 * scaleY)
-```
-
----
-
-## Widget Types
-
-| Type ID | Name | Input bytes | Output bytes | Description |
-|---|---|---|---|---|
-| `0x01` | BUTTON | 1 | 0 | Momentary push: `1`=pressed, `0`=released |
-| `0x02` | SWITCH | 1 | 0 | Toggle: `1`=ON, `0`=OFF |
-| `0x03` | SLIDER | 1 | 0 | Linear `0`–`100` |
-| `0x04` | JOYSTICK | 2 | 0 | X then Y, each `int8_t` (`-100` to `+100`) |
-| `0x05` | LED | 0 | 1 | Color: `0`=off `1`=red `2`=green `3`=blue `4`=yellow |
-| `0x06` | TEXT | 0 | 32 | Null-terminated UTF-8 string display |
-
----
-
-## CONF_DATA Payload Format
-
-```
-[PROTOCOL_VERSION] [ORIENTATION] [NUM_WIDGETS] [WIDGET_1] ... [WIDGET_N]
-```
-
-| Field | Size | Description |
-|---|---|---|
-| PROTOCOL_VERSION | 1 byte | `0x02` |
-| ORIENTATION | 1 byte | `0x00` = Landscape (200×100), `0x01` = Portrait (100×200) |
-| NUM_WIDGETS | 1 byte | Number of widget descriptors that follow |
+| Byte | Description |
+|---|---|
+| `PROTO_VERSION` | Protocol version. Current: `0x02` |
+| `ORIENTATION` | `0x00` = Landscape, `0x01` = Portrait |
+| `NUM_WIDGETS` | Number of widget descriptors that follow |
 
 ### Widget Descriptor
 
+Each widget is described by a variable-length record:
+
 ```
-[TYPE_ID] [WIDGET_ID] [X] [Y] [W] [H] [ROTATION] [LABEL_LEN] [LABEL...]
+[TYPE][ID][X][Y][SIZE][ASPECT][ROTATION][LABEL_LEN][LABEL...]
 ```
 
-| Field | Size | Description |
+| Field | Type | Description |
 |---|---|---|
-| TYPE_ID | 1 byte | Widget type (see table above) |
-| WIDGET_ID | 1 byte | Sequential zero-based index (0–255) |
-| X | 1 byte | Center X — `uint8_t` (0 = left edge) |
-| Y | 1 byte | Center Y — `uint8_t` (0 = bottom edge) |
-| W | 1 byte | Width — `uint8_t` |
-| H | 1 byte | Height — `uint8_t` |
-| ROTATION | 1 byte | `int8_t` mapped: `−90` to `+90` (multiply × 2 to get actual degrees) |
-| LABEL_LEN | 1 byte | Byte length of following label |
-| LABEL | N bytes | UTF-8 label string, **no null terminator** |
+| `TYPE` | `uint8_t` | Widget type ID (see table below) |
+| `ID` | `uint8_t` | Widget index (0-based, sequential) |
+| `X` | `uint8_t` | Center X on virtual canvas (0–200) |
+| `Y` | `uint8_t` | Center Y on virtual canvas (0–200) |
+| `SIZE` | `uint8_t` | Height in canvas units (0–200) |
+| `ASPECT` | `uint8_t` | Width/height ratio ×10. App computes: `width = SIZE × (ASPECT ÷ 10.0)` |
+| `ROTATION` | `int8_t` | Rotation in 2° steps (−90 to +90 →2-degree resolution) |
+| `LABEL_LEN` | `uint8_t` | Label byte count (0 = no label) |
+| `LABEL` | `char[LABEL_LEN]` | UTF-8 label string, **not** null-terminated |
 
-### Rotation Encoding
+#### ASPECT Encoding
 
-| User degrees | Wire `int8_t` | Notes |
+| `ASPECT` wire value | Actual ratio | Resulting width (SIZE=20) |
 |---|---|---|
-| `0°` | `0` | No rotation (default) |
-| `90°` | `45` | Quarter turn CCW |
-| `-90°` | `-45` | Quarter turn CW |
-| `180°` | `90` | Half turn |
-| `-180°` | `-90` | Half turn (opposite sign) |
+| `10` | 1.0 | 20 |
+| `16` | 1.6 | 32 |
+| `25` | 2.5 | 50 |
+| `40` | 4.0 | 80 |
+| `50` | 5.0 | 100 |
+| `255` | 25.5 | 510 (clamped by app) |
 
-Positive = counter-clockwise (standard mathematical convention).
+#### Widget Type IDs
+
+| `TYPE` | Widget | Input bytes | Output bytes |
+|---|---|---|---|
+| `0x01` | Button | 1 (`uint8_t`: 1=pressed, 0=released) | 0 |
+| `0x02` | Switch | 1 (`uint8_t`: 1=on, 0=off) | 0 |
+| `0x03` | Slider | 1 (`uint8_t`: 0–100) | 0 |
+| `0x04` | Joystick | 2 (`int8_t` X, `int8_t` Y; −100..+100) | 0 |
+| `0x05` | LED | 0 | 1 (`uint8_t` color: 0=OFF 1=RED 2=GREEN 3=BLUE 4=YELLOW) |
+| `0x06` | Text | 0 | 32 (`char[32]`, null-padded) |
 
 ---
 
-## VAR_DATA Payload Format
+## VAR_DATA Payload
 
-All input and output variable bytes from the user's flat struct, packed sequentially:
+Sent in response to `GET_VARS`. Contains the current runtime state of all widgets.
 
 ```
-[INPUT_VARS...] [OUTPUT_VARS...]
+[input widget vars, in widget-ID order]
+[output widget vars, in widget-ID order]
 ```
 
-- **Input bytes first** — all widgets with input data, in widget registration order
-- **Output bytes after** — all widgets with output data, in widget registration order
-- Sizes per widget type as defined in the widget table above
-- The app must use the CONF_DATA descriptor to compute byte offsets
+Input widget bytes are echoed as zeros (the app owns input state).
+Output widget bytes carry the current Arduino-side value.
 
 ---
 
-## SET_INPUT Payload Format
+## SET_INPUT Payload
 
-Same layout as the **input portion** of VAR_DATA. The app sends all input variable values packed in widget order.
+Sent by the app when the user interacts with a widget.
+Contains **input widget bytes only**, in widget-ID order:
 
-On receipt the Arduino library does a direct `memcpy` into the user struct at offset 0.
+```
+[input var 0][input var 1]...
+```
+
+The Arduino side iterates all widgets in ID order, skipping output-only widgets,
+and calls `deserializeInput()` on each with the appropriate byte slice.
 
 ---
 
-## connect_flag
+## Default Aspect Ratios
 
-The optional `uint8_t connect_flag` field at the **end** of the user struct (after all input and output fields) is set to `1` by the library when a BLE connection is active, and `0` on disconnect. It is **never transmitted over the wire** — it is a local status field only.
+These are the values sent on the wire when the sketch uses `aspect = 0`:
 
----
-
-## Connection Flow
-
-1. App scans for BLE devices advertising the RadioKit service UUID
-2. App connects and discovers the UART characteristic
-3. App sends `GET_CONF`
-4. Arduino responds with `CONF_DATA` (protocol version `0x02`)
-5. App validates `PROTOCOL_VERSION` — rejects `0x01` firmware with an error message
-6. App renders the UI from the descriptor
-7. App enters polling loop:
-   - Sends `GET_VARS` every ~100 ms → receives `VAR_DATA`
-   - On user interaction: sends `SET_INPUT` → Arduino responds `ACK`
-8. Periodic `PING` / `PONG` every 2 s for connection health
+| Widget | `ASPECT` wire value | Float equivalent |
+|---|---|---|
+| Button | 25 | 2.5 |
+| Switch | 16 | 1.6 |
+| Slider | 50 | 5.0 |
+| Joystick | 10 | 1.0 |
+| LED | 10 | 1.0 |
+| Text | 40 | 4.0 |

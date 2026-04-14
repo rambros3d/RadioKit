@@ -5,9 +5,9 @@
 
 class RadioKit_LED : public RadioKit_Widget {
 public:
-    static constexpr float DEFAULT_ASPECT = 1.0f;
+    // 1.0 ×10 = 10
+    static constexpr uint8_t DEFAULT_ASPECT = 10;
 
-    // Colour constants accessible as RadioKit_LED::GREEN etc.
     static const RadioKit_LEDColor OFF    = RK_LED_OFF;
     static const RadioKit_LEDColor RED    = RK_LED_RED;
     static const RadioKit_LEDColor GREEN  = RK_LED_GREEN;
@@ -21,17 +21,17 @@ public:
 
     uint8_t inputSize()  const override { return 0; }
     uint8_t outputSize() const override { return 1; }
-    void serializeOutput(uint8_t* buf)        const override;
-    void deserializeInput(const uint8_t*)           override {}
+    void serializeOutput(uint8_t* buf)         const override;
+    void deserializeInput(const uint8_t*)            override {}
 
     void              set(RadioKit_LEDColor color) { _color = color; }
     RadioKit_LEDColor get() const                  { return _color; }
 
 protected:
-    float defaultAspect() const override { return DEFAULT_ASPECT; }
+    uint8_t defaultAspect() const override { return DEFAULT_ASPECT; }
 
 private:
     RadioKit_LEDColor _color;
 };
 
-#endif // RADIOKIT_WIDGET_LED_H
+#endif
