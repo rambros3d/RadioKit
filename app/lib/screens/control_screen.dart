@@ -1,3 +1,4 @@
+import 'dart:math' show pi;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/device_provider.dart';
@@ -13,8 +14,17 @@ import '../widgets/text_widget.dart';
 
 /// Dynamic widget rendering screen for the connected RadioKit device.
 ///
-/// Positions widgets on a virtual 1000×1000 canvas, scaled to the actual
-/// screen dimensions while maintaining aspect ratio.
+/// Renders widgets on an orientation-aware virtual canvas:
+///   Landscape: 200 × 100  (origin bottom-left, Y increases upward)
+///   Portrait:  100 × 200
+///
+/// Each widget [x, y] is its CENTER point in virtual space.
+/// Coordinate transform to Flutter screen pixels:
+///   scaleX  = physicalW / canvasW
+///   scaleY  = physicalH / canvasH
+///   screenX = x * scaleX
+///   screenY = (canvasH - y) * scaleY   ← Y-axis flip
+///   topLeft = (screenX - w/2 * scaleX,  screenY - h/2 * scaleY)
 class ControlScreen extends StatefulWidget {
   const ControlScreen({super.key});
 
@@ -26,8 +36,6 @@ class _ControlScreenState extends State<ControlScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Watch for disconnection and auto-navigate back
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _listenForDisconnect();
     });
@@ -43,9 +51,7 @@ class _ControlScreenState extends State<ControlScreen> {
     final deviceProvider = context.read<DeviceProvider>();
     if (deviceProvider.connectionState == DeviceConnectionState.disconnected &&
         !deviceProvider.isConnected) {
-      // Remove listener to avoid duplicate calls
       deviceProvider.removeListener(_checkConnection);
-
       final reason = deviceProvider.errorMessage ?? 'Device disconnected';
       Navigator.of(context).popUntil((route) => route.isFirst);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -87,7 +93,6 @@ class _ControlScreenState extends State<ControlScreen> {
             automaticallyImplyLeading: false,
             title: Row(
               children: [
-                // Connection status dot
                 Container(
                   width: 10,
                   height: 10,
@@ -138,14 +143,11 @@ class _ControlScreenState extends State<ControlScreen> {
     switch (deviceProvider.connectionState) {
       case DeviceConnectionState.fetchingConfig:
         return _buildLoadingState('Loading device configuration...');
-
       case DeviceConnectionState.error:
         return _buildErrorState(
             deviceProvider.errorMessage ?? 'Unknown error', deviceProvider);
-
       case DeviceConnectionState.connected:
         return _buildCanvas(deviceProvider);
-
       default:
         return _buildLoadingState('Connecting...');
     }
@@ -161,10 +163,7 @@ class _ControlScreenState extends State<ControlScreen> {
             strokeWidth: 2,
           ),
           const SizedBox(height: 20),
-          Text(message,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium),
+          Text(message, style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     );
@@ -208,38 +207,69 @@ class _ControlScreenState extends State<ControlScreen> {
     );
   }
 
+  /// Returns the virtual canvas (width, height) based on orientation.
+  (double, double) _canvasDimensions(int orientation) {
+    if (orientation == kOrientationPortrait) {
+      return (kCanvasPortraitW, kCanvasPortraitH);
+    }
+    return (kCanvasLandscapeW, kCanvasLandscapeH);
+  }
+
   /// Build the main widget canvas.
   Widget _buildCanvas(DeviceProvider deviceProvider) {
+    final orientation = deviceProvider.orientation;
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final canvasSize = _computeCanvasSize(constraints);
-        final scale = canvasSize / 1000.0;
+        final (canvasVW, canvasVH) = _canvasDimensions(orientation);
+
+        // Fit the virtual canvas into available space, preserving aspect ratio.
+        const padding = 16.0;
+        final availW = constraints.maxWidth  - padding * 2;
+        final availH = constraints.maxHeight - padding * 2;
+        final aspectRatio = canvasVW / canvasVH;
+
+        double physW, physH;
+        if (availW / availH > aspectRatio) {
+          physH = availH;
+          physW = physH * aspectRatio;
+        } else {
+          physW = availW;
+          physH = physW / aspectRatio;
+        }
+
+        final scaleX = physW / canvasVW;
+        final scaleY = physH / canvasVH;
 
         return Center(
           child: Container(
-            width: canvasSize,
-            height: canvasSize,
+            width: physW,
+            height: physH,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+              border: Border.all(
+                  color: Theme.of(context).dividerColor, width: 1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: Stack(
                 children: [
-                  // Grid background
                   CustomPaint(
-                    size: Size(canvasSize, canvasSize),
+                    size: Size(physW, physH),
                     painter: _GridPainter(
-                      color: Theme.of(context).dividerColor.withOpacity(0.3),
+                      color:
+                          Theme.of(context).dividerColor.withOpacity(0.3),
                     ),
                   ),
-
-                  // Positioned widgets
                   ...deviceProvider.widgets.map((config) {
                     return _buildPositionedWidget(
-                        config, scale, deviceProvider);
+                      config,
+                      scaleX,
+                      scaleY,
+                      canvasVH,
+                      deviceProvider,
+                    );
                   }),
                 ],
               ),
@@ -250,35 +280,51 @@ class _ControlScreenState extends State<ControlScreen> {
     );
   }
 
-  /// Compute the canvas size (square) fitting within the available space.
-  double _computeCanvasSize(BoxConstraints constraints) {
-    const padding = 16.0;
-    final availableWidth = constraints.maxWidth - padding * 2;
-    final availableHeight = constraints.maxHeight - padding * 2;
-    return availableWidth < availableHeight ? availableWidth : availableHeight;
-  }
-
-  /// Build a positioned widget from its config.
+  /// Position and rotate a widget from its virtual-canvas center coordinates.
+  ///
+  /// Transform steps:
+  ///   1. Y-axis flip: screenY = (canvasH - virtualY) * scaleY
+  ///   2. Center → top-left: subtract half scaled size
+  ///   3. Wrap in Transform.rotate with center alignment
   Widget _buildPositionedWidget(
-      WidgetConfig config, double scale, DeviceProvider deviceProvider) {
-    final left = config.x * scale;
-    final top = config.y * scale;
-    final width = config.w * scale;
-    final height = config.h * scale;
+    WidgetConfig config,
+    double scaleX,
+    double scaleY,
+    double canvasVH,
+    DeviceProvider deviceProvider,
+  ) {
+    final scaledW = config.w * scaleX;
+    final scaledH = config.h * scaleY;
+
+    // X: left-to-right, origin bottom-left
+    final screenX = config.x * scaleX;
+    // Y: flip so that y=0 maps to bottom of physical canvas
+    final screenY = (canvasVH - config.y) * scaleY;
+
+    final left = screenX - scaledW / 2;
+    final top  = screenY - scaledH / 2;
+
+    final angleRad = config.rotationDegrees * pi / 180.0;
 
     final state = deviceProvider.widgetState;
 
     return Positioned(
       left: left,
       top: top,
-      width: width,
-      height: height,
-      child: _buildWidgetForConfig(config, state, deviceProvider),
+      width: scaledW,
+      height: scaledH,
+      child: Transform.rotate(
+        angle: angleRad,
+        alignment: Alignment.center,
+        child: _buildWidgetForConfig(config, state, deviceProvider),
+      ),
     );
   }
 
   Widget _buildWidgetForConfig(
-      WidgetConfig config, RadioWidgetState? state, DeviceProvider deviceProvider) {
+      WidgetConfig config,
+      RadioWidgetState? state,
+      DeviceProvider deviceProvider) {
     switch (config.typeId) {
       case kWidgetButton:
         final value = state?.inputValues[config.widgetId]?.first ?? 0;
@@ -361,7 +407,7 @@ class _GridPainter extends CustomPainter {
       ..color = color
       ..strokeWidth = 0.5;
 
-    const spacing = 50.0; // 50px grid
+    const spacing = 50.0;
     final cols = (size.width / spacing).ceil();
     final rows = (size.height / spacing).ceil();
 
@@ -369,7 +415,6 @@ class _GridPainter extends CustomPainter {
       final x = i * spacing;
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
-
     for (int i = 0; i <= rows; i++) {
       final y = i * spacing;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);

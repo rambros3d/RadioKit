@@ -1,4 +1,4 @@
-/// Protocol constants for the RadioKit binary protocol v1.0
+/// Protocol constants for the RadioKit binary protocol v2.0
 library protocol;
 
 // BLE Service and Characteristic UUIDs
@@ -45,16 +45,23 @@ const Map<int, int> kWidgetOutputSize = {
   kWidgetText: 32,
 };
 
-// Protocol version
-const int kProtocolVersion = 0x01;
+// Protocol version — v2 adds orientation byte, 1-byte coords, rotation field
+const int kProtocolVersion = 0x02;
+
+// Orientation wire values
+const int kOrientationLandscape = 0x00; // canvas 200 × 100
+const int kOrientationPortrait = 0x01;  // canvas 100 × 200
+
+// Virtual canvas dimensions per orientation
+const double kCanvasLandscapeW = 200.0;
+const double kCanvasLandscapeH = 100.0;
+const double kCanvasPortraitW = 100.0;
+const double kCanvasPortraitH = 200.0;
 
 // Poll intervals
 const Duration kGetVarsInterval = Duration(milliseconds: 100);
 const Duration kPingInterval = Duration(seconds: 2);
 const Duration kConfTimeout = Duration(seconds: 5);
-
-// Virtual coordinate space
-const double kVirtualSize = 1000.0;
 
 // Widget type names for display
 String widgetTypeName(int typeId) {

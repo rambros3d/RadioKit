@@ -1,18 +1,34 @@
 import 'protocol.dart';
 
-/// Configuration for a single UI widget, parsed from CONF_DATA payload.
+/// Configuration for a single UI widget, parsed from a v2 CONF_DATA payload.
+///
+/// Coordinate system:
+///   - Origin (0,0) is the bottom-left corner of the virtual canvas.
+///   - X increases rightward; Y increases upward.
+///   - [x] and [y] are the CENTER point of the widget.
+///   - Canvas size depends on [orientation] (200×100 landscape / 100×200 portrait).
 class WidgetConfig {
   final int typeId;
   final int widgetId;
 
-  /// Position in virtual 0-1000 coordinate space
+  /// Center X in virtual canvas coordinates (uint8, 0–200).
   final double x;
+
+  /// Center Y in virtual canvas coordinates, bottom-left origin (uint8, 0–200).
   final double y;
+
   final double w;
   final double h;
 
-  /// Human-readable label
+  /// Human-readable label.
   final String label;
+
+  /// Rotation as stored on the wire (int8, −90 to +90).
+  /// Multiply by 2 to get display degrees (−180° to +180°).
+  final int rotation;
+
+  /// Convenience: display degrees derived from wire rotation value.
+  double get rotationDegrees => rotation * 2.0;
 
   const WidgetConfig({
     required this.typeId,
@@ -22,6 +38,7 @@ class WidgetConfig {
     required this.w,
     required this.h,
     required this.label,
+    this.rotation = 0,
   });
 
   /// Returns the number of input bytes this widget type uses.
@@ -42,7 +59,7 @@ class WidgetConfig {
   @override
   String toString() =>
       'WidgetConfig(id=$widgetId, type=$typeName, label="$label", '
-      'pos=($x,$y), size=${w}x$h)';
+      'pos=($x,$y), size=${w}x$h, rot=${rotationDegrees}°)';
 }
 
 /// Holds the current state (values) for all widgets.

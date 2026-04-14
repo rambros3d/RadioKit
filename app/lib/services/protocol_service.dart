@@ -3,8 +3,16 @@ import 'dart:convert';
 import '../models/protocol.dart';
 import '../models/widget_config.dart';
 
+/// Result of parsing a CONF_DATA payload.
+class ParsedConf {
+  final int orientation;        // kOrientationLandscape or kOrientationPortrait
+  final List<WidgetConfig> widgets;
+
+  const ParsedConf({required this.orientation, required this.widgets});
+}
+
 /// Handles all packet building, parsing, and CRC computation for the
-/// RadioKit binary protocol v1.0.
+/// RadioKit binary protocol v2.0.
 class ProtocolService {
   // ---------------------------------------------------------------------------
   // CRC-16/CCITT  (poly 0x1021, init 0xFFFF)
@@ -34,23 +42,21 @@ class ProtocolService {
   /// Layout: START(1) + LENGTH(2 LE) + CMD(1) + PAYLOAD(N) + CRC(2 LE)
   static Uint8List buildPacket(int cmd, [List<int>? payload]) {
     final payloadBytes = payload ?? [];
-    // Total length = 1 (start) + 2 (length) + 1 (cmd) + N (payload) + 2 (crc)
     final totalLength = 6 + payloadBytes.length;
 
-    // Compute CRC over CMD + PAYLOAD
     final crcInput = [cmd, ...payloadBytes];
     final crc = _crc16(crcInput);
 
     final packet = Uint8List(totalLength);
     packet[0] = kStartByte;
-    packet[1] = totalLength & 0xFF; // LENGTH_LO
-    packet[2] = (totalLength >> 8) & 0xFF; // LENGTH_HI
+    packet[1] = totalLength & 0xFF;
+    packet[2] = (totalLength >> 8) & 0xFF;
     packet[3] = cmd;
     for (int i = 0; i < payloadBytes.length; i++) {
       packet[4 + i] = payloadBytes[i] & 0xFF;
     }
-    packet[totalLength - 2] = crc & 0xFF; // CRC_LO
-    packet[totalLength - 1] = (crc >> 8) & 0xFF; // CRC_HI
+    packet[totalLength - 2] = crc & 0xFF;
+    packet[totalLength - 1] = (crc >> 8) & 0xFF;
 
     return packet;
   }
@@ -65,27 +71,21 @@ class ProtocolService {
   static Uint8List buildPing() => buildPacket(kCmdPing);
 
   /// Build a SET_INPUT packet for the given [widgets] using [state].
-  ///
-  /// The payload packs all input variables in widget-ID order.
   static Uint8List buildSetInput(
       List<WidgetConfig> widgets, RadioWidgetState state) {
     final payload = <int>[];
 
-    // Sort widgets by widgetId to maintain registration order
     final inputWidgets = widgets.where((w) => w.hasInput).toList()
       ..sort((a, b) => a.widgetId.compareTo(b.widgetId));
 
     for (final widget in inputWidgets) {
       final values = state.inputValues[widget.widgetId] ?? [];
       if (widget.typeId == kWidgetJoystick) {
-        // Two int8 values: x, y
         final x = values.isNotEmpty ? values[0] : 0;
         final y = values.length > 1 ? values[1] : 0;
-        // Convert to unsigned byte (two's complement)
         payload.add(x < 0 ? x + 256 : x);
         payload.add(y < 0 ? y + 256 : y);
       } else {
-        // Single byte value
         final v = values.isNotEmpty ? values[0] : 0;
         payload.add(v & 0xFF);
       }
@@ -99,11 +99,6 @@ class ProtocolService {
   // ---------------------------------------------------------------------------
 
   /// Parse a received byte stream into a [ParsedPacket], or null if invalid.
-  ///
-  /// Returns null on:
-  ///   - Wrong start byte
-  ///   - Insufficient data
-  ///   - CRC mismatch
   static ParsedPacket? parsePacket(List<int> data) {
     if (data.length < 6) return null;
     if (data[0] != kStartByte) return null;
@@ -118,50 +113,53 @@ class ProtocolService {
     final receivedCrc = data[payloadEnd] | (data[payloadEnd + 1] << 8);
     final computedCrc = _crc16([cmd, ...payload]);
 
-    if (receivedCrc != computedCrc) {
-      // CRC mismatch — drop packet
-      return null;
-    }
+    if (receivedCrc != computedCrc) return null;
 
     return ParsedPacket(cmd: cmd, payload: Uint8List.fromList(payload));
   }
 
   // ---------------------------------------------------------------------------
-  // CONF_DATA parsing
+  // CONF_DATA parsing  (protocol v2)
   // ---------------------------------------------------------------------------
 
-  /// Parse a CONF_DATA payload into a list of [WidgetConfig] objects.
+  /// Parse a v2 CONF_DATA payload.
   ///
-  /// Payload format:
-  ///   [VERSION(1)] [NUM_WIDGETS(1)] [WIDGET_1] ... [WIDGET_N]
+  /// v2 header: [VERSION(1)] [ORIENTATION(1)] [NUM_WIDGETS(1)]
   ///
-  /// Each widget:
-  ///   [TYPE_ID(1)] [WIDGET_ID(1)] [X(2 LE)] [Y(2 LE)] [W(2 LE)] [H(2 LE)]
-  ///   [LABEL_LEN(1)] [LABEL(N)]
-  static List<WidgetConfig>? parseConfData(List<int> payload) {
-    if (payload.length < 2) return null;
+  /// Each widget descriptor (8 + labelLen bytes):
+  ///   [TYPE_ID(1)] [WIDGET_ID(1)] [X(1)] [Y(1)] [W(1)] [H(1)]
+  ///   [ROTATION(1, int8)] [LABEL_LEN(1)] [LABEL(N)]
+  ///
+  /// Returns null and logs on version mismatch or truncated data.
+  static ParsedConf? parseConfData(List<int> payload) {
+    if (payload.length < 3) return null;
 
     final version = payload[0];
     if (version != kProtocolVersion) {
-      // Incompatible protocol version — still attempt parsing
+      // Version mismatch — firmware must be updated to v0x02
+      return null;
     }
 
-    final numWidgets = payload[1];
+    final orientation = payload[1]; // kOrientationLandscape or kOrientationPortrait
+    final numWidgets = payload[2];
     final widgets = <WidgetConfig>[];
-    int offset = 2;
+    int offset = 3;
 
     for (int i = 0; i < numWidgets; i++) {
-      // Need at least 11 bytes: type(1)+id(1)+x(2)+y(2)+w(2)+h(2)+labelLen(1)
-      if (offset + 11 > payload.length) break;
+      // Minimum 8 bytes per descriptor before the label
+      if (offset + 8 > payload.length) break;
 
-      final typeId = payload[offset];
+      final typeId   = payload[offset];
       final widgetId = payload[offset + 1];
-      final x = payload[offset + 2] | (payload[offset + 3] << 8);
-      final y = payload[offset + 4] | (payload[offset + 5] << 8);
-      final w = payload[offset + 6] | (payload[offset + 7] << 8);
-      final h = payload[offset + 8] | (payload[offset + 9] << 8);
-      final labelLen = payload[offset + 10];
-      offset += 11;
+      final x        = payload[offset + 2].toDouble();
+      final y        = payload[offset + 3].toDouble();
+      final w        = payload[offset + 4].toDouble();
+      final h        = payload[offset + 5].toDouble();
+      // rotation is a signed int8
+      final rotRaw   = payload[offset + 6];
+      final rotation = rotRaw >= 128 ? rotRaw - 256 : rotRaw;
+      final labelLen = payload[offset + 7];
+      offset += 8;
 
       String label = '';
       if (labelLen > 0 && offset + labelLen <= payload.length) {
@@ -171,32 +169,29 @@ class ProtocolService {
       }
 
       widgets.add(WidgetConfig(
-        typeId: typeId,
+        typeId:   typeId,
         widgetId: widgetId,
-        x: x.toDouble(),
-        y: y.toDouble(),
-        w: w.toDouble(),
-        h: h.toDouble(),
-        label: label,
+        x:        x,
+        y:        y,
+        w:        w,
+        h:        h,
+        label:    label,
+        rotation: rotation,
       ));
     }
 
-    return widgets;
+    return ParsedConf(orientation: orientation, widgets: widgets);
   }
 
   // ---------------------------------------------------------------------------
   // VAR_DATA parsing
   // ---------------------------------------------------------------------------
 
-  /// Parse a VAR_DATA payload, updating the [WidgetState] with new values.
-  ///
-  /// Layout: [INPUT_VARS...] [OUTPUT_VARS...]
-  /// Variables are packed in widget-ID order, sizes per widget type.
+  /// Parse a VAR_DATA payload, updating [WidgetState] with new values.
   static RadioWidgetState? parseVarData(
       List<int> payload, List<WidgetConfig> widgets, RadioWidgetState current) {
     int offset = 0;
 
-    // Sort by widgetId to match registration order
     final inputWidgets = widgets.where((w) => w.hasInput).toList()
       ..sort((a, b) => a.widgetId.compareTo(b.widgetId));
     final outputWidgets = widgets.where((w) => w.hasOutput).toList()
@@ -204,7 +199,6 @@ class ProtocolService {
 
     var state = current;
 
-    // Parse input variables
     for (final widget in inputWidgets) {
       if (widget.typeId == kWidgetJoystick) {
         if (offset + 2 > payload.length) break;
@@ -219,20 +213,16 @@ class ProtocolService {
       }
     }
 
-    // Parse output variables
     for (final widget in outputWidgets) {
       if (widget.typeId == kWidgetText) {
         if (offset + 32 > payload.length) break;
         final rawBytes = payload.sublist(offset, offset + 32);
-        // Find null terminator
         final nullIdx = rawBytes.indexOf(0);
-        final strBytes =
-            nullIdx >= 0 ? rawBytes.sublist(0, nullIdx) : rawBytes;
+        final strBytes = nullIdx >= 0 ? rawBytes.sublist(0, nullIdx) : rawBytes;
         final text = utf8.decode(strBytes, allowMalformed: true);
         state = state.copyWithOutput(widget.widgetId, text);
         offset += 32;
       } else {
-        // LED: 1 byte
         if (offset + 1 > payload.length) break;
         state = state.copyWithOutput(widget.widgetId, payload[offset]);
         offset += 1;
@@ -242,7 +232,6 @@ class ProtocolService {
     return state;
   }
 
-  /// Convert an unsigned byte value (0-255) to a signed int8 (-128..127).
   static int _toSigned(int byte) {
     final b = byte & 0xFF;
     return b >= 128 ? b - 256 : b;
@@ -257,6 +246,7 @@ class ParsedPacket {
   const ParsedPacket({required this.cmd, required this.payload});
 
   @override
-  String toString() => 'ParsedPacket(cmd=0x${cmd.toRadixString(16).padLeft(2, "0")}, '
+  String toString() =>
+      'ParsedPacket(cmd=0x${cmd.toRadixString(16).padLeft(2, "0")}, '
       'payloadLen=${payload.length})';
 }
