@@ -35,13 +35,14 @@
 #define RK_CMD_PONG       0x08   // Arduino → App: keep-alive pong
 
 // ─────────────────────────────────────────────
-//  Protocol version sent in CONF_DATA
+//  Protocol version sent in CONF_DATA header
+//  v2: orientation byte added, 1-byte coords, rotation field
 // ─────────────────────────────────────────────
-#define RK_PROTOCOL_VERSION 0x01
+#define RK_PROTOCOL_VERSION 0x02
 
 // ─────────────────────────────────────────────
 //  Maximum outbound buffer (CONF_DATA can be large)
-//  16 widgets × (1+1+2+2+2+2+1+32) = 16 × 43 = 688 bytes + overhead
+//  16 widgets × (1+1+1+1+1+1+1+32) = 16 × 39 = 624 bytes + 3 header + overhead
 // ─────────────────────────────────────────────
 #define RK_MAX_PACKET_SIZE  768
 
@@ -53,67 +54,27 @@
 // ─────────────────────────────────────────────
 //  CRC-16/CCITT
 // ─────────────────────────────────────────────
-
-/**
- * Compute CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF)
- * over `len` bytes starting at `data`.
- */
 uint16_t rk_crc16(const uint8_t* data, uint16_t len);
 
 // ─────────────────────────────────────────────
 //  Packet builder helpers
 // ─────────────────────────────────────────────
-
-/**
- * Write a complete framed packet into `outBuf`.
- *
- * @param outBuf   Destination buffer (must be >= RK_MAX_PACKET_SIZE)
- * @param cmd      Command byte
- * @param payload  Payload bytes (may be nullptr if payloadLen == 0)
- * @param payloadLen Number of payload bytes
- * @return Total packet size written into outBuf
- */
 uint16_t rk_buildPacket(uint8_t* outBuf,
                         uint8_t  cmd,
                         const uint8_t* payload,
                         uint16_t payloadLen);
 
-/**
- * Build and return a PONG packet (no payload).
- * Convenience wrapper around rk_buildPacket.
- */
 uint16_t rk_buildPong(uint8_t* outBuf);
-
-/**
- * Build and return an ACK packet (no payload).
- */
 uint16_t rk_buildAck(uint8_t* outBuf);
 
 // ─────────────────────────────────────────────
 //  Incoming packet parser state machine
 // ─────────────────────────────────────────────
-
-/**
- * Feed a single received byte into the parser.
- *
- * Call this in the BLE receive callback for every incoming byte.
- * When a complete, valid packet is assembled the function returns true
- * and fills `outCmd` + `outPayload`/`outPayloadLen`.
- *
- * @param byte           The received byte
- * @param outCmd         [out] Parsed command if function returns true
- * @param outPayload     [out] Pointer into internal buffer — valid until next call
- * @param outPayloadLen  [out] Payload byte count
- * @return true if a complete valid packet has been received
- */
 bool rk_rxFeedByte(uint8_t byte,
                    uint8_t& outCmd,
                    const uint8_t*& outPayload,
                    uint16_t& outPayloadLen);
 
-/**
- * Reset the receive parser (e.g. on BLE disconnect).
- */
 void rk_rxReset();
 
 #endif // RADIOKIT_PROTOCOL_H
