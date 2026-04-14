@@ -17,8 +17,20 @@ class WidgetConfig {
   /// Center Y in virtual canvas coordinates, bottom-left origin (uint8, 0–200).
   final double y;
 
-  final double w;
-  final double h;
+  /// Height of the widget in canvas units (wire field SIZE, uint8).
+  final int size;
+
+  /// Aspect ratio encoded as uint8 (wire value = aspectRatio × 10).
+  /// e.g. 1.0 → 10, 2.5 → 25, 5.0 → 50.
+  /// 0 = use widget-type default (resolved by the Arduino library before
+  /// transmitting, so the app should never receive 0 in practice).
+  final int aspect;
+
+  /// Computed width in canvas units: size × (aspect / 10.0).
+  double get w => size * (aspect / 10.0);
+
+  /// Computed height in canvas units (= size).
+  double get h => size.toDouble();
 
   /// Human-readable label.
   final String label;
@@ -35,8 +47,8 @@ class WidgetConfig {
     required this.widgetId,
     required this.x,
     required this.y,
-    required this.w,
-    required this.h,
+    required this.size,
+    required this.aspect,
     required this.label,
     this.rotation = 0,
   });
@@ -59,7 +71,7 @@ class WidgetConfig {
   @override
   String toString() =>
       'WidgetConfig(id=$widgetId, type=$typeName, label="$label", '
-      'pos=($x,$y), size=${w}x$h, rot=${rotationDegrees}°)';
+      'pos=($x,$y), size=$size aspect=${aspect / 10.0} → ${w.toStringAsFixed(1)}×${h.toStringAsFixed(1)}, rot=${rotationDegrees}°)';
 }
 
 /// Holds the current state (values) for all widgets.

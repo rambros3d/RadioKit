@@ -127,35 +127,36 @@ class ProtocolService {
   /// v2 header: [VERSION(1)] [ORIENTATION(1)] [NUM_WIDGETS(1)]
   ///
   /// Each widget descriptor (8 + labelLen bytes):
-  ///   [TYPE_ID(1)] [WIDGET_ID(1)] [X(1)] [Y(1)] [W(1)] [H(1)]
+  ///   [TYPE_ID(1)] [WIDGET_ID(1)] [X(1)] [Y(1)] [SIZE(1)] [ASPECT(1)]
   ///   [ROTATION(1, int8)] [LABEL_LEN(1)] [LABEL(N)]
   ///
-  /// Returns null and logs on version mismatch or truncated data.
+  /// SIZE  = height in canvas units (uint8).
+  /// ASPECT = aspectRatio × 10, uint8 (e.g. 25 = 2.5, 10 = 1.0).
+  /// Width is computed as: SIZE × (ASPECT / 10.0).
+  ///
+  /// Returns null on version mismatch or truncated data.
   static ParsedConf? parseConfData(List<int> payload) {
     if (payload.length < 3) return null;
 
     final version = payload[0];
     if (version != kProtocolVersion) {
-      // Version mismatch — firmware must be updated to v0x02
       return null;
     }
 
-    final orientation = payload[1]; // kOrientationLandscape or kOrientationPortrait
-    final numWidgets = payload[2];
-    final widgets = <WidgetConfig>[];
-    int offset = 3;
+    final orientation = payload[1];
+    final numWidgets  = payload[2];
+    final widgets     = <WidgetConfig>[];
+    int offset        = 3;
 
     for (int i = 0; i < numWidgets; i++) {
-      // Minimum 8 bytes per descriptor before the label
       if (offset + 8 > payload.length) break;
 
       final typeId   = payload[offset];
       final widgetId = payload[offset + 1];
       final x        = payload[offset + 2].toDouble();
       final y        = payload[offset + 3].toDouble();
-      final w        = payload[offset + 4].toDouble();
-      final h        = payload[offset + 5].toDouble();
-      // rotation is a signed int8
+      final size     = payload[offset + 4];           // HEIGHT in canvas units
+      final aspect   = payload[offset + 5];           // aspectRatio × 10
       final rotRaw   = payload[offset + 6];
       final rotation = rotRaw >= 128 ? rotRaw - 256 : rotRaw;
       final labelLen = payload[offset + 7];
@@ -173,8 +174,8 @@ class ProtocolService {
         widgetId: widgetId,
         x:        x,
         y:        y,
-        w:        w,
-        h:        h,
+        size:     size,
+        aspect:   aspect,
         label:    label,
         rotation: rotation,
       ));
@@ -217,9 +218,9 @@ class ProtocolService {
       if (widget.typeId == kWidgetText) {
         if (offset + 32 > payload.length) break;
         final rawBytes = payload.sublist(offset, offset + 32);
-        final nullIdx = rawBytes.indexOf(0);
+        final nullIdx  = rawBytes.indexOf(0);
         final strBytes = nullIdx >= 0 ? rawBytes.sublist(0, nullIdx) : rawBytes;
-        final text = utf8.decode(strBytes, allowMalformed: true);
+        final text     = utf8.decode(strBytes, allowMalformed: true);
         state = state.copyWithOutput(widget.widgetId, text);
         offset += 32;
       } else {

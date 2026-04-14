@@ -61,15 +61,12 @@ class BleService {
   /// empty (no error).
   Stream<DeviceInfo> startScan() {
     final controller = StreamController<DeviceInfo>();
-
     _doRequestDevice(controller);
-
     return controller.stream;
   }
 
   Future<void> _doRequestDevice(StreamController<DeviceInfo> controller) async {
     try {
-      // Check API availability
       if (!FlutterWebBluetooth.instance.isBluetoothApiSupported) {
         controller.addError(
           Exception(
@@ -93,7 +90,6 @@ class BleService {
         return;
       }
 
-      // Open the browser's device picker filtered to RadioKit service UUID
       final options = RequestOptionsBuilder(
         [
           RequestFilterBuilder(
@@ -105,21 +101,19 @@ class BleService {
 
       final device = await FlutterWebBluetooth.instance.requestDevice(options);
 
-      // Emit a DeviceInfo for the selected device
       controller.add(
         DeviceInfo(
           id: device.id,
           name: device.name ?? '',
-          rssi: -60, // RSSI not available in Web Bluetooth; default to good
+          rssi: -60,
         ),
       );
 
-      // Keep a reference for connect()
       _pendingDevice = device;
     } catch (e) {
       if (e.toString().contains('UserCancelledDialogError') ||
           e.toString().contains('DeviceNotFoundError')) {
-        // User cancelled or device not found — ignore
+        // User cancelled — ignore
       } else {
         if (!controller.isClosed) {
           controller.addError(Exception('Bluetooth error: $e'));
@@ -132,7 +126,6 @@ class BleService {
     }
   }
 
-  // Hold the device object returned by requestDevice() until connect() is called
   BluetoothDevice? _pendingDevice;
 
   /// Stop scan — no-op on web (the picker auto-dismisses).
@@ -143,23 +136,16 @@ class BleService {
   // ---------------------------------------------------------------------------
 
   /// Connect to a device previously selected via [startScan].
-  ///
-  /// [deviceId] must match the id of the device emitted by [startScan].
   Future<void> connect(String deviceId) async {
     BluetoothDevice? device = _pendingDevice;
 
-    // Handle mock device
     if (deviceId == 'MOCK-UUID-1234') {
       _handleMockConnect();
       return;
     }
 
-    // If somehow _pendingDevice is gone (e.g. reconnect to paired device),
-    // try to find it in the known devices stream.
     if (device == null || device.id != deviceId) {
-      // Look in already-paired devices
-      final knownDevices =
-          await FlutterWebBluetooth.instance.devices.first;
+      final knownDevices = await FlutterWebBluetooth.instance.devices.first;
       try {
         device = knownDevices.firstWhere((d) => d.id == deviceId);
       } catch (_) {
@@ -175,7 +161,6 @@ class BleService {
       throw Exception('Failed to connect: $e');
     }
 
-    // Discover services
     final services = await device.discoverServices();
     BluetoothService? radioKitService;
     try {
@@ -190,7 +175,6 @@ class BleService {
       );
     }
 
-    // Get the UART characteristic
     BluetoothCharacteristic? characteristic;
     try {
       characteristic = await radioKitService
@@ -204,14 +188,12 @@ class BleService {
     _characteristic = characteristic;
     _receiveBuffer.clear();
 
-    // Listen to disconnect events
     device.connected.listen((connected) {
       if (!connected && _device != null) {
         _handleDisconnect('Connection lost');
       }
     });
 
-    // Subscribe to notifications
     await characteristic.startNotifications();
     characteristic.value.listen(
       (data) {
@@ -226,12 +208,8 @@ class BleService {
 
   /// Disconnect from the device.
   Future<void> disconnect() async {
-    try {
-      await _characteristic?.stopNotifications();
-    } catch (_) {}
-    try {
-      _device?.disconnect();
-    } catch (_) {}
+    try { await _characteristic?.stopNotifications(); } catch (_) {}
+    try { _device?.disconnect(); } catch (_) {}
     _device = null;
     _characteristic = null;
     _receiveBuffer.clear();
@@ -241,7 +219,6 @@ class BleService {
 
   void _handleMockConnect() {
     _isMockConnected = true;
-    // Simulate successful connection and service discovery
   }
 
   /// [Debug only] Manually inject a packet into the received stream.
@@ -267,32 +244,20 @@ class BleService {
   void _processBuffer() {
     while (_receiveBuffer.length >= 6) {
       final startIdx = _receiveBuffer.indexOf(kStartByte);
-      if (startIdx < 0) {
-        _receiveBuffer.clear();
-        return;
-      }
-      if (startIdx > 0) {
-        _receiveBuffer.removeRange(0, startIdx);
-        continue;
-      }
+      if (startIdx < 0) { _receiveBuffer.clear(); return; }
+      if (startIdx > 0) { _receiveBuffer.removeRange(0, startIdx); continue; }
 
       if (_receiveBuffer.length < 3) return;
       final length = _receiveBuffer[1] | (_receiveBuffer[2] << 8);
 
-      if (length < 6) {
-        _receiveBuffer.removeAt(0);
-        continue;
-      }
-
+      if (length < 6) { _receiveBuffer.removeAt(0); continue; }
       if (_receiveBuffer.length < length) return;
 
       final packetBytes = _receiveBuffer.sublist(0, length);
       _receiveBuffer.removeRange(0, length);
 
       final packet = ProtocolService.parsePacket(packetBytes);
-      if (packet != null) {
-        onPacketReceived?.call(packet);
-      }
+      if (packet != null) onPacketReceived?.call(packet);
     }
   }
 
@@ -300,19 +265,18 @@ class BleService {
   // Writing
   // ---------------------------------------------------------------------------
 
-  // Mock state for All-Widget Demo Mode
   int _mockButtonValue = 0;
   int _mockSwitchValue = 1;
   int _mockSliderValue = 50;
-  int _mockJoyX = 0;
-  int _mockJoyY = 0;
-  int _mockLedValue = 1;
+  int _mockJoyX        = 0;
+  int _mockJoyY        = 0;
+  int _mockLedValue    = 1;
   String _mockTextValue = 'Demo Mode Active';
 
   Future<void> writePacket(Uint8List data) async {
     if (_isMockConnected) {
       if (data.length >= 4 && data[0] == kStartByte) {
-        final cmd = data[3];
+        final cmd     = data[3];
         final payload = data.sublist(4, data.length - 2);
 
         Future.delayed(const Duration(milliseconds: 30), () {
@@ -326,11 +290,10 @@ class BleService {
               _mockButtonValue = payload[0];
               _mockSwitchValue = payload[1];
               _mockSliderValue = payload[2];
-              _mockJoyX = _toSigned(payload[3]);
-              _mockJoyY = _toSigned(payload[4]);
-              // LED follows switch, text follows slider
-              _mockLedValue = _mockSwitchValue;
-              _mockTextValue = 'Val: $_mockSliderValue | Joy: $_mockJoyX,$_mockJoyY';
+              _mockJoyX        = _toSigned(payload[3]);
+              _mockJoyY        = _toSigned(payload[4]);
+              _mockLedValue    = _mockSwitchValue;
+              _mockTextValue   = 'Val: $_mockSliderValue | Joy: $_mockJoyX,$_mockJoyY';
             }
             _respondWithAck();
           } else if (cmd == kCmdPing) {
@@ -346,51 +309,48 @@ class BleService {
     await char.writeValueWithoutResponse(data);
   }
 
-  /// Inject a mock CONF_DATA response using protocol v2 format.
+  /// Inject a mock CONF_DATA response using protocol v2 SIZE+ASPECT wire format.
   ///
   /// Header:  [0x02=version][0x00=landscape][0x06=6 widgets]
-  /// Descriptors: [TYPE][ID][X][Y][W][H][ROTATION][LABEL_LEN][LABEL...]
-  /// Virtual canvas: 200×100 (landscape), origin bottom-left, coords = center.
+  /// Descriptors: [TYPE][ID][X][Y][SIZE][ASPECT][ROTATION][LABEL_LEN][LABEL...]
+  ///   SIZE   = height in canvas units
+  ///   ASPECT = uint8(aspectRatio × 10)  e.g. 2.5 → 25, 1.0 → 10
+  ///   W      = SIZE × (ASPECT / 10.0)  computed by the app
   ///
-  /// Widget dimensions use the Arduino-side default aspect ratios from
-  /// docs/functions.md: W = int(size × aspectRatio), H = size
+  ///   id=0  Button   center=(38, 25)  size=15 aspect=25  → W=37.5  H=15
+  ///   id=1  Switch   center=(63, 75)  size=15 aspect=16  → W=24.0  H=15
+  ///   id=2  Slider   center=(12, 51)  size=10 aspect=50  → W=50.0  H=10
+  ///   id=3  Joystick center=(127,51)  size=38 aspect=10  → W=38.0  H=38
+  ///   id=4  LED      center=(12, 80)  size=12 aspect=10  → W=12.0  H=12
+  ///   id=5  Text     center=(51, 80)  size=12 aspect=40  → W=48.0  H=12
   ///
-  ///   id=0  Button   center=(38, 25)  size=15 aspect=2.5 → W=37  H=15
-  ///   id=1  Switch   center=(63, 75)  size=15 aspect=1.6 → W=24  H=15
-  ///   id=2  Slider   center=(12, 51)  size=10 aspect=5.0 → W=50  H=10
-  ///   id=3  Joystick center=(127,51)  size=38 aspect=1.0 → W=38  H=38
-  ///   id=4  LED      center=(12, 80)  size=12 aspect=1.0 → W=12  H=12
-  ///   id=5  Text     center=(51, 80)  size=12 aspect=4.0 → W=48  H=12
-  ///
-  /// CRC-16/CCITT verified: 0xB7F8
+  /// CRC-16/CCITT verified: 0x2E26
   void _respondWithMockConf() {
     injectDebugPacket([
-      0x55, 0x5B, 0x00, 0x02,                               // framing: START, LEN=91, CMD=CONF_DATA
-      0x02, 0x00, 0x06,                                      // v2 header: version, landscape, 6 widgets
-      0x01, 0x00, 0x26, 0x19, 0x25, 0x0F, 0x00, 0x06,       // Button   id=0 x=38 y=25 w=37 h=15 rot=0 llen=6
+      0x55, 0x5B, 0x00, 0x02,                               // START, LEN=91, CMD=CONF_DATA
+      0x02, 0x00, 0x06,                                      // v2: version, landscape, 6 widgets
+      0x01, 0x00, 0x26, 0x19, 0x0F, 0x19, 0x00, 0x06,       // Button   id=0 x=38 y=25 size=15 aspect=25 rot=0 llen=6
       0x42, 0x75, 0x74, 0x74, 0x6F, 0x6E,                   // "Button"
-      0x02, 0x01, 0x3F, 0x4B, 0x18, 0x0F, 0x00, 0x06,       // Switch   id=1 x=63 y=75 w=24 h=15 rot=0 llen=6
+      0x02, 0x01, 0x3F, 0x4B, 0x0F, 0x10, 0x00, 0x06,       // Switch   id=1 x=63 y=75 size=15 aspect=16 rot=0 llen=6
       0x53, 0x77, 0x69, 0x74, 0x63, 0x68,                   // "Switch"
-      0x03, 0x02, 0x0C, 0x33, 0x32, 0x0A, 0x00, 0x06,       // Slider   id=2 x=12 y=51 w=50 h=10 rot=0 llen=6
+      0x03, 0x02, 0x0C, 0x33, 0x0A, 0x32, 0x00, 0x06,       // Slider   id=2 x=12 y=51 size=10 aspect=50 rot=0 llen=6
       0x53, 0x6C, 0x69, 0x64, 0x65, 0x72,                   // "Slider"
-      0x04, 0x03, 0x7F, 0x33, 0x26, 0x26, 0x00, 0x07,       // Joystick id=3 x=127 y=51 w=38 h=38 rot=0 llen=7
+      0x04, 0x03, 0x7F, 0x33, 0x26, 0x0A, 0x00, 0x07,       // Joystick id=3 x=127 y=51 size=38 aspect=10 rot=0 llen=7
       0x43, 0x6F, 0x6E, 0x74, 0x72, 0x6F, 0x6C,             // "Control"
-      0x05, 0x04, 0x0C, 0x50, 0x0C, 0x0C, 0x00, 0x03,       // LED      id=4 x=12 y=80 w=12 h=12 rot=0 llen=3
+      0x05, 0x04, 0x0C, 0x50, 0x0C, 0x0A, 0x00, 0x03,       // LED      id=4 x=12 y=80 size=12 aspect=10 rot=0 llen=3
       0x4C, 0x45, 0x44,                                      // "LED"
-      0x06, 0x05, 0x33, 0x50, 0x30, 0x0C, 0x00, 0x06,       // Text     id=5 x=51 y=80 w=48 h=12 rot=0 llen=6
+      0x06, 0x05, 0x33, 0x50, 0x0C, 0x28, 0x00, 0x06,       // Text     id=5 x=51 y=80 size=12 aspect=40 rot=0 llen=6
       0x53, 0x74, 0x61, 0x74, 0x75, 0x73,                   // "Status"
-      0xF8, 0xB7,                                            // CRC-16/CCITT = 0xB7F8
+      0x26, 0x2E,                                            // CRC-16/CCITT = 0x2E26
     ]);
   }
 
   void _respondWithMockVars() {
     final textBytes = Uint8List(32);
-    final encoded = utf8.encode(_mockTextValue);
+    final encoded   = utf8.encode(_mockTextValue);
     for (int i = 0; i < encoded.length && i < 32; i++) {
       textBytes[i] = encoded[i];
     }
-    // Inputs: Btn(1), Sw(1), Sld(1), JoyX(1), JoyY(1)
-    // Outputs: Led(1), Text(32)
     final payload = [
       _mockButtonValue,
       _mockSwitchValue,
@@ -398,21 +358,14 @@ class BleService {
       _mockJoyX < 0 ? _mockJoyX + 256 : _mockJoyX,
       _mockJoyY < 0 ? _mockJoyY + 256 : _mockJoyY,
       _mockLedValue,
-      ...textBytes
+      ...textBytes,
     ];
-    final packet = ProtocolService.buildPacket(kCmdVarData, payload);
-    injectDebugPacket(packet);
+    injectDebugPacket(ProtocolService.buildPacket(kCmdVarData, payload));
   }
 
-  void _respondWithAck() {
-    injectDebugPacket(ProtocolService.buildPacket(kCmdAck));
-  }
+  void _respondWithAck()  => injectDebugPacket(ProtocolService.buildPacket(kCmdAck));
+  void _respondWithPong() => injectDebugPacket(ProtocolService.buildPacket(kCmdPong));
 
-  void _respondWithPong() {
-    injectDebugPacket(ProtocolService.buildPacket(kCmdPong));
-  }
-
-  /// Convert an unsigned byte value (0-255) to a signed int8 (-128..127).
   static int _toSigned(int byte) {
     final b = byte & 0xFF;
     return b >= 128 ? b - 256 : b;
@@ -422,7 +375,5 @@ class BleService {
   // Cleanup
   // ---------------------------------------------------------------------------
 
-  Future<void> dispose() async {
-    await disconnect();
-  }
+  Future<void> dispose() async => disconnect();
 }
