@@ -358,32 +358,34 @@ class BleService {
   /// Descriptors: [TYPE][ID][X][Y][W][H][ROTATION][LABEL_LEN][LABEL...]
   /// Virtual canvas: 200×100 (landscape), origin bottom-left, coords = center.
   ///
-  /// Widget layout:
-  ///   id=0  Button   center=(38, 25)  size=20×15
-  ///   id=1  Switch   center=(63, 75)  size=20×15
-  ///   id=2  Slider   center=(12, 51)  size=10×40
-  ///   id=3  Joystick center=(127,51)  size=38×38
-  ///   id=4  LED      center=(12, 80)  size=12×12
-  ///   id=5  Text     center=(51, 80)  size=77×12
+  /// Widget dimensions use the Arduino-side default aspect ratios from
+  /// docs/functions.md: W = int(size × aspectRatio), H = size
   ///
-  /// CRC-16/CCITT verified: 0x2090
+  ///   id=0  Button   center=(38, 25)  size=15 aspect=2.5 → W=37  H=15
+  ///   id=1  Switch   center=(63, 75)  size=15 aspect=1.6 → W=24  H=15
+  ///   id=2  Slider   center=(12, 51)  size=10 aspect=5.0 → W=50  H=10
+  ///   id=3  Joystick center=(127,51)  size=38 aspect=1.0 → W=38  H=38
+  ///   id=4  LED      center=(12, 80)  size=12 aspect=1.0 → W=12  H=12
+  ///   id=5  Text     center=(51, 80)  size=12 aspect=4.0 → W=48  H=12
+  ///
+  /// CRC-16/CCITT verified: 0xCD5F
   void _respondWithMockConf() {
     injectDebugPacket([
       0x55, 0x5B, 0x00, 0x02,                               // framing: START, LEN=91, CMD=CONF_DATA
       0x02, 0x00, 0x06,                                      // v2 header: version, landscape, 6 widgets
-      0x01, 0x00, 0x26, 0x19, 0x14, 0x0F, 0x00, 0x06,       // Button   id=0 x=38 y=25 w=20 h=15 rot=0 llen=6
+      0x01, 0x00, 0x26, 0x19, 0x25, 0x0F, 0x00, 0x06,       // Button   id=0 x=38 y=25 w=37 h=15 rot=0 llen=6
       0x42, 0x75, 0x74, 0x74, 0x6F, 0x6E,                   // "Button"
-      0x02, 0x01, 0x3F, 0x4B, 0x14, 0x0F, 0x00, 0x06,       // Switch   id=1 x=63 y=75 w=20 h=15 rot=0 llen=6
+      0x02, 0x01, 0x3F, 0x4B, 0x18, 0x0F, 0x00, 0x06,       // Switch   id=1 x=63 y=75 w=24 h=15 rot=0 llen=6
       0x53, 0x77, 0x69, 0x74, 0x63, 0x68,                   // "Switch"
-      0x03, 0x02, 0x0C, 0x33, 0x0A, 0x28, 0x00, 0x06,       // Slider   id=2 x=12 y=51 w=10 h=40 rot=0 llen=6
+      0x03, 0x02, 0x0C, 0x33, 0x32, 0x0A, 0x00, 0x06,       // Slider   id=2 x=12 y=51 w=50 h=10 rot=0 llen=6
       0x53, 0x6C, 0x69, 0x64, 0x65, 0x72,                   // "Slider"
       0x04, 0x03, 0x7F, 0x33, 0x26, 0x26, 0x00, 0x07,       // Joystick id=3 x=127 y=51 w=38 h=38 rot=0 llen=7
       0x43, 0x6F, 0x6E, 0x74, 0x72, 0x6F, 0x6C,             // "Control"
       0x05, 0x04, 0x0C, 0x50, 0x0C, 0x0C, 0x00, 0x03,       // LED      id=4 x=12 y=80 w=12 h=12 rot=0 llen=3
       0x4C, 0x45, 0x44,                                      // "LED"
-      0x06, 0x05, 0x33, 0x50, 0x4D, 0x0C, 0x00, 0x06,       // Text     id=5 x=51 y=80 w=77 h=12 rot=0 llen=6
+      0x06, 0x05, 0x33, 0x50, 0xC0, 0x30, 0x00, 0x06,       // Text     id=5 x=51 y=80 w=48 h=12 rot=0 llen=6
       0x53, 0x74, 0x61, 0x74, 0x75, 0x73,                   // "Status"
-      0x90, 0x20,                                            // CRC-16/CCITT = 0x2090
+      0x5F, 0xCD,                                            // CRC-16/CCITT = 0xCD5F
     ]);
   }
 
