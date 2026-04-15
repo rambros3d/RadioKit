@@ -2,6 +2,56 @@
 #include "../RadioKit.h"
 #include <string.h>
 
+// ── Deferred registration list ──────────────────────────────────────────────
+// Widget globals are constructed before RadioKit (static init order
+// fiasco). We collect them in a singly-linked list and drain it when
+// RadioKitClass::begin() is called.
+struct _DeferredNode {
+    RadioKit_Widget*  widget;
+    _DeferredNode*    next;
+};
+
+// Plain global (not a class) — zero-initialised before any ctor runs.
+static _DeferredNode* s_deferredHead = nullptr;
+
+static void _pushDeferred(RadioKit_Widget* w) {
+    _DeferredNode* node = new _DeferredNode{w, s_deferredHead};
+    s_deferredHead = node;
+}
+
+void RadioKit_Widget_drainDeferred() {
+    // Called by RadioKitClass::begin(). Drain in reverse-push order
+    // so widget IDs are assigned in declaration order.
+    // First, count nodes so we can reverse.
+    uint8_t count = 0;
+    _DeferredNode* n = s_deferredHead;
+    while (n) { count++; n = n->next; }
+
+    // Build a small temporary array and reverse.
+    if (count == 0) return;
+    RadioKit_Widget** arr = new RadioKit_Widget*[count];
+    n = s_deferredHead;
+    for (int8_t i = (int8_t)(count - 1); i >= 0; i--) {
+        arr[i] = n->widget;
+        n = n->next;
+    }
+    for (uint8_t i = 0; i < count; i++) {
+        RadioKit._registerWidget(arr[i]);
+    }
+    delete[] arr;
+
+    // Free the list nodes.
+    n = s_deferredHead;
+    while (n) {
+        _DeferredNode* next = n->next;
+        delete n;
+        n = next;
+    }
+    s_deferredHead = nullptr;
+}
+
+// ── Widget base implementation ──────────────────────────────────────────────
+
 RadioKit_Widget::RadioKit_Widget()
     : typeId(0), widgetId(0)
     , _x(0), _y(0), _scale(10), _aspect(0)
@@ -47,7 +97,8 @@ void RadioKit_Widget::_init(
 }
 
 void RadioKit_Widget::_registerSelf() {
-    RadioKit._registerWidget(this);
+    // Defer — RadioKit global may not be constructed yet.
+    _pushDeferred(this);
 }
 
 uint8_t RadioKit_Widget::serializeStrings(uint8_t* buf) const {

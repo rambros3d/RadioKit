@@ -9,6 +9,9 @@
 RadioKitClass RadioKit;
 static RadioKitClass* s_instance = nullptr;
 
+// Forward-declared in Widget.cpp
+extern void RadioKit_Widget_drainDeferred();
+
 RadioKitClass::RadioKitClass()
     : _widgetCount(0)
     , _transport(nullptr)
@@ -30,8 +33,9 @@ void RadioKitClass::_registerWidget(RadioKit_Widget* widget) {
 }
 
 void RadioKitClass::begin() {
-    // config.architecture is set at compile-time via RK_ARCH_DETECTED
-    // Nothing else to do yet — reserved for future init
+    // Drain widgets that were constructed before RadioKit (static init
+    // order fiasco workaround). This assigns widgetIds in declaration order.
+    RadioKit_Widget_drainDeferred();
 }
 
 void RadioKitClass::startBLE(const char* deviceName) {
@@ -53,12 +57,10 @@ void RadioKitClass::update() {
         uint32_t now = millis();
         if (now - _varUpdateSentAt >= RK_VAR_UPDATE_TIMEOUT_MS) {
             if (_varUpdateRetries >= RK_VAR_UPDATE_MAX_RETRIES) {
-                // Fail-soft: send full VAR_DATA sync
                 _pendingVarUpdate = false;
                 _varUpdateRetries = 0;
                 _handleGetVars();
             } else {
-                // Retransmit last VAR_UPDATE — rebuild from widget state
                 RadioKit_Widget* w = _widgets[_varUpdateId];
                 uint8_t dataSz = w->outputSize();
                 uint8_t payload[2 + dataSz];
@@ -117,7 +119,6 @@ void RadioKitClass::_handleSetInput(const uint8_t* payload, uint16_t len) {
         w->deserializeInput(payload + offset);
         offset += sz;
     }
-    // ACK with SEQ byte (use 0 for SET_INPUT acks)
     uint8_t seq = 0;
     uint16_t pkt = rk_buildPacket(_txBuf, RK_CMD_ACK, &seq, 1);
     if (_transport) _transport->sendPacket(_txBuf, pkt);
@@ -136,11 +137,10 @@ void RadioKitClass::_handleAck(const uint8_t* payload, uint16_t len) {
     }
 }
 
-// ── CONF_DATA payload builder (Protocol v3) ──────────────────
+// ── CONF_DATA payload builder (Protocol v3) ──────────────────────────────
 uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
     uint16_t out = 0;
 
-    // Global header
     const char* name = config.name ? config.name : "";
     const char* pwd  = config.password ? config.password : "";
     uint8_t nameLen  = (uint8_t)strnlen(name, RADIOKIT_MAX_LABEL);
@@ -148,20 +148,18 @@ uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
 
     if (out + 5 + nameLen + pwdLen > bufSize) return 0;
 
-    buf[out++] = RK_PROTOCOL_VERSION;    // PROTO_VERSION
-    buf[out++] = config.theme;           // THEME
-    buf[out++] = config.orientation;     // ORIENTATION
-    buf[out++] = _widgetCount;           // NUM_WIDGETS
-    buf[out++] = nameLen;                // NAME_LEN
+    buf[out++] = RK_PROTOCOL_VERSION;
+    buf[out++] = config.theme;
+    buf[out++] = config.orientation;
+    buf[out++] = _widgetCount;
+    buf[out++] = nameLen;
     memcpy(&buf[out], name, nameLen); out += nameLen;
-    buf[out++] = pwdLen;                 // PWD_LEN
+    buf[out++] = pwdLen;
     memcpy(&buf[out], pwd, pwdLen);   out += pwdLen;
 
-    // Widget descriptors
     for (uint8_t i = 0; i < _widgetCount; i++) {
         RadioKit_Widget* w = _widgets[i];
 
-        // Fixed fields: TYPE ID X Y SCALE ASPECT ROTATION(2) STYLE VARIANT = 10 bytes
         if (out + 10 > bufSize) break;
         buf[out++] = w->typeId;
         buf[out++] = w->widgetId;
@@ -169,14 +167,12 @@ uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
         buf[out++] = w->y();
         buf[out++] = w->scale();
         buf[out++] = w->aspect();
-        // ROTATION as little-endian int16_t
         int16_t rot = w->rotation();
         buf[out++] = (uint8_t)(rot & 0xFF);
         buf[out++] = (uint8_t)((rot >> 8) & 0xFF);
         buf[out++] = w->style();
         buf[out++] = w->variant();
 
-        // String bitmask + strings
         uint8_t strBuf[1 + (RADIOKIT_MAX_LABEL + 1) * 4 + (RADIOKIT_MAX_ICON + 1)];
         uint8_t strLen = w->serializeStrings(strBuf);
         if (out + strLen > bufSize) break;
@@ -186,10 +182,9 @@ uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
     return out;
 }
 
-// ── VAR_DATA payload builder ─────────────────────────────────
+// ── VAR_DATA payload builder ──────────────────────────────────────────
 uint16_t RadioKitClass::_buildVarPayload(uint8_t* buf, uint16_t bufSize) {
     uint16_t out = 0;
-    // Input widgets: send current state (zeros if nothing received yet)
     for (uint8_t i = 0; i < _widgetCount; i++) {
         RadioKit_Widget* w = _widgets[i];
         uint8_t sz = w->inputSize();
@@ -198,7 +193,6 @@ uint16_t RadioKitClass::_buildVarPayload(uint8_t* buf, uint16_t bufSize) {
         memset(&buf[out], 0, sz);
         out += sz;
     }
-    // Output widgets: serialize current state
     for (uint8_t i = 0; i < _widgetCount; i++) {
         RadioKit_Widget* w = _widgets[i];
         uint8_t sz = w->outputSize();
