@@ -1,22 +1,19 @@
 #include "Joystick.h"
 
-RadioKit_Joystick::RadioKit_Joystick(const char* label, uint8_t x, uint8_t y,
-                                     uint8_t size, float aspect)
-    : _jx(0), _jy(0)
+RK_Joystick::RK_Joystick(RK_JoystickProps p)
+    : props(p)
 {
-    typeId = RK_TYPE_JOYSTICK;
-    _init(label, x, y, size, aspect);
+    typeId    = RK_TYPE_JOYSTICK;
+    _rotation = p.rotation;
+    _enabled  = p.enabled;
+    _init(p.label, p.x, p.y, p.scale, 0.0f, 0, p.variant,
+          nullptr, nullptr, nullptr);
+    // Restore rotation & enabled after _init (which resets them)
+    _rotation = p.rotation;
+    _enabled  = p.enabled;
 }
 
-RadioKit_Joystick::RadioKit_Joystick(uint8_t x, uint8_t y,
-                                     uint8_t size, float aspect)
-    : _jx(0), _jy(0)
-{
-    typeId = RK_TYPE_JOYSTICK;
-    _init(nullptr, x, y, size, aspect);
-}
-
-void RadioKit_Joystick::deserializeInput(const uint8_t* buf) {
-    _jx = (int8_t)buf[0];
-    _jy = (int8_t)buf[1];
+void RK_Joystick::deserializeInput(const uint8_t* buf) {
+    props.xvalue = (int8_t)buf[0];
+    props.yvalue = (int8_t)buf[1];
 }

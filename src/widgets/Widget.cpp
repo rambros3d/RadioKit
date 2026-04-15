@@ -4,35 +4,44 @@
 
 RadioKit_Widget::RadioKit_Widget()
     : typeId(0), widgetId(0)
-    , _x(0), _y(0), _size(0), _aspect(0)
-    , _rotation(0), _visible(true)
+    , _x(0), _y(0), _scale(10), _aspect(0)
+    , _rotation(0), _enabled(true)
+    , _style(0), _variant(0)
 {
-    _label[0] = '\0';
+    _label[0]   = '\0';
+    _icon[0]    = '\0';
+    _onText[0]  = '\0';
+    _offText[0] = '\0';
 }
 
-// float aspect →0–2.55 mapped to uint8_t 0–255 via ×10
-static uint8_t floatToAspect(float f) {
-    if (f <= 0.0f) return 0;
-    float v = f * 10.0f + 0.5f;
-    return (v > 255.0f) ? 255 : (uint8_t)v;
-}
-
-void RadioKit_Widget::_init(const char* lbl, uint8_t x, uint8_t y,
-                            uint8_t size, float aspect)
+void RadioKit_Widget::_init(
+    const char* label,  uint8_t x,       uint8_t y,
+    float scale,        float   aspect,
+    uint8_t style,      uint8_t variant,
+    const char* icon,   const char* onText, const char* offText)
 {
-    _x        = x;
-    _y        = y;
-    _size     = size;
-    _aspect   = floatToAspect(aspect);
+    _x       = x;
+    _y       = y;
+    _scale   = _floatToWire(scale  > 0.0f ? scale  : 1.0f);
+    _aspect  = _floatToWire(aspect);
     _rotation = 0;
-    _visible  = true;
+    _enabled = true;
+    _style   = style;
+    _variant = variant;
 
-    if (lbl && lbl[0] != '\0') {
-        strncpy(_label, lbl, RADIOKIT_MAX_LABEL);
-        _label[RADIOKIT_MAX_LABEL] = '\0';
-    } else {
-        _label[0] = '\0';
-    }
+    auto _copyStr = [](char* dst, const char* src, size_t maxLen) {
+        if (src && src[0] != '\0') {
+            strncpy(dst, src, maxLen);
+            dst[maxLen] = '\0';
+        } else {
+            dst[0] = '\0';
+        }
+    };
+
+    _copyStr(_label,   label,   RADIOKIT_MAX_LABEL);
+    _copyStr(_icon,    icon,    RADIOKIT_MAX_ICON);
+    _copyStr(_onText,  onText,  RADIOKIT_MAX_LABEL);
+    _copyStr(_offText, offText, RADIOKIT_MAX_LABEL);
 
     _registerSelf();
 }
@@ -41,26 +50,27 @@ void RadioKit_Widget::_registerSelf() {
     RadioKit._registerWidget(this);
 }
 
-void RadioKit_Widget::setPosition(uint8_t x, uint8_t y) {
-    _x = x; _y = y;
-}
+uint8_t RadioKit_Widget::serializeStrings(uint8_t* buf) const {
+    uint8_t mask = 0;
+    if (_label[0]   != '\0') mask |= RK_STR_LABEL;
+    if (_icon[0]    != '\0') mask |= RK_STR_ICON;
+    if (_onText[0]  != '\0') mask |= RK_STR_ONTEXT;
+    if (_offText[0] != '\0') mask |= RK_STR_OFFTEXT;
 
-void RadioKit_Widget::setPosition(uint8_t x, uint8_t y, int16_t rot) {
-    _x = x; _y = y; _rotation = rot;
-}
+    uint8_t out = 0;
+    buf[out++] = mask;
 
-void RadioKit_Widget::setSize(uint8_t size) {
-    _size = size;
-}
+    auto _writeStr = [&](const char* s) {
+        uint8_t len = (uint8_t)strnlen(s, RADIOKIT_MAX_LABEL);
+        buf[out++] = len;
+        memcpy(&buf[out], s, len);
+        out += len;
+    };
 
-void RadioKit_Widget::setSize(uint8_t size, float aspectRatio) {
-    _size   = size;
-    _aspect = floatToAspect(aspectRatio);
-}
+    if (mask & RK_STR_LABEL)   _writeStr(_label);
+    if (mask & RK_STR_ICON)    _writeStr(_icon);
+    if (mask & RK_STR_ONTEXT)  _writeStr(_onText);
+    if (mask & RK_STR_OFFTEXT) _writeStr(_offText);
 
-void RadioKit_Widget::setAspectRatio(float aspectRatio) {
-    _aspect = floatToAspect(aspectRatio);
+    return out;
 }
-
-void RadioKit_Widget::show() { _visible = true;  }
-void RadioKit_Widget::hide() { _visible = false; }

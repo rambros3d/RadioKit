@@ -2,8 +2,7 @@
  * RadioKitConfig.h
  * Library-wide constants, enums, and helpers for RadioKit.
  *
- * This header does NOT contain sketch-level macros.
- * Include RadioKit.h in your sketch.
+ * v2.0 / Protocol v3
  */
 
 #ifndef RADIOKIT_CONFIG_H
@@ -13,52 +12,102 @@
 #include <stdint.h>
 
 // ─────────────────────────────────────────────
+//  Library version
+// ─────────────────────────────────────────────
+#define RK_LIB_VERSION "2.0.0"
+
+// ─────────────────────────────────────────────
 //  Canvas orientation
 // ─────────────────────────────────────────────
-enum RadioKit_Orientation : uint8_t {
-    RK_LANDSCAPE = 0x00,   ///< Canvas: 200 wide × 100 tall
-    RK_PORTRAIT  = 0x01    ///< Canvas: 100 wide × 200 tall
-};
+#define RK_LANDSCAPE  0x00
+#define RK_PORTRAIT   0x01
 
-#define RK_CANVAS_LANDSCAPE_W  200
-#define RK_CANVAS_LANDSCAPE_H  100
-#define RK_CANVAS_PORTRAIT_W   100
-#define RK_CANVAS_PORTRAIT_H   200
+// ─────────────────────────────────────────────
+//  Architecture IDs (auto-detected)
+// ─────────────────────────────────────────────
+#define RK_ARCH_UNKNOWN  0
+#define RK_ARCH_ESP32    1
+#define RK_ARCH_NORDIC   2
+#define RK_ARCH_SAMD     3
+#define RK_ARCH_STM32    4
+
+#if defined(ESP32)
+  #define RK_ARCH_DETECTED RK_ARCH_ESP32
+#elif defined(NRF52) || defined(NRF51)
+  #define RK_ARCH_DETECTED RK_ARCH_NORDIC
+#elif defined(ARDUINO_ARCH_SAMD)
+  #define RK_ARCH_DETECTED RK_ARCH_SAMD
+#elif defined(STM32)
+  #define RK_ARCH_DETECTED RK_ARCH_STM32
+#else
+  #define RK_ARCH_DETECTED RK_ARCH_UNKNOWN
+#endif
+
+// ─────────────────────────────────────────────
+//  UI Themes
+// ─────────────────────────────────────────────
+#define RK_DEFAULT    0
+#define RK_FUTURISTIC 1
+#define RK_RETRO      2
+#define RK_MILITARY   3
+#define RK_CYBERPUNK  4
+#define RK_NEON       5
+#define RK_MINIMAL    6
+
+// ─────────────────────────────────────────────
+//  Widget Styles
+// ─────────────────────────────────────────────
+#define RK_PRIMARY    0
+#define RK_DIM        1
+#define RK_SUCCESS    2
+#define RK_WARNING    3
+#define RK_DANGER     4
+
+// ─────────────────────────────────────────────
+//  Color hex constants (for RK_LED::setColor)
+// ─────────────────────────────────────────────
+#define RK_OFF     0x000000
+#define RK_RED     0xFF0000
+#define RK_GREEN   0x00FF00
+#define RK_BLUE    0x0000FF
+#define RK_YELLOW  0xFFFF00
 
 // ─────────────────────────────────────────────
 //  Widget type IDs (protocol)
 // ─────────────────────────────────────────────
-#define RK_TYPE_BUTTON   0x01
-#define RK_TYPE_SWITCH   0x02
-#define RK_TYPE_SLIDER   0x03
-#define RK_TYPE_JOYSTICK 0x04
-#define RK_TYPE_LED      0x05
-#define RK_TYPE_TEXT     0x06
+#define RK_TYPE_PUSH_BUTTON    0x01
+#define RK_TYPE_TOGGLE_BUTTON  0x02
+#define RK_TYPE_SLIDER         0x03
+#define RK_TYPE_JOYSTICK       0x04
+#define RK_TYPE_LED            0x05
+#define RK_TYPE_TEXT           0x06
+#define RK_TYPE_MULTIPLE       0x07
+
+// Legacy aliases (kept for internal use)
+#define RK_TYPE_BUTTON   RK_TYPE_PUSH_BUTTON
+#define RK_TYPE_SWITCH   RK_TYPE_TOGGLE_BUTTON
+
+// ─────────────────────────────────────────────
+//  String Bitmask bits (CONF_DATA widget descriptor)
+// ─────────────────────────────────────────────
+#define RK_STR_LABEL    (1 << 0)  ///< Label string present
+#define RK_STR_ICON     (1 << 1)  ///< Icon string present
+#define RK_STR_ONTEXT   (1 << 2)  ///< OnText string present
+#define RK_STR_OFFTEXT  (1 << 3)  ///< OffText string present
+#define RK_STR_CONTENT  (1 << 4)  ///< Content (Text widget initial value)
 
 // ─────────────────────────────────────────────
 //  Widget limits
 // ─────────────────────────────────────────────
-#define RADIOKIT_MAX_WIDGETS  16
-#define RADIOKIT_MAX_LABEL    32
-#define RADIOKIT_TEXT_LEN     32
+#define RADIOKIT_MAX_WIDGETS   16
+#define RADIOKIT_MAX_LABEL     32
+#define RADIOKIT_MAX_ICON      24
+#define RADIOKIT_TEXT_LEN      32
+#define RADIOKIT_MAX_ITEMS      8  ///< MultipleButton/Select item pool size
 
 // ─────────────────────────────────────────────
-//  LED color constants and enum
+//  Rotation helper
 // ─────────────────────────────────────────────
-enum RadioKit_LEDColor : uint8_t {
-    RK_LED_OFF    = 0,
-    RK_LED_RED    = 1,
-    RK_LED_GREEN  = 2,
-    RK_LED_BLUE   = 3,
-    RK_LED_YELLOW = 4
-};
-
-// ─────────────────────────────────────────────
-//  Rotation helper: user degrees (-180..+180) -> int8_t wire value
-//  2-degree resolution: stored = round(deg / 2)
-// ─────────────────────────────────────────────
-#define RK_ROT(deg) ((int8_t)(((int16_t)(deg) < -180 ? -180 \
-                              : (int16_t)(deg) >  180 ?  180 \
-                              : (int16_t)(deg)) / 2))
+#define RK_ROT(deg) ((int16_t)(deg))
 
 #endif // RADIOKIT_CONFIG_H

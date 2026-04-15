@@ -1,17 +1,30 @@
+/**
+ * Text.h
+ * RK_Text — dynamic text display label (Arduino → App).
+ */
+
 #ifndef RADIOKIT_WIDGET_TEXT_H
 #define RADIOKIT_WIDGET_TEXT_H
 
 #include "Widget.h"
 
-class RadioKit_Text : public RadioKit_Widget {
-public:
-    // 4.0 ×10 = 40
-    static constexpr uint8_t DEFAULT_ASPECT = 40;
+// ── Props struct ─────────────────────────────────────────────
+struct RK_TextProps {
+    const char* label  = nullptr;
+    const char* icon   = nullptr;
+    uint8_t     x      = 0;
+    uint8_t     y      = 0;
+    float       scale  = 1.0f;
+    uint8_t     style  = 0;
+    const char* text   = nullptr;
+};
 
-    RadioKit_Text(const char* label, uint8_t x, uint8_t y,
-                  uint8_t size, float aspect = 0);
-    RadioKit_Text(uint8_t x, uint8_t y,
-                  uint8_t size, float aspect = 0);
+// ── Widget class ─────────────────────────────────────────────
+class RK_Text : public RadioKit_Widget {
+public:
+    static constexpr uint8_t DEFAULT_ASPECT = 40; // 4.0
+
+    RK_Text(RK_TextProps p);
 
     uint8_t inputSize()  const override { return 0; }
     uint8_t outputSize() const override { return RADIOKIT_TEXT_LEN; }
@@ -19,8 +32,11 @@ public:
     void deserializeInput(const uint8_t*)            override {}
 
     void        set(const char* text);
-    void        set(const String& text) { set(text.c_str()); }
-    const char* get() const             { return _text; }
+    void        set(const String& s) { set(s.c_str()); }
+    const char* get() const { return _text; }
+    void        setIcon(const char* val);
+
+    RK_TextProps props;
 
 protected:
     uint8_t defaultAspect() const override { return DEFAULT_ASPECT; }
@@ -29,4 +45,4 @@ private:
     char _text[RADIOKIT_TEXT_LEN];
 };
 
-#endif
+#endif // RADIOKIT_WIDGET_TEXT_H

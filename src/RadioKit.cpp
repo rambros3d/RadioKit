@@ -1,6 +1,6 @@
 /**
  * RadioKit.cpp
- * OOP widget registry, protocol dispatch, serialization.
+ * OOP widget registry, protocol dispatch, serialization (v2.0 / Protocol v3).
  */
 
 #include "RadioKit.h"
@@ -11,8 +11,12 @@ static RadioKitClass* s_instance = nullptr;
 
 RadioKitClass::RadioKitClass()
     : _widgetCount(0)
-    , _orientation(RK_LANDSCAPE)
     , _transport(nullptr)
+    , _pendingVarUpdate(false)
+    , _varUpdateSeq(0)
+    , _varUpdateId(0)
+    , _varUpdateRetries(0)
+    , _varUpdateSentAt(0)
 {
     memset(_widgets, 0, sizeof(_widgets));
     memset(_txBuf,   0, sizeof(_txBuf));
@@ -25,9 +29,15 @@ void RadioKitClass::_registerWidget(RadioKit_Widget* widget) {
     _widgets[_widgetCount++] = widget;
 }
 
-void RadioKitClass::startBLE(const char* deviceName, const char* /*password*/) {
+void RadioKitClass::begin() {
+    // config.architecture is set at compile-time via RK_ARCH_DETECTED
+    // Nothing else to do yet — reserved for future init
+}
+
+void RadioKitClass::startBLE(const char* deviceName) {
+    const char* name = (deviceName && deviceName[0] != '\0') ? deviceName : config.name;
     _transport = &RadioKitBLEInstance;
-    _transport->begin(deviceName, RadioKitClass::_onPacket);
+    _transport->begin(name, RadioKitClass::_onPacket);
 }
 
 void RadioKitClass::startSerial(Stream& stream) {
@@ -37,6 +47,31 @@ void RadioKitClass::startSerial(Stream& stream) {
 
 void RadioKitClass::update() {
     if (_transport) _transport->update();
+
+    // VAR_UPDATE reliability: retransmit on timeout
+    if (_pendingVarUpdate && _transport && _transport->isConnected()) {
+        uint32_t now = millis();
+        if (now - _varUpdateSentAt >= RK_VAR_UPDATE_TIMEOUT_MS) {
+            if (_varUpdateRetries >= RK_VAR_UPDATE_MAX_RETRIES) {
+                // Fail-soft: send full VAR_DATA sync
+                _pendingVarUpdate = false;
+                _varUpdateRetries = 0;
+                _handleGetVars();
+            } else {
+                // Retransmit last VAR_UPDATE — rebuild from widget state
+                RadioKit_Widget* w = _widgets[_varUpdateId];
+                uint8_t dataSz = w->outputSize();
+                uint8_t payload[2 + dataSz];
+                payload[0] = _varUpdateSeq;
+                payload[1] = _varUpdateId;
+                w->serializeOutput(&payload[2]);
+                uint16_t pkt = rk_buildPacket(_txBuf, RK_CMD_VAR_UPDATE, payload, 2 + dataSz);
+                _transport->sendPacket(_txBuf, pkt);
+                _varUpdateSentAt = now;
+                _varUpdateRetries++;
+            }
+        }
+    }
 }
 
 bool RadioKitClass::isConnected() const {
@@ -49,10 +84,11 @@ void RadioKitClass::_onPacket(uint8_t cmd,
 {
     if (!s_instance) return;
     switch (cmd) {
-        case RK_CMD_GET_CONF:  s_instance->_handleGetConf();                     break;
-        case RK_CMD_GET_VARS:  s_instance->_handleGetVars();                     break;
-        case RK_CMD_SET_INPUT: s_instance->_handleSetInput(payload, payloadLen); break;
-        case RK_CMD_PING:      s_instance->_handlePing();                        break;
+        case RK_CMD_GET_CONF:  s_instance->_handleGetConf();                      break;
+        case RK_CMD_GET_VARS:  s_instance->_handleGetVars();                      break;
+        case RK_CMD_SET_INPUT: s_instance->_handleSetInput(payload, payloadLen);  break;
+        case RK_CMD_PING:      s_instance->_handlePing();                         break;
+        case RK_CMD_ACK:       s_instance->_handleAck(payload, payloadLen);       break;
         default: break;
     }
 }
@@ -81,7 +117,9 @@ void RadioKitClass::_handleSetInput(const uint8_t* payload, uint16_t len) {
         w->deserializeInput(payload + offset);
         offset += sz;
     }
-    uint16_t pkt = rk_buildAck(_txBuf);
+    // ACK with SEQ byte (use 0 for SET_INPUT acks)
+    uint8_t seq = 0;
+    uint16_t pkt = rk_buildPacket(_txBuf, RK_CMD_ACK, &seq, 1);
     if (_transport) _transport->sendPacket(_txBuf, pkt);
 }
 
@@ -90,45 +128,68 @@ void RadioKitClass::_handlePing() {
     if (_transport) _transport->sendPacket(_txBuf, pkt);
 }
 
-uint16_t RadioKitClass::_totalInputBytes() const {
-    uint16_t total = 0;
-    for (uint8_t i = 0; i < _widgetCount; i++) total += _widgets[i]->inputSize();
-    return total;
+void RadioKitClass::_handleAck(const uint8_t* payload, uint16_t len) {
+    if (!_pendingVarUpdate) return;
+    if (len >= 1 && payload[0] == _varUpdateSeq) {
+        _pendingVarUpdate = false;
+        _varUpdateRetries = 0;
+    }
 }
 
-uint16_t RadioKitClass::_totalOutputBytes() const {
-    uint16_t total = 0;
-    for (uint8_t i = 0; i < _widgetCount; i++) total += _widgets[i]->outputSize();
-    return total;
-}
-
+// ── CONF_DATA payload builder (Protocol v3) ──────────────────
 uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
     uint16_t out = 0;
-    if (out + 3 > bufSize) return 0;
-    buf[out++] = RK_PROTOCOL_VERSION;
-    buf[out++] = (uint8_t)_orientation;
-    buf[out++] = _widgetCount;
 
+    // Global header
+    const char* name = config.name ? config.name : "";
+    const char* pwd  = config.password ? config.password : "";
+    uint8_t nameLen  = (uint8_t)strnlen(name, RADIOKIT_MAX_LABEL);
+    uint8_t pwdLen   = (uint8_t)strnlen(pwd,  RADIOKIT_MAX_LABEL);
+
+    if (out + 5 + nameLen + pwdLen > bufSize) return 0;
+
+    buf[out++] = RK_PROTOCOL_VERSION;    // PROTO_VERSION
+    buf[out++] = config.theme;           // THEME
+    buf[out++] = config.orientation;     // ORIENTATION
+    buf[out++] = _widgetCount;           // NUM_WIDGETS
+    buf[out++] = nameLen;                // NAME_LEN
+    memcpy(&buf[out], name, nameLen); out += nameLen;
+    buf[out++] = pwdLen;                 // PWD_LEN
+    memcpy(&buf[out], pwd, pwdLen);   out += pwdLen;
+
+    // Widget descriptors
     for (uint8_t i = 0; i < _widgetCount; i++) {
-        RadioKit_Widget* wgt = _widgets[i];
-        uint8_t labelLen = (uint8_t)strnlen(wgt->label(), RADIOKIT_MAX_LABEL);
-        if (out + 8 + labelLen > bufSize) break;
-        buf[out++] = wgt->typeId;
-        buf[out++] = wgt->widgetId;
-        buf[out++] = wgt->x();
-        buf[out++] = wgt->y();
-        buf[out++] = wgt->size();
-        buf[out++] = wgt->aspect();
-        buf[out++] = (uint8_t)RK_ROT(wgt->rotation());
-        buf[out++] = labelLen;
-        memcpy(&buf[out], wgt->label(), labelLen);
-        out += labelLen;
+        RadioKit_Widget* w = _widgets[i];
+
+        // Fixed fields: TYPE ID X Y SCALE ASPECT ROTATION(2) STYLE VARIANT = 10 bytes
+        if (out + 10 > bufSize) break;
+        buf[out++] = w->typeId;
+        buf[out++] = w->widgetId;
+        buf[out++] = w->x();
+        buf[out++] = w->y();
+        buf[out++] = w->scale();
+        buf[out++] = w->aspect();
+        // ROTATION as little-endian int16_t
+        int16_t rot = w->rotation();
+        buf[out++] = (uint8_t)(rot & 0xFF);
+        buf[out++] = (uint8_t)((rot >> 8) & 0xFF);
+        buf[out++] = w->style();
+        buf[out++] = w->variant();
+
+        // String bitmask + strings
+        uint8_t strBuf[1 + (RADIOKIT_MAX_LABEL + 1) * 4 + (RADIOKIT_MAX_ICON + 1)];
+        uint8_t strLen = w->serializeStrings(strBuf);
+        if (out + strLen > bufSize) break;
+        memcpy(&buf[out], strBuf, strLen);
+        out += strLen;
     }
     return out;
 }
 
+// ── VAR_DATA payload builder ─────────────────────────────────
 uint16_t RadioKitClass::_buildVarPayload(uint8_t* buf, uint16_t bufSize) {
     uint16_t out = 0;
+    // Input widgets: send current state (zeros if nothing received yet)
     for (uint8_t i = 0; i < _widgetCount; i++) {
         RadioKit_Widget* w = _widgets[i];
         uint8_t sz = w->inputSize();
@@ -137,6 +198,7 @@ uint16_t RadioKitClass::_buildVarPayload(uint8_t* buf, uint16_t bufSize) {
         memset(&buf[out], 0, sz);
         out += sz;
     }
+    // Output widgets: serialize current state
     for (uint8_t i = 0; i < _widgetCount; i++) {
         RadioKit_Widget* w = _widgets[i];
         uint8_t sz = w->outputSize();

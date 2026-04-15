@@ -1,21 +1,13 @@
 #include "Slider.h"
 
-RadioKit_Slider::RadioKit_Slider(const char* label, uint8_t x, uint8_t y,
-                                 uint8_t size, float aspect)
-    : _value(0)
+RK_Slider::RK_Slider(RK_SliderProps p)
+    : props(p)
 {
     typeId = RK_TYPE_SLIDER;
-    _init(label, x, y, size, aspect);
+    _init(p.label, p.x, p.y, p.scale, p.aspect, 0, p.variant,
+          nullptr, nullptr, nullptr);
 }
 
-RadioKit_Slider::RadioKit_Slider(uint8_t x, uint8_t y,
-                                 uint8_t size, float aspect)
-    : _value(0)
-{
-    typeId = RK_TYPE_SLIDER;
-    _init(nullptr, x, y, size, aspect);
-}
-
-void RadioKit_Slider::deserializeInput(const uint8_t* buf) {
-    _value = buf[0] > 100 ? 100 : buf[0];
+void RK_Slider::deserializeInput(const uint8_t* buf) {
+    props.value = buf[0] > 100 ? 100 : buf[0];
 }
