@@ -1,10 +1,6 @@
 /**
  * Widget.h
  * Abstract base class for all RadioKit widgets (v2.0).
- *
- * Stores all common fields defined in the protocol widget descriptor:
- *   TYPE, ID, X, Y, SCALE, ASPECT, ROTATION, STYLE, VARIANT, STR_MASK
- * Plus icon / onText / offText strings used by string-bitmask serialization.
  */
 
 #ifndef RADIOKIT_WIDGET_H
@@ -19,17 +15,18 @@ public:
     RadioKit_Widget();
     virtual ~RadioKit_Widget() {}
 
-    // ── Identity ─────────────────────────────────────────────
-    uint8_t typeId;    ///< RK_TYPE_* constant
-    uint8_t widgetId;  ///< Assigned by RadioKitClass._registerWidget()
+    // ── Identity ───────────────────────────────────────────────────────
+    uint8_t typeId;
+    uint8_t widgetId;
 
-    // ── Accessors ────────────────────────────────────────────
+    // ── Accessors ──────────────────────────────────────────────────────
     uint8_t     x()        const { return _x; }
     uint8_t     y()        const { return _y; }
     /// Scale ×10 (e.g. 1.5 → 15)
     uint8_t     scale()    const { return _scale; }
     /// Aspect ×10 (e.g. 2.5 → 25). 0 = use widget default.
     uint8_t     aspect()   const { return _aspect != 0 ? _aspect : defaultAspect(); }
+    /// Rotation in degrees (wire value = degrees; displayed as degrees × 2).
     int16_t     rotation() const { return _rotation; }
     bool        enabled()  const { return _enabled; }
     uint8_t     style()    const { return _style; }
@@ -39,20 +36,18 @@ public:
     const char* onText()   const { return _onText; }
     const char* offText()  const { return _offText; }
 
-    // ── Serialization ────────────────────────────────────────
+    // ── Serialization ─────────────────────────────────────────────────────
     virtual uint8_t inputSize()  const = 0;
     virtual uint8_t outputSize() const = 0;
     virtual void serializeOutput(uint8_t* buf)         const = 0;
     virtual void deserializeInput(const uint8_t* buf)        = 0;
 
-    /** Writes the string-bitmask byte followed by [LEN][STR] pairs.
-     *  Returns number of bytes written. buf must be large enough. */
     uint8_t serializeStrings(uint8_t* buf) const;
 
 protected:
     uint8_t  _x, _y;
-    uint8_t  _scale;    ///< ×10 scale: 10 = 1.0, 15 = 1.5
-    uint8_t  _aspect;   ///< ×10 scale: 0=use default, 25=2.5
+    uint8_t  _scale;
+    uint8_t  _aspect;
     int16_t  _rotation;
     bool     _enabled;
     uint8_t  _style;
@@ -64,16 +59,18 @@ protected:
 
     virtual uint8_t defaultAspect() const = 0;
 
-    void _init(const char* label,  uint8_t x,       uint8_t y,
+    /// rotation defaults to 0. Positive = clockwise in degrees.
+    void _init(const char* label,  uint8_t x,        uint8_t y,
                float scale,        float   aspect,
                uint8_t style,      uint8_t variant,
-               const char* icon,   const char* onText, const char* offText);
+               const char* icon,   const char* onText, const char* offText,
+               int16_t rotation = 0);
 
 private:
     void _registerSelf();
 };
 
-// ── Static helper ────────────────────────────────────────────
+// ── Static helper ────────────────────────────────────────────────────────
 static inline uint8_t _floatToWire(float f) {
     if (f <= 0.0f) return 0;
     float v = f * 10.0f + 0.5f;

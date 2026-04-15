@@ -8,7 +8,6 @@
 
 #include "Widget.h"
 
-// ── Props struct ─────────────────────────────────────────────
 struct RK_TextProps {
     const char* label  = nullptr;
     const char* icon   = nullptr;
@@ -17,12 +16,12 @@ struct RK_TextProps {
     float       scale  = 1.0f;
     uint8_t     style  = 0;
     const char* text   = nullptr;
+    int16_t     rotation = 0;  ///< Rotation in degrees.
 };
 
-// ── Widget class ─────────────────────────────────────────────
 class RK_Text : public RadioKit_Widget {
 public:
-    static constexpr uint8_t DEFAULT_ASPECT = 40; // 4.0
+    static constexpr uint8_t DEFAULT_ASPECT = 40;
 
     RK_Text(RK_TextProps p);
 

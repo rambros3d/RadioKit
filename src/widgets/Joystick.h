@@ -8,23 +8,21 @@
 
 #include "Widget.h"
 
-// ── Props struct ─────────────────────────────────────────────
 struct RK_JoystickProps {
-    const char* label   = nullptr;
-    uint8_t     x       = 0;
-    uint8_t     y       = 0;
-    float       scale   = 1.0f;
-    int16_t     rotation = 0;
-    bool        enabled = true;
-    uint8_t     variant = 0;  // 0=self-centering, 1=no-centering
-    int8_t      xvalue  = 0;
-    int8_t      yvalue  = 0;
+    const char* label    = nullptr;
+    uint8_t     x        = 0;
+    uint8_t     y        = 0;
+    float       scale    = 1.0f;
+    int16_t     rotation = 0;  ///< Rotation in degrees.
+    bool        enabled  = true;
+    uint8_t     variant  = 0;
+    int8_t      xvalue   = 0;
+    int8_t      yvalue   = 0;
 };
 
-// ── Widget class ─────────────────────────────────────────────
 class RK_Joystick : public RadioKit_Widget {
 public:
-    static constexpr uint8_t DEFAULT_ASPECT = 10; // 1.0
+    static constexpr uint8_t DEFAULT_ASPECT = 10;
 
     RK_Joystick(RK_JoystickProps p);
 

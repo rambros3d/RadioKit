@@ -1,7 +1,6 @@
 /**
  * LED.h
  * RK_LED — visual status indicator (Arduino → App).
- * Uses RGB + opacity instead of the old color enum.
  */
 
 #ifndef RADIOKIT_WIDGET_LED_H
@@ -9,7 +8,6 @@
 
 #include "Widget.h"
 
-// ── Props struct ─────────────────────────────────────────────
 struct RK_LEDProps {
     const char* label   = nullptr;
     const char* icon    = nullptr;
@@ -22,28 +20,25 @@ struct RK_LEDProps {
     uint8_t     green   = 0;
     uint8_t     blue    = 0;
     uint8_t     opacity = 255;
+    int16_t     rotation = 0;  ///< Rotation in degrees.
 };
 
-// ── Widget class ─────────────────────────────────────────────
 class RK_LED : public RadioKit_Widget {
 public:
-    static constexpr uint8_t DEFAULT_ASPECT = 10; // 1.0
+    static constexpr uint8_t DEFAULT_ASPECT = 10;
 
     RK_LED(RK_LEDProps p);
 
     uint8_t inputSize()  const override { return 0; }
-    uint8_t outputSize() const override { return 5; } // state + R + G + B + opacity
+    uint8_t outputSize() const override { return 5; } // STATE + R + G + B + OPACITY
     void serializeOutput(uint8_t* buf)         const override;
     void deserializeInput(const uint8_t*)            override {}
 
     void on()  { props.state = true;  }
     void off() { props.state = false; }
 
-    /** Accepts 6-char (RRGGBB) or 8-char (RRGGBBAA) hex string. */
     void setColor(const char* hex);
-    /** Accepts 0xRRGGBB or 0xRRGGBBAA uint32. */
     void setColor(uint32_t rgba);
-
     void setOpacity(uint8_t val)  { props.opacity = val; }
     void setRed(uint8_t val)      { props.red     = val; }
     void setGreen(uint8_t val)    { props.green   = val; }

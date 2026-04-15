@@ -5,7 +5,7 @@ void RadioKit_Button::_initFromProps(const RK_ButtonProps& p, uint8_t tid) {
     props  = p;
     typeId = tid;
     _init(p.label, p.x, p.y, p.scale, 0.0f, p.style, 0,
-          p.icon, p.onText, p.offText);
+          p.icon, p.onText, p.offText, p.rotation);
 }
 
 void RadioKit_Button::serializeOutput(uint8_t* buf) const {
@@ -18,7 +18,6 @@ void RadioKit_Button::deserializeInput(const uint8_t* buf) {
         if (newState && !props.state) _pendingPress = true;
         props.state = newState;
     } else {
-        // ToggleButton: app sends new latched state directly
         props.state = newState;
     }
 }
@@ -33,7 +32,6 @@ void RadioKit_Button::setIcon(const char* val) {
     }
 }
 
-// ── PushButton ───────────────────────────────────────────────
 RK_PushButton::RK_PushButton(RK_ButtonProps p) {
     _initFromProps(p, RK_TYPE_PUSH_BUTTON);
 }
@@ -43,8 +41,7 @@ bool RK_PushButton::isPressed() {
     return false;
 }
 
-// ── ToggleButton ─────────────────────────────────────────────
 RK_ToggleButton::RK_ToggleButton(RK_ButtonProps p) {
     _initFromProps(p, RK_TYPE_TOGGLE_BUTTON);
-    props.state = p.state; // honour initial latched state
+    props.state = p.state;
 }

@@ -3,15 +3,11 @@
 #include <string.h>
 
 // ── Deferred registration list ──────────────────────────────────────────────
-// Widget globals are constructed before RadioKit (static init order
-// fiasco). We collect them in a singly-linked list and drain it when
-// RadioKitClass::begin() is called.
 struct _DeferredNode {
     RadioKit_Widget*  widget;
     _DeferredNode*    next;
 };
 
-// Plain global (not a class) — zero-initialised before any ctor runs.
 static _DeferredNode* s_deferredHead = nullptr;
 
 static void _pushDeferred(RadioKit_Widget* w) {
@@ -20,15 +16,11 @@ static void _pushDeferred(RadioKit_Widget* w) {
 }
 
 void RadioKit_Widget_drainDeferred() {
-    // Called by RadioKitClass::begin(). Drain in reverse-push order
-    // so widget IDs are assigned in declaration order.
-    // First, count nodes so we can reverse.
     uint8_t count = 0;
     _DeferredNode* n = s_deferredHead;
     while (n) { count++; n = n->next; }
-
-    // Build a small temporary array and reverse.
     if (count == 0) return;
+
     RadioKit_Widget** arr = new RadioKit_Widget*[count];
     n = s_deferredHead;
     for (int8_t i = (int8_t)(count - 1); i >= 0; i--) {
@@ -40,7 +32,6 @@ void RadioKit_Widget_drainDeferred() {
     }
     delete[] arr;
 
-    // Free the list nodes.
     n = s_deferredHead;
     while (n) {
         _DeferredNode* next = n->next;
@@ -68,16 +59,17 @@ void RadioKit_Widget::_init(
     const char* label,  uint8_t x,       uint8_t y,
     float scale,        float   aspect,
     uint8_t style,      uint8_t variant,
-    const char* icon,   const char* onText, const char* offText)
+    const char* icon,   const char* onText, const char* offText,
+    int16_t rotation)
 {
-    _x       = x;
-    _y       = y;
-    _scale   = _floatToWire(scale  > 0.0f ? scale  : 1.0f);
-    _aspect  = _floatToWire(aspect);
-    _rotation = 0;
-    _enabled = true;
-    _style   = style;
-    _variant = variant;
+    _x        = x;
+    _y        = y;
+    _scale    = _floatToWire(scale  > 0.0f ? scale  : 1.0f);
+    _aspect   = _floatToWire(aspect);
+    _rotation = rotation;
+    _enabled  = true;
+    _style    = style;
+    _variant  = variant;
 
     auto _copyStr = [](char* dst, const char* src, size_t maxLen) {
         if (src && src[0] != '\0') {
@@ -97,7 +89,6 @@ void RadioKit_Widget::_init(
 }
 
 void RadioKit_Widget::_registerSelf() {
-    // Defer — RadioKit global may not be constructed yet.
     _pushDeferred(this);
 }
 

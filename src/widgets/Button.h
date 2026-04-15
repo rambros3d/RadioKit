@@ -2,8 +2,6 @@
  * Button.h
  * RK_PushButton  — momentary (true while held)
  * RK_ToggleButton — latched (toggles on tap)
- *
- * Both share RK_ButtonProps and the same RadioKit_Button base.
  */
 
 #ifndef RADIOKIT_WIDGET_BUTTON_H
@@ -12,7 +10,7 @@
 #include "Widget.h"
 #include <initializer_list>
 
-// ── Props struct ─────────────────────────────────────────────
+// ── Props struct ───────────────────────────────────────────────────────
 struct RK_ButtonProps {
     const char* label   = nullptr;
     const char* icon    = nullptr;
@@ -23,23 +21,21 @@ struct RK_ButtonProps {
     bool        state   = false;
     const char* onText  = nullptr;
     const char* offText = nullptr;
+    int16_t     rotation = 0;  ///< Rotation in degrees. Positive = clockwise.
 };
 
-// ── Shared implementation base ───────────────────────────────
+// ── Shared implementation base ──────────────────────────────────────────────
 class RadioKit_Button : public RadioKit_Widget {
 public:
-    static constexpr uint8_t DEFAULT_ASPECT = 10; // 1.0
+    static constexpr uint8_t DEFAULT_ASPECT = 10;
 
     uint8_t inputSize()  const override { return 1; }
     uint8_t outputSize() const override { return 1; }
     void serializeOutput(uint8_t* buf)         const override;
     void deserializeInput(const uint8_t* buf)        override;
 
-    /** Returns true if active (held for push, latched for toggle). */
     bool get() const { return props.state; }
-    /** Force-update app-side state. */
     void set(bool val) { props.state = val; }
-    /** Update icon name. */
     void setIcon(const char* val);
 
     RK_ButtonProps props;
@@ -51,16 +47,14 @@ protected:
     void _initFromProps(const RK_ButtonProps& p, uint8_t typeId);
 };
 
-// ── PushButton ───────────────────────────────────────────────
+// ── PushButton ─────────────────────────────────────────────────────────────
 class RK_PushButton : public RadioKit_Button {
 public:
     RK_PushButton(RK_ButtonProps p);
-
-    /** Consumes and returns a single rising-edge press event. */
     bool isPressed();
 };
 
-// ── ToggleButton ─────────────────────────────────────────────
+// ── ToggleButton ────────────────────────────────────────────────────────────
 class RK_ToggleButton : public RadioKit_Button {
 public:
     RK_ToggleButton(RK_ButtonProps p);
