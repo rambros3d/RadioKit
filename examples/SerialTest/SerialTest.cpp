@@ -1,32 +1,8 @@
 /**
- * SerialTest — RadioKit Example
+ * SerialTest — RadioKit Example (v2.0)
  *
  * Minimal USB Serial sketch for testing the RadioKit app
  * over Web Serial (Chrome / Edge) or Android USB OTG.
- *
- * No BLE hardware or antenna required — great for rapid
- * layout and widget testing on a dev board.
- *
- * Widgets:
- *   - Button  → blinks built-in LED on each press
- *   - Switch  → toggles built-in LED continuously
- *   - Slider  → value echoed on serial monitor
- *   - Joystick→ X/Y echoed on serial monitor
- *   - LED     → cycles GREEN / YELLOW / RED based on slider value
- *   - Text    → shows uptime in seconds
- *
- * Hardware:
- *   - Any ESP32 dev board connected via USB
- *   - Built-in LED on GPIO 7 (change LED_PIN if needed)
- *
- * Usage:
- *   1. Flash to ESP32
- *   2. Open the RadioKit app → choose "USB / Serial" connection
- *   3. Select the COM port → connect
- *   4. Interact with widgets
- *
- * Note: the USB serial port is shared with the RadioKit protocol.
- * Do NOT open the Arduino Serial Monitor while the app is connected.
  */
 
 #include <Arduino.h>
@@ -36,13 +12,12 @@
 #define LED_PIN 7
 
 // ── Widget declarations ───────────────────────────────────────────
-//                          label        x    y  size
-RadioKit_Button btn("Press", 20, 50, 20);
-RadioKit_Switch sw("LED", 60, 80, 20);
-RadioKit_Slider sld("Level", 100, 50, 12, 8.0);
-RadioKit_Joystick joy("Stick", 160, 50, 40);
-RadioKit_LED statusLED(20, 20, 14);
-RadioKit_Text uptimeText("Uptime", 80, 20, 10);
+RK_PushButton btn({ .label="Press", .x=20,  .y=50, .scale=2.0 });
+RK_ToggleButton sw({  .label="LED",   .x=60,  .y=80, .scale=2.0 });
+RK_Slider sld({ .label="Level", .x=100, .y=50, .aspect=8.0, .value=12 });
+RK_Joystick joy({ .label="Stick", .x=160, .y=50, .scale=4.0 });
+RK_LED statusLED({ .label="Status", .x=20,  .y=20, .scale=1.4 });
+RK_Text uptimeText({ .label="Uptime", .x=80,  .y=20 });
 
 // ────────────────────────────────────────────────────────────
 void setup() {
@@ -50,6 +25,13 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
+  // Global Configuration
+  RadioKit.config.name = "Serial Test v2.0";
+  RadioKit.config.theme = RK_DEFAULT;
+  RadioKit.config.password = "1234";
+
+  RadioKit.begin();
+  
   // USB Serial transport — app connects over Web Serial or Android USB
   RadioKit.startSerial(Serial);
 }
@@ -67,20 +49,21 @@ void loop() {
   }
 
   // Switch: hold LED on
-  if (sw.isOn()) {
+  if (sw.get()) {
     digitalWrite(LED_PIN, HIGH);
   } else {
     digitalWrite(LED_PIN, LOW);
   }
 
   // Status LED: reflects slider level
-  uint8_t level = sld.value();
-  if (level < 34)
-    statusLED.set(RadioKit_LED::RED);
-  else if (level < 67)
-    statusLED.set(RadioKit_LED::YELLOW);
-  else
-    statusLED.set(RadioKit_LED::GREEN);
+  uint8_t level = sld.get();
+  if (level < 34) {
+    statusLED.setColor(RK_RED);
+  } else if (level < 67) {
+    statusLED.setColor(RK_YELLOW);
+  } else {
+    statusLED.setColor(RK_GREEN);
+  }
 
   // Uptime text (updates every second)
   static uint32_t lastSec = 0;
