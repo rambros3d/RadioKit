@@ -8,25 +8,25 @@ const String kRadioKitCharUuid    = '0000FFE1-0000-1000-8000-00805F9B34FB';
 // Packet framing
 const int kStartByte = 0x55;
 
-// Command identifiers
-const int kCmdGetConf  = 0x01;
-const int kCmdConfData = 0x02;
-const int kCmdGetVars  = 0x03;
-const int kCmdVarData  = 0x04;
-const int kCmdSetInput = 0x05;
-const int kCmdAck      = 0x06;
-const int kCmdPing     = 0x07;
-const int kCmdPong     = 0x08;
-const int kCmdVarUpdate = 0x09; // v3: partial variable update with ACK
+// Command identifiers  (must match RadioKitProtocol.h exactly)
+const int kCmdGetConf  = 0x01;  // App → Device : request config
+const int kCmdConfData = 0x02;  // Device → App : config payload
+const int kCmdGetVars  = 0x03;  // App → Device : request variables
+const int kCmdVarData  = 0x04;  // Device → App : full variable snapshot
+const int kCmdSetInput = 0x05;  // App → Device : set all input values
+const int kCmdAck      = 0x06;  // Both         : acknowledge
+const int kCmdPing     = 0x07;  // App → Device : keep-alive ping
+const int kCmdPong     = 0x08;  // Device → App : pong
+const int kCmdVarUpdate = 0x09; // Device → App : reliable partial update
 
 // Widget type identifiers
 const int kWidgetButton   = 0x01;
-const int kWidgetSwitch   = 0x02; // toggle button
+const int kWidgetSwitch   = 0x02;
 const int kWidgetSlider   = 0x03;
 const int kWidgetJoystick = 0x04;
 const int kWidgetLed      = 0x05;
 const int kWidgetText     = 0x06;
-const int kWidgetMultiple = 0x07; // v3: segmented / multi-button
+const int kWidgetMultiple = 0x07;
 
 // Widget input sizes in bytes (app → device)
 const Map<int, int> kWidgetInputSize = {
@@ -67,13 +67,14 @@ const double kCanvasPortraitH  = 200.0;
 // Poll intervals
 const Duration kGetVarsInterval = Duration(milliseconds: 100);
 const Duration kPingInterval    = Duration(seconds: 2);
-const Duration kConfTimeout     = Duration(seconds: 5);
+// Increased to 8 s to handle slow USB CDC enumeration on some boards
+const Duration kConfTimeout     = Duration(seconds: 8);
 
 // VAR_UPDATE reliability (v3)
 const int kVarUpdateTimeoutMs  = 200;
 const int kVarUpdateMaxRetries = 5;
 
-// ── Theme IDs (mirror RK_Config themes) ──────────────────────────────────────
+// ── Theme IDs ──────────────────────────────────────────────────────────────
 const int kThemeDefault  = 0;
 const int kThemeMinimal  = 1;
 const int kThemeDark     = 2;
@@ -82,7 +83,7 @@ const int kThemeNeon     = 4;
 const int kThemeRetro    = 5;
 const int kThemeCustom   = 6;
 
-// ── Style / variant IDs ───────────────────────────────────────────────────────
+// ── Style / variant IDs ───────────────────────────────────────────────────
 const int kStyleDefault = 0;
 const int kStylePrimary = 1;
 const int kStyleDim     = 2;
@@ -90,7 +91,7 @@ const int kStyleSuccess = 3;
 const int kStyleWarning = 4;
 const int kStyleDanger  = 5;
 
-// ── String bitmask bits ───────────────────────────────────────────────────────
+// ── String bitmask bits ───────────────────────────────────────────────────
 const int kStrMaskLabel   = 0x01;
 const int kStrMaskIcon    = 0x02;
 const int kStrMaskOnText  = 0x04;

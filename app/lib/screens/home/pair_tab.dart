@@ -49,10 +49,10 @@ class _PairTabState extends State<PairTab> {
   }
 
   Future<void> _connectBle(DeviceInfo device) async {
-    final bleProvider = context.read<BleProvider>();
+    final bleProvider    = context.read<BleProvider>();
     final deviceProvider = context.read<DeviceProvider>();
-    final history = context.read<HistoryProvider>();
-    final console = context.read<ConsoleProvider>();
+    final history        = context.read<HistoryProvider>();
+    final console        = context.read<ConsoleProvider>();
 
     console.log('READY TO PAIR: ${device.displayName}', level: ConsoleLogLevel.info);
     await bleProvider.stopScan();
@@ -60,17 +60,15 @@ class _PairTabState extends State<PairTab> {
 
     deviceProvider.setTransport(bleProvider.bleService);
     final success = await _connect(device, deviceProvider, console);
-    
-    if (success) {
-      await history.saveDevice(device, 'ble');
-    }
+
+    if (success) await history.saveDevice(device, 'ble');
   }
 
   Future<void> _connectSerial(DeviceInfo device, {int baudRate = 115200}) async {
     final serialProvider = context.read<SerialProvider>();
     final deviceProvider = context.read<DeviceProvider>();
-    final history = context.read<HistoryProvider>();
-    final console = context.read<ConsoleProvider>();
+    final history        = context.read<HistoryProvider>();
+    final console        = context.read<ConsoleProvider>();
 
     console.log('CONNECTING VIA USB: ${device.displayName}', level: ConsoleLogLevel.info);
     await serialProvider.stopScan();
@@ -79,18 +77,18 @@ class _PairTabState extends State<PairTab> {
     deviceProvider.setTransport(serialProvider.serialService);
     final success = await _connect(device, deviceProvider, console, baudRate: baudRate);
 
-    if (success) {
-      await history.saveDevice(device, 'serial');
-    }
+    if (success) await history.saveDevice(device, 'serial');
   }
 
-  Future<bool> _connect(DeviceInfo device, DeviceProvider deviceProvider, ConsoleProvider console, {int baudRate = 115200}) async {
+  Future<bool> _connect(
+    DeviceInfo device,
+    DeviceProvider deviceProvider,
+    ConsoleProvider console, {
+    int baudRate = 115200,
+  }) async {
     if (!mounted) return false;
-
     console.log('ESTABLISHING HANDSHAKE...', level: ConsoleLogLevel.info);
-    
     await deviceProvider.connectToDevice(device, baudRate: baudRate);
-
     if (!mounted) return false;
 
     if (deviceProvider.connectionState == DeviceConnectionState.connected) {
@@ -124,7 +122,9 @@ class _PairTabState extends State<PairTab> {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.grid_view_rounded, size: 18), onPressed: () {}),
+          IconButton(
+              icon: const Icon(Icons.grid_view_rounded, size: 18),
+              onPressed: () {}),
           const SizedBox(width: 8),
         ],
       ),
@@ -134,7 +134,9 @@ class _PairTabState extends State<PairTab> {
           Expanded(
             child: _selectedTransportIndex == 0
                 ? _BleTab(onDeviceTapped: _connectBle)
-                : _SerialTab(onPortTapped: (device, baud) => _connectSerial(device, baudRate: baud)),
+                : _SerialTab(
+                    onPortTapped: (device, baud) =>
+                        _connectSerial(device, baudRate: baud)),
           ),
           const ConsoleLogView(),
           const SizedBox(height: 16),
@@ -187,7 +189,8 @@ class _ToggleOption extends StatelessWidget {
   final bool isActive;
   final VoidCallback onTap;
 
-  const _ToggleOption({required this.label, required this.isActive, required this.onTap});
+  const _ToggleOption(
+      {required this.label, required this.isActive, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -213,6 +216,8 @@ class _ToggleOption extends StatelessWidget {
   }
 }
 
+// ── BLE Tab ──────────────────────────────────────────────────────────────────
+
 class _BleTab extends StatelessWidget {
   final Future<void> Function(DeviceInfo) onDeviceTapped;
   const _BleTab({required this.onDeviceTapped});
@@ -224,7 +229,7 @@ class _BleTab extends StatelessWidget {
         return Column(
           children: [
             _buildStatusHeader(
-              context, 
+              context,
               label: ble.isScanning ? 'SCANNING' : 'IDLE',
               subtitle: 'BLUETOOTH LOW ENERGY',
               protocol: 'BT_SIG_4.2',
@@ -234,21 +239,34 @@ class _BleTab extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('DISCOVERED_UNITS', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.brandOrange)),
-                  Text('${ble.devices.length.toString().padLeft(2, '0')}_NODES_FOUND', style: const TextStyle(color: Colors.white24, fontSize: 9)),
+                  Text('DISCOVERED_UNITS',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(color: AppColors.brandOrange)),
+                  Text(
+                      '${ble.devices.length.toString().padLeft(2, '0')}_NODES_FOUND',
+                      style: const TextStyle(
+                          color: Colors.white24, fontSize: 9)),
                 ],
               ),
             ),
             Expanded(
               child: ble.devices.isEmpty
-                  ? Center(child: Text(ble.isScanning ? '...' : 'No units found', style: const TextStyle(color: Colors.white12)))
+                  ? Center(
+                      child: Text(
+                          ble.isScanning ? '...' : 'No units found',
+                          style:
+                              const TextStyle(color: Colors.white12)))
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: ble.devices.length,
                       itemBuilder: (context, index) {
                         return _UnitCard(
                           device: ble.devices[index],
-                          onTap: () => onDeviceTapped(ble.devices[index]),
+                          onTap: () =>
+                              onDeviceTapped(ble.devices[index]),
                         );
                       },
                     ),
@@ -259,7 +277,10 @@ class _BleTab extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusHeader(BuildContext context, {required String label, required String subtitle, required String protocol}) {
+  Widget _buildStatusHeader(BuildContext context,
+      {required String label,
+      required String subtitle,
+      required String protocol}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -267,33 +288,49 @@ class _BleTab extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 8, height: 8,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: label == 'SCANNING' ? AppColors.brandOrange : Colors.white12),
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: label == 'SCANNING'
+                        ? AppColors.brandOrange
+                        : Colors.white12),
               ),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.0)),
-                  Text(subtitle, style: const TextStyle(color: Colors.white24, fontSize: 8)),
+                  Text(label,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          letterSpacing: 1.0)),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          color: Colors.white24, fontSize: 8)),
                 ],
               ),
               const Spacer(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('PROTOCOL', style: TextStyle(color: Colors.white24, fontSize: 8)),
-                  Text(protocol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                  const Text('PROTOCOL',
+                      style:
+                          TextStyle(color: Colors.white24, fontSize: 8)),
+                  Text(protocol,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 11)),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 12),
           const LinearProgressIndicator(
-            value: 0.3, 
-            backgroundColor: Color(0x0DFFFFFF), // ~5% white
-            valueColor: AlwaysStoppedAnimation(AppColors.brandOrange), 
-            minHeight: 1
+            value: 0.3,
+            backgroundColor: Color(0x0DFFFFFF),
+            valueColor:
+                AlwaysStoppedAnimation(AppColors.brandOrange),
+            minHeight: 1,
           ),
         ],
       ),
@@ -321,13 +358,24 @@ class _UnitCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(device.displayName.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5)),
+                  Text(device.displayName.toUpperCase(),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          letterSpacing: 0.5)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.connected)),
+                      Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.connected)),
                       const SizedBox(width: 6),
-                      const Text('READY TO PAIR', style: TextStyle(color: Colors.white38, fontSize: 9)),
+                      const Text('READY TO PAIR',
+                          style: TextStyle(
+                              color: Colors.white38, fontSize: 9)),
                     ],
                   ),
                 ],
@@ -357,7 +405,7 @@ class _SignalBars extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: List.generate(4, (i) {
-        bool active = i < bars;
+        final active = i < bars;
         return Container(
           width: 3,
           height: 8 + (i * 3.0),
@@ -372,9 +420,9 @@ class _SignalBars extends StatelessWidget {
   }
 }
 
+// ── Serial Tab ───────────────────────────────────────────────────────────────
+
 class _SerialTab extends StatefulWidget {
-  /// Called when the user taps CONNECT.
-  /// Receives the selected [DeviceInfo] and the chosen [baudRate].
   final Future<void> Function(DeviceInfo device, int baudRate) onPortTapped;
   const _SerialTab({required this.onPortTapped});
 
@@ -396,14 +444,7 @@ class _SerialTabState extends State<_SerialTab> {
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildConfigCard(serial),
-              const SizedBox(height: 24),
-              _buildDriverStatusCard(),
-            ],
-          ),
+          child: _buildConfigCard(serial),
         );
       },
     );
@@ -417,13 +458,24 @@ class _SerialTabState extends State<_SerialTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('HARDWARE_INTERFACE', style: TextStyle(color: AppColors.brandOrange, fontSize: 9, fontWeight: FontWeight.bold)),
-            const Text('CONFIGURATION', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+            const Text('HARDWARE_INTERFACE',
+                style: TextStyle(
+                    color: AppColors.brandOrange,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold)),
+            const Text('CONFIGURATION',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5)),
             const SizedBox(height: 24),
             _buildDropdownLabel('SERIAL_PORT'),
             _buildDropdown<DeviceInfo?>(
               value: _selectedPort,
-              items: serial.ports.map((p) => DropdownMenuItem(value: p, child: Text(p.displayName))).toList(),
+              items: serial.ports
+                  .map((p) => DropdownMenuItem(
+                      value: p, child: Text(p.displayName)))
+                  .toList(),
               onChanged: (v) => setState(() => _selectedPort = v),
               hint: 'Select device...',
             ),
@@ -431,7 +483,10 @@ class _SerialTabState extends State<_SerialTab> {
             _buildDropdownLabel('BAUD_RATE'),
             _buildDropdown<String>(
               value: _selectedBaud,
-              items: ['9600', '19200', '38400', '57600', '115200'].map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+              items: ['9600', '19200', '38400', '57600', '115200']
+                  .map((b) =>
+                      DropdownMenuItem(value: b, child: Text(b)))
+                  .toList(),
               onChanged: (v) => setState(() => _selectedBaud = v!),
             ),
             const SizedBox(height: 24),
@@ -439,14 +494,20 @@ class _SerialTabState extends State<_SerialTab> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.brandOrange, foregroundColor: Colors.black),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brandOrange,
+                    foregroundColor: Colors.black),
                 onPressed: _selectedPort == null
                     ? null
                     : () => widget.onPortTapped(
                           _selectedPort!,
                           int.tryParse(_selectedBaud) ?? 115200,
                         ),
-                child: Text('CONNECT_+', style: GoogleFonts.changa(fontWeight: FontWeight.w700, letterSpacing: 1.2, fontSize: 13)),
+                child: Text('CONNECT_+',
+                    style: GoogleFonts.changa(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                        fontSize: 13)),
               ),
             ),
           ],
@@ -458,17 +519,27 @@ class _SerialTabState extends State<_SerialTab> {
   Widget _buildDropdownLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(label, style: const TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+      child: Text(label,
+          style: const TextStyle(
+              color: Colors.white38,
+              fontSize: 9,
+              fontWeight: FontWeight.bold)),
     );
   }
 
-  Widget _buildDropdown<T>({required T value, required List<DropdownMenuItem<T>> items, required ValueChanged<T?> onChanged, String? hint}) {
+  Widget _buildDropdown<T>({
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+    String? hint,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.black26, 
-        borderRadius: BorderRadius.circular(4), 
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        color: Colors.black26,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+            color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
@@ -476,31 +547,15 @@ class _SerialTabState extends State<_SerialTab> {
           items: items,
           onChanged: onChanged,
           dropdownColor: const Color(0xFF2A2A2A),
-          hint: hint != null ? Text(hint, style: const TextStyle(color: Colors.white24)) : null,
+          hint: hint != null
+              ? Text(hint,
+                  style: const TextStyle(color: Colors.white24))
+              : null,
           isExpanded: true,
-          style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDriverStatusCard() {
-    return Card(
-      color: Colors.white.withValues(alpha: 0.05),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(width: 8, height: 8, decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.connected)),
-            const SizedBox(width: 12),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('DRIVER_STATUS', style: TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold)),
-                Text('FTDI_USB_BUS_READY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ],
+          style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontFamily: 'monospace'),
         ),
       ),
     );

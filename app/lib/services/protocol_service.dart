@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../models/protocol.dart';
 import '../models/widget_config.dart';
 
@@ -30,9 +31,10 @@ class ProtocolService {
 
   // ── Packet building ──────────────────────────────────────────────────────
 
-  /// Build a complete RadioKit packet: START(1)+LENGTH(2 LE)+CMD(1)+PAYLOAD(N)+CRC(2 LE)
+  /// Build a complete RadioKit packet:
+  ///   START(1) + LENGTH(2 LE) + CMD(1) + PAYLOAD(N) + CRC(2 LE)
   static Uint8List buildPacket(int cmd, [List<int>? payload]) {
-    final p    = payload ?? [];
+    final p     = payload ?? [];
     final total = 6 + p.length;
     final crc   = _crc16([cmd, ...p]);
     final pkt   = Uint8List(total);
@@ -46,17 +48,16 @@ class ProtocolService {
     return pkt;
   }
 
-  static Uint8List buildGetConf() => buildPacket(kCmdGetConf);
-  static Uint8List buildGetVars() => buildPacket(kCmdGetVars);
-  static Uint8List buildPing()    => buildPacket(kCmdPing);
+  static Uint8List buildGetConf()  => buildPacket(kCmdGetConf);
+  static Uint8List buildGetVars()  => buildPacket(kCmdGetVars);
+  static Uint8List buildPing()     => buildPacket(kCmdPing);
 
   /// Build an ACK packet acknowledging a VAR_UPDATE with [seq].
   static Uint8List buildAck(int seq) => buildPacket(kCmdAck, [seq & 0xFF]);
 
   /// Build a VAR_UPDATE packet: [WIDGET_ID(1)] [SEQ(1)] [VALUES...]
-  static Uint8List buildVarUpdate(int widgetId, int seq, List<int> values) {
-    return buildPacket(kCmdVarUpdate, [widgetId & 0xFF, seq & 0xFF, ...values]);
-  }
+  static Uint8List buildVarUpdate(int widgetId, int seq, List<int> values) =>
+      buildPacket(kCmdVarUpdate, [widgetId & 0xFF, seq & 0xFF, ...values]);
 
   /// Build a SET_INPUT packet from the full widget state.
   static Uint8List buildSetInput(
@@ -69,7 +70,7 @@ class ProtocolService {
       final values = state.inputValues[widget.widgetId] ?? [];
       if (widget.typeId == kWidgetJoystick) {
         final x = values.isNotEmpty ? values[0] : 0;
-        final y = values.length > 1 ? values[1] : 0;
+        final y = values.length > 1  ? values[1] : 0;
         payload.add(x < 0 ? x + 256 : x);
         payload.add(y < 0 ? y + 256 : y);
       } else {
@@ -94,7 +95,7 @@ class ProtocolService {
     return ParsedPacket(cmd: cmd, payload: Uint8List.fromList(payload));
   }
 
-  // ── CONF_DATA parsing (protocol v3) ──────────────────────────────────────
+  // ── CONF_DATA parsing (protocol v3) ─────────────────────────────────────
   //
   // Global header (variable length):
   //   [VERSION(1)] [THEME(1)] [ORIENTATION(1)] [NUM_WIDGETS(1)]
@@ -105,41 +106,69 @@ class ProtocolService {
   //   [TYPE(1)] [ID(1)] [X(1)] [Y(1)] [SCALE(1)] [ASPECT(1)]
   //   [ROT_LO(1)] [ROT_HI(1)] [STYLE(1)] [VARIANT(1)]
   // Then string section:
-  //   [STR_MASK(1)]  followed by [LEN(1)][STR] for each set bit
-  //   in order: LABEL(bit0), ICON(bit1), ONTEXT(bit2), OFFTEXT(bit3), CONTENT(bit4)
+  //   [STR_MASK(1)] then for each set bit → [LEN(1)][STR(LEN)]
+  //   bit order: LABEL(0), ICON(1), ONTEXT(2), OFFTEXT(3), CONTENT(4)
 
   static ParsedConf? parseConfData(List<int> payload) {
-    if (payload.length < 4) return null;
-    if (payload[0] != kProtocolVersion) return null;
+    // Minimum: VERSION + THEME + ORIENTATION + NUM_WIDGETS + NAME_LEN + PWD_LEN = 6
+    if (payload.length < 6) {
+      debugPrint('RadioKit CONF_DATA: payload too short (${payload.length} bytes)');
+      return null;
+    }
 
-    // Global header
-    // payload[1] = THEME (read but not stored yet)
+    if (payload[0] != kProtocolVersion) {
+      debugPrint(
+          'RadioKit CONF_DATA: version mismatch '
+          '(got 0x${payload[0].toRadixString(16)}, '
+          'expected 0x${kProtocolVersion.toRadixString(16)})');
+      return null;
+    }
+
+    // payload[1] = THEME  (stored but not yet used by UI)
     final orientation = payload[2];
     final numWidgets  = payload[3];
     int offset        = 4;
 
-    // Device name
-    if (offset >= payload.length) return null;
+    // Skip device name
+    if (offset >= payload.length) {
+      debugPrint('RadioKit CONF_DATA: truncated before NAME_LEN');
+      return null;
+    }
     final nameLen = payload[offset++];
-    offset += nameLen; // skip name bytes
+    if (offset + nameLen > payload.length) {
+      debugPrint('RadioKit CONF_DATA: truncated in NAME field');
+      return null;
+    }
+    offset += nameLen;
 
-    // Password
-    if (offset >= payload.length) return null;
+    // Skip password
+    if (offset >= payload.length) {
+      debugPrint('RadioKit CONF_DATA: truncated before PWD_LEN');
+      return null;
+    }
     final pwdLen = payload[offset++];
-    offset += pwdLen; // skip password bytes
+    if (offset + pwdLen > payload.length) {
+      debugPrint('RadioKit CONF_DATA: truncated in PWD field');
+      return null;
+    }
+    offset += pwdLen;
 
     final widgets = <WidgetConfig>[];
 
     for (int i = 0; i < numWidgets; i++) {
       // 10 fixed bytes per widget
-      if (offset + 10 > payload.length) break;
+      if (offset + 10 > payload.length) {
+        debugPrint('RadioKit CONF_DATA: truncated at widget $i fixed header '
+            '(offset=$offset, payload=${payload.length})');
+        break;
+      }
 
       final typeId   = payload[offset];
       final widgetId = payload[offset + 1];
       final x        = payload[offset + 2].toDouble();
       final y        = payload[offset + 3].toDouble();
-      final scale    = payload[offset + 4]; // SCALE ×10
-      final aspect   = payload[offset + 5]; // ASPECT ×10
+      final scale    = payload[offset + 4]; // ×10  e.g. 20 = 2.0
+      final aspect   = payload[offset + 5]; // ×10  e.g. 0 = default
       // Rotation: signed LE int16
       final rotRaw   = payload[offset + 6] | (payload[offset + 7] << 8);
       final rotation = rotRaw >= 0x8000 ? rotRaw - 0x10000 : rotRaw;
@@ -148,7 +177,10 @@ class ProtocolService {
       offset += 10;
 
       // String bitmask
-      if (offset >= payload.length) break;
+      if (offset >= payload.length) {
+        debugPrint('RadioKit CONF_DATA: truncated before STR_MASK at widget $i');
+        break;
+      }
       final strMask = payload[offset++];
 
       String label = '', icon = '', onText = '', offText = '', content = '';
@@ -156,7 +188,11 @@ class ProtocolService {
       String readStr() {
         if (offset >= payload.length) return '';
         final len = payload[offset++];
-        if (len == 0 || offset + len > payload.length) return '';
+        if (len == 0) return '';
+        if (offset + len > payload.length) {
+          offset = payload.length; // clamp
+          return '';
+        }
         final s = utf8.decode(payload.sublist(offset, offset + len),
             allowMalformed: true);
         offset += len;
@@ -174,7 +210,7 @@ class ProtocolService {
         widgetId: widgetId,
         x:        x,
         y:        y,
-        size:     scale,  // size field carries SCALE wire value
+        size:     scale,
         aspect:   aspect,
         scale:    scale,
         rotation: rotation,
@@ -189,10 +225,11 @@ class ProtocolService {
       ));
     }
 
+    debugPrint('RadioKit CONF_DATA: parsed ${widgets.length}/$numWidgets widgets OK');
     return ParsedConf(orientation: orientation, widgets: widgets);
   }
 
-  // ── VAR_DATA parsing ──────────────────────────────────────────────────────
+  // ── VAR_DATA parsing ─────────────────────────────────────────────────────
 
   static RadioWidgetState? parseVarData(
       List<int> payload, List<WidgetConfig> widgets, RadioWidgetState current) {
@@ -245,7 +282,6 @@ class ProtocolService {
   }
 
   /// Parse a VAR_UPDATE payload: [WIDGET_ID(1)] [SEQ(1)] [VALUES...]
-  /// Returns (widgetId, seq, values) or null if malformed.
   static (int, int, List<int>)? parseVarUpdate(List<int> payload) {
     if (payload.length < 2) return null;
     final widgetId = payload[0];

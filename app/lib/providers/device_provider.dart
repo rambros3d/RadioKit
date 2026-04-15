@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../models/device_info.dart';
 import '../models/widget_config.dart';
@@ -60,7 +61,7 @@ class DeviceProvider extends ChangeNotifier {
   })  : _transport = transport,
         _debugSink = debugSink;
 
-  // ── Getters ────────────────────────────────────────────────────────────────
+  // ── Getters ───────────────────────────────────────────────────────────────
 
   DeviceInfo?           get connectedDevice  => _connectedDevice;
   DeviceConnectionState get connectionState  => _connectionState;
@@ -72,7 +73,7 @@ class DeviceProvider extends ChangeNotifier {
       _connectionState == DeviceConnectionState.connected;
   TransportService      get currentTransport => _transport;
 
-  // ── Transport swap ─────────────────────────────────────────────────────────
+  // ── Transport swap ────────────────────────────────────────────────────────
 
   void setTransport(TransportService transport) {
     var next = transport;
@@ -85,7 +86,7 @@ class DeviceProvider extends ChangeNotifier {
     _transport.onConnectionLost = _handleConnectionLost;
   }
 
-  // ── Connection ─────────────────────────────────────────────────────────────
+  // ── Connection ────────────────────────────────────────────────────────────
 
   Future<void> connectToDevice(DeviceInfo device, {int baudRate = 115200}) async {
     _connectionState = DeviceConnectionState.connecting;
@@ -113,6 +114,11 @@ class DeviceProvider extends ChangeNotifier {
       return;
     }
 
+    // Brief settle delay for USB CDC — some boards need ~200 ms after
+    // DTR/RTS assertion before they start responding to packets.
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (_connectionState == DeviceConnectionState.disconnected) return;
+
     await _requestConfig();
   }
 
@@ -134,7 +140,8 @@ class DeviceProvider extends ChangeNotifier {
 
       _confTimeoutTimer = Timer(kConfTimeout, () {
         if (_confCompleter != null && !_confCompleter!.isCompleted) {
-          _confCompleter!.completeError(TimeoutException('CONF_DATA timeout'));
+          _confCompleter!.completeError(
+              TimeoutException('CONF_DATA timeout (attempt ${attempt + 1})'));
         }
       });
 
@@ -144,11 +151,16 @@ class DeviceProvider extends ChangeNotifier {
         if (_connectionState == DeviceConnectionState.disconnected) return;
         _startPolling();
         return;
-      } on TimeoutException {
+      } on TimeoutException catch (e) {
         _confTimeoutTimer?.cancel();
+        debugPrint('RadioKit: $e — retrying (attempt ${attempt + 1}/3)');
         if (_connectionState == DeviceConnectionState.disconnected) return;
-        if (attempt < 2) continue;
-        _errorMessage    = 'Timed out waiting for device configuration. Please reconnect.';
+        if (attempt < 2) {
+          // Re-send GET_CONF before next attempt
+          try { await _transport.writePacket(ProtocolService.buildGetConf()); } catch (_) {}
+          continue;
+        }
+        _errorMessage    = 'Device did not respond after 3 attempts. Please reconnect.';
         _connectionState = DeviceConnectionState.error;
         notifyListeners();
         return;
@@ -163,7 +175,7 @@ class DeviceProvider extends ChangeNotifier {
     }
   }
 
-  // ── Polling loop ───────────────────────────────────────────────────────────
+  // ── Polling loop ──────────────────────────────────────────────────────────
 
   void _startPolling() {
     _pollTimer?.cancel();
@@ -185,7 +197,7 @@ class DeviceProvider extends ChangeNotifier {
     _pingTimer?.cancel(); _pingTimer = null;
   }
 
-  // ── Packet handling ────────────────────────────────────────────────────────
+  // ── Packet handling ───────────────────────────────────────────────────────
 
   void _handlePacket(ParsedPacket packet) {
     switch (packet.cmd) {
@@ -193,15 +205,21 @@ class DeviceProvider extends ChangeNotifier {
       case kCmdVarData:   _handleVarData(packet.payload);   break;
       case kCmdVarUpdate: _handleVarUpdate(packet.payload); break;
       case kCmdAck:       _handleAck(packet.payload);       break;
-      case kCmdPong:      break;
+      case kCmdPong:      break; // keep-alive, no action needed
       default:
         debugPrint('RadioKit: Unknown cmd 0x${packet.cmd.toRadixString(16)}');
     }
   }
 
   void _handleConfData(List<int> payload) {
+    debugPrint('RadioKit: CONF_DATA received, ${payload.length} bytes');
     final conf = ProtocolService.parseConfData(payload);
-    if (conf == null) { debugPrint('RadioKit: Failed to parse CONF_DATA'); return; }
+    if (conf == null) {
+      debugPrint('RadioKit: CONF_DATA parse failed — raw: '
+          '${payload.take(32).map((b) => b.toRadixString(16).padLeft(2, "0")).join(" ")}');
+      // Don't fail permanently — let the retry loop send GET_CONF again
+      return;
+    }
     _widgets         = conf.widgets;
     _orientation     = conf.orientation;
     _widgetState     = RadioWidgetState.initial(conf.widgets);
@@ -221,7 +239,6 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   /// Handle an incoming VAR_UPDATE (device → app partial update).
-  /// Apply the change immediately and send back an ACK.
   void _handleVarUpdate(List<int> payload) {
     final result = ProtocolService.parseVarUpdate(payload);
     if (result == null) return;
@@ -230,11 +247,10 @@ class DeviceProvider extends ChangeNotifier {
     final current = _widgetState;
     if (current == null) return;
 
-    // Find the widget to know if this is input or output
     final widget = _widgets.firstWhere(
       (w) => w.widgetId == widgetId,
       orElse: () => WidgetConfig(
-        typeId: 0, widgetId: widgetId, x: 0, y: 0, size: 0, aspect: 0),
+          typeId: 0, widgetId: widgetId, x: 0, y: 0, size: 0, aspect: 0),
     );
 
     RadioWidgetState next;
@@ -243,10 +259,12 @@ class DeviceProvider extends ChangeNotifier {
         next = current.copyWithOutput(widgetId, List<int>.from(values.take(4)));
       } else if (widget.typeId == kWidgetText) {
         final nullIdx = values.indexOf(0);
-        final text = utf8Decode(nullIdx >= 0 ? values.sublist(0, nullIdx) : values);
+        final text = utf8Decode(
+            nullIdx >= 0 ? values.sublist(0, nullIdx) : values);
         next = current.copyWithOutput(widgetId, text);
       } else {
-        next = current.copyWithOutput(widgetId, values.isNotEmpty ? values[0] : 0);
+        next = current.copyWithOutput(
+            widgetId, values.isNotEmpty ? values[0] : 0);
       }
     } else {
       next = current.copyWithInput(widgetId, values);
@@ -255,14 +273,14 @@ class DeviceProvider extends ChangeNotifier {
     _widgetState = next;
     notifyListeners();
 
-    // Send ACK
+    // ACK back to device
     _transport.writePacket(ProtocolService.buildAck(seq)).catchError((_) {});
   }
 
   /// Handle ACK from device — clears the pending VAR_UPDATE retry for [seq].
   void _handleAck(List<int> payload) {
     if (payload.isEmpty) return;
-    final seq    = payload[0];
+    final seq     = payload[0];
     final pending = _pendingUpdates.remove(seq);
     pending?.timer?.cancel();
   }
@@ -275,11 +293,8 @@ class DeviceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── VAR_UPDATE with retry (app → device) ───────────────────────────────────
+  // ── VAR_UPDATE with retry (app → device) ──────────────────────────────────
 
-  /// Send a reliable VAR_UPDATE for [widgetId] with [values].
-  /// Retries every [kVarUpdateTimeoutMs] ms up to [kVarUpdateMaxRetries] times,
-  /// then falls back to a full GET_VARS cycle.
   Future<void> _sendVarUpdate(int widgetId, List<int> values) async {
     final seq = _nextSeq++ & 0xFF;
     final pkt = ProtocolService.buildVarUpdate(widgetId, seq, values);
@@ -299,7 +314,6 @@ class DeviceProvider extends ChangeNotifier {
 
       if (entry.retries >= kVarUpdateMaxRetries) {
         _pendingUpdates.remove(seq);
-        // Fallback: request a full VAR_DATA
         try { await _transport.writePacket(ProtocolService.buildGetVars()); } catch (_) {}
         return;
       }
@@ -321,7 +335,7 @@ class DeviceProvider extends ChangeNotifier {
     _pendingUpdates.clear();
   }
 
-  // ── Widget interaction ─────────────────────────────────────────────────────
+  // ── Widget interaction ────────────────────────────────────────────────────
 
   Future<void> setInputValue(int widgetId, List<int> values) async {
     final current = _widgetState;
@@ -330,11 +344,10 @@ class DeviceProvider extends ChangeNotifier {
     _widgetState = next;
     notifyListeners();
     if (!_transport.isConnected) return;
-    // Use reliable VAR_UPDATE for single-widget changes
     await _sendVarUpdate(widgetId, values);
   }
 
-  // ── Disconnect ─────────────────────────────────────────────────────────────
+  // ── Disconnect ────────────────────────────────────────────────────────────
 
   Future<void> disconnect() async {
     _connectionState = DeviceConnectionState.disconnected;
@@ -354,7 +367,7 @@ class DeviceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Cleanup ────────────────────────────────────────────────────────────────
+  // ── Cleanup ───────────────────────────────────────────────────────────────
 
   @override
   void dispose() {
@@ -365,7 +378,6 @@ class DeviceProvider extends ChangeNotifier {
   }
 }
 
-// ignore: non_constant_identifier_names
 String utf8Decode(List<int> bytes) {
   try { return const Utf8Decoder(allowMalformed: true).convert(bytes); }
   catch (_) { return ''; }
