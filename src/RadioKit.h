@@ -27,7 +27,7 @@ class RadioKitClass {
 public:
     RadioKitClass();
 
-    // ── Setup ────────────────────────────────────────────────────────────
+    // ── Setup ─────────────────────────────────────────────────────────────
 
     /**
      * Initialise BLE and start advertising.
@@ -37,18 +37,23 @@ public:
     void startBLE(const char* deviceName, const char* password = nullptr);
 
     /**
-     * Initialise USB Serial transport.
+     * Attach to a pre-initialised serial stream.
+     * The sketch MUST call Serial.begin() (or equivalent) before this.
+     *
      * @param stream  Any Arduino Stream — Serial, Serial1, SoftwareSerial, …
-     * @param baud    Legacy parameter. Pass 0. Stream should be pre-initialised with begin().
+     *
+     * Example:
+     *   Serial.begin(115200);
+     *   RadioKit.startSerial(Serial);
      */
-    void startSerial(Stream& stream, uint32_t baud = 0);
+    void startSerial(Stream& stream);
 
-    // ── Main loop ───────────────────────────────────────────────────────────
+    // ── Main loop ──────────────────────────────────────────────────────────
 
     /** Process transport events and incoming packets. Call once per loop(). */
     void update();
 
-    // ── Status ───────────────────────────────────────────────────────────────
+    // ── Status ─────────────────────────────────────────────────────────────
 
     /** Returns true if a peer is connected (BLE) or recently active (Serial). */
     bool isConnected() const;
@@ -56,7 +61,7 @@ public:
     /** Returns the number of registered widgets. */
     uint8_t widgetCount() const { return _widgetCount; }
 
-    // ── Internal ────────────────────────────────────────────────────────────
+    // ── Internal ───────────────────────────────────────────────────────────
 
     /** Called by RadioKit_Widget constructor to self-register. */
     void _registerWidget(RadioKit_Widget* widget);
@@ -65,13 +70,11 @@ private:
     RadioKit_Widget*     _widgets[RADIOKIT_MAX_WIDGETS];
     uint8_t              _widgetCount;
     RadioKit_Orientation _orientation;
-    RadioKitTransport*   _transport;    ///< Points to BLE or Serial instance
+    RadioKitTransport*   _transport;
 
     uint8_t _txBuf[RK_MAX_PACKET_SIZE];
 
-    static void _onPacket(uint8_t cmd,
-                          const uint8_t* payload,
-                          uint16_t payloadLen);
+    static void _onPacket(uint8_t cmd, const uint8_t* payload, uint16_t payloadLen);
 
     void _handleGetConf();
     void _handleGetVars();

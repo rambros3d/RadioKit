@@ -3,14 +3,16 @@
  * USB Serial transport for RadioKit.
  * Implements RadioKitTransport over any Arduino Stream (Serial, Serial1, …).
  *
+ * The sketch is responsible for calling Serial.begin() before startSerial().
+ * RadioKit never touches the hardware peripheral directly.
+ *
  * Connection model:
  *   isConnected() returns true for TIMEOUT_MS after the last valid packet.
- *   The app must send PING at least every (TIMEOUT_MS − 1000) ms to keep
- *   the session alive. Recommended app PING interval: 1000 ms.
+ *   The app should send PING every ~1000 ms to keep the session alive.
  *
  * Usage:
- *   RadioKit.startSerial(Serial);          // 115200 baud (default)
- *   RadioKit.startSerial(Serial1, 9600);   // custom baud
+ *   Serial.begin(115200);
+ *   RadioKit.startSerial(Serial);
  */
 
 #ifndef RADIOKIT_SERIAL_H
@@ -24,28 +26,29 @@ public:
     RadioKitSerialTransport();
 
     /**
-     * Initialise the serial transport.
-     * @param stream  Any Arduino Stream (Serial, Serial1, SoftwareSerial, …)
-     * @param baud    Baud rate. Pass 0 to skip Serial.begin() (stream pre-inited).
+     * Attach the transport to an already-initialised Stream.
+     * The sketch must call stream.begin() (or Serial.begin()) beforehand.
+     *
+     * @param stream  Any Arduino Stream — Serial, Serial1, SoftwareSerial, …
      * @param cb      Packet callback.
      */
-    void begin(Stream& stream, uint32_t baud, RK_PacketCallback cb);
+    void begin(Stream& stream, RK_PacketCallback cb);
 
-    /** Satisfies RadioKitTransport interface; name is unused for serial. */
+    /** Satisfies RadioKitTransport pure-virtual; unused for serial. */
     void begin(const char* /*name*/, RK_PacketCallback cb) override;
 
     void update()                                      override;
     void sendPacket(const uint8_t* buf, uint16_t len)  override;
     bool isConnected() const                           override;
 
-    /// Timeout in ms since last valid packet before isConnected() → false.
+    /// ms since last valid packet before isConnected() returns false.
     static constexpr uint32_t TIMEOUT_MS = 3000;
 
 private:
     Stream*           _stream;
     RK_PacketCallback _cb;
     uint32_t          _lastPacketMs;
-    uint32_t          _lastByteMs;     ///< Time of last byte received
+    uint32_t          _lastByteMs;
     bool              _everReceived;
 };
 

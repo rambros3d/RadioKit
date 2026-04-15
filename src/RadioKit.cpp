@@ -10,39 +10,31 @@ RadioKitClass RadioKit;
 static RadioKitClass* s_instance = nullptr;
 
 RadioKitClass::RadioKitClass()
-    : _orientation(RK_LANDSCAPE)
+    : _widgetCount(0)
+    , _orientation(RK_LANDSCAPE)
     , _transport(nullptr)
 {
-    // If s_instance is already set, it means a widget self-registered
-    // during static initialization. In that case, DO NOT reset _widgetCount.
-    if (s_instance == nullptr) {
-        _widgetCount = 0;
-        memset(_widgets, 0, sizeof(_widgets));
-        memset(_txBuf,   0, sizeof(_txBuf));
-        s_instance = this;
-    }
+    memset(_widgets, 0, sizeof(_widgets));
+    memset(_txBuf,   0, sizeof(_txBuf));
+    s_instance = this;
 }
 
-// ─────────────────────────────────────────────
 void RadioKitClass::_registerWidget(RadioKit_Widget* widget) {
-    if (s_instance == nullptr) s_instance = this;
     if (_widgetCount >= RADIOKIT_MAX_WIDGETS) return;
     widget->widgetId = _widgetCount;
     _widgets[_widgetCount++] = widget;
 }
 
-// ─────────────────────────────────────────────
 void RadioKitClass::startBLE(const char* deviceName, const char* /*password*/) {
     _transport = &RadioKitBLEInstance;
     _transport->begin(deviceName, RadioKitClass::_onPacket);
 }
 
-void RadioKitClass::startSerial(Stream& stream, uint32_t baud) {
+void RadioKitClass::startSerial(Stream& stream) {
     _transport = &RadioKitSerialInstance;
-    RadioKitSerialInstance.begin(stream, baud, RadioKitClass::_onPacket);
+    RadioKitSerialInstance.begin(stream, RadioKitClass::_onPacket);
 }
 
-// ─────────────────────────────────────────────
 void RadioKitClass::update() {
     if (_transport) _transport->update();
 }
@@ -51,7 +43,6 @@ bool RadioKitClass::isConnected() const {
     return _transport ? _transport->isConnected() : false;
 }
 
-// ─────────────────────────────────────────────
 void RadioKitClass::_onPacket(uint8_t cmd,
                               const uint8_t* payload,
                               uint16_t payloadLen)
@@ -111,11 +102,6 @@ uint16_t RadioKitClass::_totalOutputBytes() const {
     return total;
 }
 
-// ─────────────────────────────────────────────
-//  _buildConfPayload
-//  [PROTO_VER][ORIENTATION][NUM_WIDGETS]
-//  per widget: [TYPE][ID][X][Y][SIZE][ASPECT][ROTATION][LABEL_LEN][LABEL...]
-// ─────────────────────────────────────────────
 uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
     uint16_t out = 0;
     if (out + 3 > bufSize) return 0;
@@ -132,7 +118,7 @@ uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
         buf[out++] = wgt->x();
         buf[out++] = wgt->y();
         buf[out++] = wgt->size();
-        buf[out++] = wgt->aspect();   // uint8_t, ×10 scale, never 0
+        buf[out++] = wgt->aspect();
         buf[out++] = (uint8_t)RK_ROT(wgt->rotation());
         buf[out++] = labelLen;
         memcpy(&buf[out], wgt->label(), labelLen);
@@ -141,10 +127,6 @@ uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
     return out;
 }
 
-// ─────────────────────────────────────────────
-//  _buildVarPayload
-//  [input vars echoed as 0x00...][output vars]
-// ─────────────────────────────────────────────
 uint16_t RadioKitClass::_buildVarPayload(uint8_t* buf, uint16_t bufSize) {
     uint16_t out = 0;
     for (uint8_t i = 0; i < _widgetCount; i++) {

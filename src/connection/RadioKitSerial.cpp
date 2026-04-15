@@ -10,25 +10,20 @@ RadioKitSerialTransport RadioKitSerialInstance;
 
 RadioKitSerialTransport::RadioKitSerialTransport()
     : _stream(nullptr), _cb(nullptr)
-    , _lastPacketMs(0), _everReceived(false)
+    , _lastPacketMs(0), _lastByteMs(0), _everReceived(false)
 {}
 
-void RadioKitSerialTransport::begin(Stream& stream, uint32_t /*baud*/,
-                                    RK_PacketCallback cb)
-{
+void RadioKitSerialTransport::begin(Stream& stream, RK_PacketCallback cb) {
     _stream       = &stream;
     _cb           = cb;
     _lastPacketMs = 0;
     _lastByteMs   = 0;
     _everReceived = false;
-
     rk_rxReset();
 }
 
-// Stub: satisfies the pure virtual when startBLE()-style call is made
 void RadioKitSerialTransport::begin(const char* /*name*/, RK_PacketCallback cb) {
-    // Should not be reached in normal usage; requires begin(stream, baud, cb).
-    _cb = cb;
+    _cb = cb;  // stream must be set via begin(Stream&, cb) overload
 }
 
 void RadioKitSerialTransport::update() {
@@ -48,10 +43,10 @@ void RadioKitSerialTransport::update() {
         }
     }
 
-    // Recover from junk: if we are mid-packet but haven't seen an incoming byte
-    // for 100ms, assume it was noise and reset the framing state.
-    if ((millis() - _lastByteMs) > 100) {
+    // Junk recovery: reset framing if mid-packet but silent for >100 ms
+    if (_lastByteMs > 0 && (millis() - _lastByteMs) > 100) {
         rk_rxReset();
+        _lastByteMs = 0;
     }
 }
 
