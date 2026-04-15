@@ -39,9 +39,9 @@ class AppColors {
 
   // --- GLASSMORPHISM HELPERS ---
   static Color glassBackground(Brightness b) =>
-      b == Brightness.dark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.3);
+      b == Brightness.dark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.3);
   static Color glassBorder(Brightness b) =>
-      b == Brightness.dark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1);
+      b == Brightness.dark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1);
 
   // --- DYNAMIC HELPERS ---
   static Color dynamicSurface(Brightness b) =>
@@ -56,7 +56,7 @@ class AppColors {
   static Color dynamicTextSecondary(Brightness b) => brandGray;
 
   static Color dynamicBorder(Brightness b) =>
-      b == Brightness.dark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08);
+      b == Brightness.dark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08);
 
   // --- SEMANTIC ALIASES ---
   static const Color primary = brandOrange;

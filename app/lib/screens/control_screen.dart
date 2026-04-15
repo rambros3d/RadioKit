@@ -119,7 +119,7 @@ class _ControlScreenState extends State<ControlScreen> {
                         color: (isConnected
                                 ? AppColors.connected
                                 : AppColors.disconnected)
-                            .withOpacity(0.6),
+                            .withValues(alpha: 0.6),
                         blurRadius: 6,
                         spreadRadius: 1,
                       ),
@@ -274,7 +274,7 @@ class _ControlScreenState extends State<ControlScreen> {
                     painter: _GridPainter(
                         color: Theme.of(context)
                             .dividerColor
-                            .withOpacity(0.3)),
+                            .withValues(alpha: 0.3)),
                   ),
                   ...deviceProvider.widgets.map((config) {
                     return _buildPositionedWidget(

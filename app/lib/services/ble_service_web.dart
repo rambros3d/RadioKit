@@ -134,7 +134,8 @@ class BleService implements TransportService {
   // ---------------------------------------------------------------------------
 
   /// Connect to a device previously selected via [startScan].
-  Future<void> connect(String deviceId) async {
+  @override
+  Future<void> connect(String deviceId, {int baudRate = 115200}) async {
     BluetoothDevice? device = _pendingDevice;
 
     if (deviceId == 'MOCK-UUID-1234') {

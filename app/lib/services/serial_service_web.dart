@@ -113,7 +113,7 @@ class SerialService implements TransportService {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<void> connect(String deviceId) async {
+  Future<void> connect(String deviceId, {int baudRate = _kDefaultBaud}) async {
     final port = _port;
     if (port == null) {
       throw Exception('No serial port selected. Please choose a port first.');
@@ -121,7 +121,7 @@ class SerialService implements TransportService {
 
     // Build JSSerialOptions with baudRate
     final options = JSSerialOptions(
-      baudRate: _kDefaultBaud,
+      baudRate: baudRate,
       dataBits: 8,
       stopBits: 1,
       parity: 'none',

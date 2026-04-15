@@ -47,13 +47,13 @@ class _ConsoleLogViewState extends State<ConsoleLogView> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.terminal_rounded, size: 14, color: AppColors.brandOrange.withOpacity(0.7)),
+                      Icon(Icons.terminal_rounded, size: 14, color: AppColors.brandOrange.withValues(alpha: 0.7)),
                       const SizedBox(width: 8),
                       Text(
                         'CONSOLE_LOG',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               letterSpacing: 1.2,
-                              color: AppColors.brandOrange.withOpacity(0.7),
+                              color: AppColors.brandOrange.withValues(alpha: 0.7),
                             ),
                       ),
                     ],
@@ -72,7 +72,7 @@ class _ConsoleLogViewState extends State<ConsoleLogView> {
               height: widget.height,
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.white10),
               ),

@@ -219,9 +219,9 @@ class _BleTab extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: color.withOpacity(0.5)),
+                    border: Border.all(color: color.withValues(alpha: 0.5)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -423,7 +423,7 @@ class _SerialTab extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.usb_rounded, size: 72,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)),
             const SizedBox(height: 32),
             Text('USB Serial', style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 12),
@@ -710,7 +710,7 @@ class _LogoPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final signalPaint = Paint()
-      ..color = AppColors.brandOrange.withOpacity(0.6)
+      ..color = AppColors.brandOrange.withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
       ..strokeCap = StrokeCap.round;
@@ -743,7 +743,7 @@ class _DemoModeButton extends StatelessWidget {
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
           side: BorderSide(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12)),

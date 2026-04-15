@@ -66,7 +66,7 @@ class _PairTabState extends State<PairTab> {
     }
   }
 
-  Future<void> _connectSerial(DeviceInfo device) async {
+  Future<void> _connectSerial(DeviceInfo device, {int baudRate = 115200}) async {
     final serialProvider = context.read<SerialProvider>();
     final deviceProvider = context.read<DeviceProvider>();
     final history = context.read<HistoryProvider>();
@@ -77,19 +77,19 @@ class _PairTabState extends State<PairTab> {
     if (!mounted) return;
 
     deviceProvider.setTransport(serialProvider.serialService);
-    final success = await _connect(device, deviceProvider, console);
+    final success = await _connect(device, deviceProvider, console, baudRate: baudRate);
 
     if (success) {
       await history.saveDevice(device, 'serial');
     }
   }
 
-  Future<bool> _connect(DeviceInfo device, DeviceProvider deviceProvider, ConsoleProvider console) async {
+  Future<bool> _connect(DeviceInfo device, DeviceProvider deviceProvider, ConsoleProvider console, {int baudRate = 115200}) async {
     if (!mounted) return false;
 
     console.log('ESTABLISHING HANDSHAKE...', level: ConsoleLogLevel.info);
     
-    await deviceProvider.connectToDevice(device);
+    await deviceProvider.connectToDevice(device, baudRate: baudRate);
 
     if (!mounted) return false;
 
@@ -134,7 +134,7 @@ class _PairTabState extends State<PairTab> {
           Expanded(
             child: _selectedTransportIndex == 0
                 ? _BleTab(onDeviceTapped: _connectBle)
-                : _SerialTab(onPortTapped: _connectSerial),
+                : _SerialTab(onPortTapped: (device, baud) => _connectSerial(device, baudRate: baud)),
           ),
           const ConsoleLogView(),
           const SizedBox(height: 16),
@@ -150,7 +150,7 @@ class _PairTabState extends State<PairTab> {
         height: 44,
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -310,7 +310,7 @@ class _UnitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: Colors.white.withOpacity(0.05),
+      color: Colors.white.withValues(alpha: 0.05),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(4),
@@ -373,7 +373,9 @@ class _SignalBars extends StatelessWidget {
 }
 
 class _SerialTab extends StatefulWidget {
-  final Future<void> Function(DeviceInfo) onPortTapped;
+  /// Called when the user taps CONNECT.
+  /// Receives the selected [DeviceInfo] and the chosen [baudRate].
+  final Future<void> Function(DeviceInfo device, int baudRate) onPortTapped;
   const _SerialTab({required this.onPortTapped});
 
   @override
@@ -409,7 +411,7 @@ class _SerialTabState extends State<_SerialTab> {
 
   Widget _buildConfigCard(SerialProvider serial) {
     return Card(
-      color: Colors.white.withOpacity(0.05),
+      color: Colors.white.withValues(alpha: 0.05),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -438,7 +440,12 @@ class _SerialTabState extends State<_SerialTab> {
               height: 48,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.brandOrange, foregroundColor: Colors.black),
-                onPressed: _selectedPort == null ? null : () => widget.onPortTapped(_selectedPort!),
+                onPressed: _selectedPort == null
+                    ? null
+                    : () => widget.onPortTapped(
+                          _selectedPort!,
+                          int.tryParse(_selectedBaud) ?? 115200,
+                        ),
                 child: Text('CONNECT_+', style: GoogleFonts.changa(fontWeight: FontWeight.w700, letterSpacing: 1.2, fontSize: 13)),
               ),
             ),
@@ -461,7 +468,7 @@ class _SerialTabState extends State<_SerialTab> {
       decoration: BoxDecoration(
         color: Colors.black26, 
         borderRadius: BorderRadius.circular(4), 
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
@@ -479,7 +486,7 @@ class _SerialTabState extends State<_SerialTab> {
 
   Widget _buildDriverStatusCard() {
     return Card(
-      color: Colors.white.withOpacity(0.05),
+      color: Colors.white.withValues(alpha: 0.05),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(

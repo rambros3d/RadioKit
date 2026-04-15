@@ -33,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         selectedItemColor: AppColors.brandOrange,
-        unselectedItemColor: Colors.white38,
+        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
         selectedLabelStyle: GoogleFonts.changa(
           fontSize: 13,
           fontWeight: FontWeight.w700,

@@ -32,6 +32,7 @@ class _JoystickWidgetState extends State<JoystickWidget>
 
   late final AnimationController _springController;
   late Animation<Offset> _springAnimation;
+  VoidCallback? _springListener; // kept so we can remove it before re-adding
 
   @override
   void initState() {
@@ -44,6 +45,9 @@ class _JoystickWidgetState extends State<JoystickWidget>
 
   @override
   void dispose() {
+    if (_springListener != null) {
+      _springAnimation.removeListener(_springListener!);
+    }
     _springController.dispose();
     super.dispose();
   }
@@ -77,21 +81,30 @@ class _JoystickWidgetState extends State<JoystickWidget>
   }
 
   void _onPanEnd(DragEndDetails _) {
+    // Remove previous listener to prevent accumulation across drag cycles.
+    if (_springListener != null) {
+      _springAnimation.removeListener(_springListener!);
+      _springListener = null;
+    }
+
     _springAnimation = Tween<Offset>(
       begin: Offset(_nx, _ny),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(parent: _springController, curve: Curves.elasticOut),
-    )..addListener(() {
-        setState(() {
-          _nx = _springAnimation.value.dx;
-          _ny = _springAnimation.value.dy;
-        });
-        final ix = (_nx * 100).round().clamp(-100, 100);
-        final iy = (_ny * 100).round().clamp(-100, 100);
-        widget.onChanged(ix, iy);
-      });
+    );
 
+    _springListener = () {
+      setState(() {
+        _nx = _springAnimation.value.dx;
+        _ny = _springAnimation.value.dy;
+      });
+      final ix = (_nx * 100).round().clamp(-100, 100);
+      final iy = (_ny * 100).round().clamp(-100, 100);
+      widget.onChanged(ix, iy);
+    };
+
+    _springAnimation.addListener(_springListener!);
     _springController.forward(from: 0);
   }
 
@@ -114,7 +127,7 @@ class _JoystickWidgetState extends State<JoystickWidget>
             border: Border.all(color: Theme.of(context).dividerColor, width: 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 blurRadius: 8,
                 spreadRadius: 1,
               ),
@@ -130,7 +143,7 @@ class _JoystickWidgetState extends State<JoystickWidget>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: Theme.of(context).dividerColor.withOpacity(0.5),
+                      color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
                       width: 1),
                 ),
               ),
@@ -167,12 +180,12 @@ class _JoystickWidgetState extends State<JoystickWidget>
                       gradient: RadialGradient(
                         colors: [
                           AppColors.brandOrange,
-                          AppColors.brandOrange.withOpacity(0.7),
+                          AppColors.brandOrange.withValues(alpha: 0.7),
                         ],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
                           blurRadius: 8,
                           spreadRadius: 1,
                         ),
@@ -211,7 +224,7 @@ class _Crosshair extends StatelessWidget {
     return CustomPaint(
       size: Size(size, size),
       painter: _CrosshairPainter(
-        color: Theme.of(context).dividerColor.withOpacity(0.4),
+        color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
       ),
     );
   }
@@ -238,5 +251,6 @@ class _CrosshairPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _CrosshairPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

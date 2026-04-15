@@ -10,7 +10,7 @@ class DeviceInfo {
     required this.rssi,
   });
 
-  /// Display name — falls back to the BLE device ID if no name is advertised.
+  /// Display name — falls back to 'Unknown Device' if no name is advertised.
   String get displayName => name.isNotEmpty ? name : 'Unknown Device';
 
   /// Signal quality classification based on RSSI.

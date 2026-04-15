@@ -16,7 +16,7 @@ class SerialService implements TransportService {
       throw UnsupportedError('Serial not supported on this platform');
 
   @override
-  Future<void> connect(String deviceId) =>
+  Future<void> connect(String deviceId, {int baudRate = 115200}) =>
       throw UnsupportedError('Serial not supported on this platform');
 
   @override

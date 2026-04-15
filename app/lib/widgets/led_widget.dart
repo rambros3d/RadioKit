@@ -41,37 +41,42 @@ class LedWidget extends StatelessWidget {
         color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _isOn ? _ledColor.withOpacity(0.5) : Theme.of(context).dividerColor,
+          color: _isOn ? _ledColor.withValues(alpha: 0.5) : Theme.of(context).dividerColor,
           width: 1.5,
         ),
       ),
-      child: Column(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Size the LED circle proportionally to the allocated canvas space,
+          // capped so it never looks absurd in very large allocations.
+          final ledSize = (constraints.maxWidth * 0.45).clamp(16.0, 72.0);
+          return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // LED circle with glow effect
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 32,
-            height: 32,
+            width: ledSize,
+            height: ledSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _ledColor,
               boxShadow: _isOn
                   ? [
                       BoxShadow(
-                        color: _ledColor.withOpacity(0.8),
+                        color: _ledColor.withValues(alpha: 0.8),
                         blurRadius: 14,
                         spreadRadius: 3,
                       ),
                       BoxShadow(
-                        color: _ledColor.withOpacity(0.4),
+                        color: _ledColor.withValues(alpha: 0.4),
                         blurRadius: 28,
                         spreadRadius: 6,
                       ),
                     ]
                   : [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         blurRadius: 4,
                         spreadRadius: 1,
                         offset: const Offset(0, 2),
@@ -121,6 +126,8 @@ class LedWidget extends StatelessWidget {
             ),
           ),
         ],
+      );
+        },
       ),
     );
   }

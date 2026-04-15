@@ -4,16 +4,14 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import '../models/protocol.dart';
 import '../models/device_info.dart';
 import 'protocol_service.dart';
-
-/// Callback types used by [BleService].
-typedef PacketReceivedCallback = void Function(ParsedPacket packet);
-typedef ConnectionLostCallback = void Function(String reason);
+import 'transport_service.dart';
+export 'transport_service.dart';
 
 /// Native BLE service (Android / iOS) using flutter_reactive_ble.
 ///
 /// All heavy protocol logic lives in [ProtocolService]; this class handles
 /// the BLE transport layer only.
-class BleService {
+class BleService implements TransportService {
   final FlutterReactiveBle _ble = FlutterReactiveBle();
 
   // UUIDs
@@ -34,9 +32,10 @@ class BleService {
   final List<int> _receiveBuffer = [];
 
   // Callbacks
-  PacketReceivedCallback? onPacketReceived;
-  ConnectionLostCallback? onConnectionLost;
+  @override PacketReceivedCallback? onPacketReceived;
+  @override ConnectionLostCallback? onConnectionLost;
 
+  @override
   bool get isConnected => _connectedDeviceId != null;
   String? get connectedDeviceId => _connectedDeviceId;
 
@@ -94,7 +93,8 @@ class BleService {
   /// Connect to a device and set up the UART characteristic.
   ///
   /// Completes with [true] on success. Throws on failure.
-  Future<void> connect(String deviceId) async {
+  @override
+  Future<void> connect(String deviceId, {int baudRate = 115200}) async {
     final completer = Completer<void>();
 
     await _connectionSubscription?.cancel();
@@ -147,6 +147,7 @@ class BleService {
   }
 
   /// Disconnect from the currently connected device.
+  @override
   Future<void> disconnect() async {
     await _notifySubscription?.cancel();
     _notifySubscription = null;
@@ -233,6 +234,7 @@ class BleService {
   // ---------------------------------------------------------------------------
 
   /// Write [data] to the RadioKit characteristic.
+  @override
   Future<void> writePacket(Uint8List data) async {
     final char = _characteristic;
     if (char == null) throw StateError('Not connected');
@@ -244,6 +246,7 @@ class BleService {
   // Cleanup
   // ---------------------------------------------------------------------------
 
+  @override
   Future<void> dispose() async {
     await stopScan();
     await disconnect();

@@ -112,7 +112,7 @@ class _ActiveLinkSection extends StatelessWidget {
         _buildSectionTag(context, '01. ACTIVE_LINK'),
         Card(
           clipBehavior: Clip.antiAlias,
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           child: Stack(
             children: [
               // Ghost Icon Background
@@ -122,7 +122,7 @@ class _ActiveLinkSection extends StatelessWidget {
                 child: Icon(
                   Icons.local_shipping_rounded,
                   size: 160,
-                  color: Colors.white.withOpacity(0.03),
+                  color: Colors.white.withValues(alpha: 0.03),
                 ),
               ),
               Padding(
@@ -137,7 +137,7 @@ class _ActiveLinkSection extends StatelessWidget {
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: const Color(0xFF2A2A2A),
-                            border: Border.all(color: AppColors.brandOrange.withOpacity(0.3)),
+                            border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.3)),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Icon(Icons.local_shipping_rounded,
@@ -185,7 +185,7 @@ class _ActiveLinkSection extends StatelessWidget {
                                   Text(
                                     '6X6_OFF-ROAD_CHASSIS', // Placeholder
                                     style: TextStyle(
-                                      color: AppColors.brandOrange.withOpacity(0.7),
+                                      color: AppColors.brandOrange.withValues(alpha: 0.7),
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 0.5,
@@ -195,9 +195,9 @@ class _ActiveLinkSection extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: AppColors.brandOrange.withOpacity(0.15),
+                                      color: AppColors.brandOrange.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(2),
-                                      border: Border.all(color: AppColors.brandOrange.withOpacity(0.3)),
+                                      border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.3)),
                                     ),
                                     child: const Text('UNIT 02', // Placeholder
                                       style: TextStyle(color: AppColors.brandOrange, fontSize: 8, fontWeight: FontWeight.bold),
@@ -330,7 +330,7 @@ class _PairedModelsList extends StatelessWidget {
 
     if (devices.isEmpty) {
       return Card(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         child: const Padding(
           padding: EdgeInsets.all(32),
           child: Center(
@@ -343,19 +343,19 @@ class _PairedModelsList extends StatelessWidget {
     return Column(
       children: devices.map((device) {
         return Card(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 device.type == 'ble' ? Icons.airplanemode_active : Icons.smart_toy_rounded,
-                color: AppColors.brandOrange.withOpacity(0.7),
+                color: AppColors.brandOrange.withValues(alpha: 0.7),
               ),
             ),
             title: Text(
@@ -394,6 +394,10 @@ class _PairedModelsList extends StatelessWidget {
 
     try {
       await deviceProvider.connectToDevice(device.toDeviceInfo());
+
+      // Guard against stale context if the user navigated away during connect.
+      if (!context.mounted) return;
+
       if (deviceProvider.isConnected) {
         console.log('RESYNC SUCCESSFUL: ${device.name}', level: ConsoleLogLevel.success);
       } else {
@@ -404,6 +408,7 @@ class _PairedModelsList extends StatelessWidget {
         );
       }
     } catch (e) {
+      if (!context.mounted) return;
       console.log('RUNTIME ERROR: $e', level: ConsoleLogLevel.error);
     }
   }

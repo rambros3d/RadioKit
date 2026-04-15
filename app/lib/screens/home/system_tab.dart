@@ -97,7 +97,7 @@ class SystemTab extends StatelessWidget {
 
   Widget _buildApplicationCard(BuildContext context, ThemeProvider themeProvider) {
     return Card(
-      color: Colors.white.withOpacity(0.05),
+      color: Colors.white.withValues(alpha: 0.05),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -108,7 +108,7 @@ class SystemTab extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -135,7 +135,7 @@ class SystemTab extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const _SettingLabel(label: 'SYSTEM_LANGUAGE', value: 'English (US)'),
-                Icon(Icons.language_rounded, color: AppColors.brandOrange.withOpacity(0.7), size: 20),
+                Icon(Icons.language_rounded, color: AppColors.brandOrange.withValues(alpha: 0.7), size: 20),
               ],
             ),
             const Divider(height: 32, color: Colors.white10),
@@ -163,7 +163,7 @@ class SystemTab extends StatelessWidget {
 
   Widget _buildAboutCard(BuildContext context) {
     return Card(
-      color: Colors.white.withOpacity(0.05),
+      color: Colors.white.withValues(alpha: 0.05),
       child: const Padding(
         padding: EdgeInsets.all(20),
         child: Column(
@@ -182,7 +182,7 @@ class SystemTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         children: [
@@ -206,7 +206,7 @@ class SystemTab extends StatelessWidget {
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
                       fontStyle: FontStyle.italic,
-                      color: Colors.redAccent.withOpacity(0.9),
+                      color: Colors.redAccent.withValues(alpha: 0.9),
                     ),
                   ),
                   const Text(
@@ -307,7 +307,7 @@ class _ThemeToggleOption extends StatelessWidget {
       child: Container(
         height: 32,
         decoration: BoxDecoration(
-          color: isActive ? Colors.white.withOpacity(0.12) : Colors.transparent,
+          color: isActive ? Colors.white.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
         ),
         alignment: Alignment.center,

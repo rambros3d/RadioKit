@@ -27,7 +27,7 @@ class BleService implements TransportService {
       throw UnsupportedError('BLE not supported on this platform');
 
   @override
-  Future<void> connect(String deviceId) =>
+  Future<void> connect(String deviceId, {int baudRate = 115200}) =>
       throw UnsupportedError('BLE not supported on this platform');
 
   @override

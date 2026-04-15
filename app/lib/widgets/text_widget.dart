@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/widget_config.dart';
 import '../theme/app_theme.dart';
 
@@ -24,7 +25,7 @@ class TextWidget extends StatelessWidget {
         border: Border.all(color: Theme.of(context).dividerColor, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 4,
             spreadRadius: 0,
             offset: const Offset(0, 2),
@@ -76,11 +77,10 @@ class TextWidget extends StatelessWidget {
                       )
                     : Text(
                         text,
-                        style: TextStyle(
+                        style: GoogleFonts.robotoMono(
                           color: Theme.of(context).textTheme.bodyLarge?.color,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          fontFamily: 'monospace',
                           letterSpacing: 0.5,
                         ),
                         maxLines: 3,

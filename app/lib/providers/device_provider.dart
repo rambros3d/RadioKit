@@ -76,7 +76,7 @@ class DeviceProvider extends ChangeNotifier {
   // Connection
   // ---------------------------------------------------------------------------
 
-  Future<void> connectToDevice(DeviceInfo device) async {
+  Future<void> connectToDevice(DeviceInfo device, {int baudRate = 115200}) async {
     _connectionState = DeviceConnectionState.connecting;
     _connectedDevice = device;
     _errorMessage    = null;
@@ -94,7 +94,7 @@ class DeviceProvider extends ChangeNotifier {
     }
 
     try {
-      await _transport.connect(device.id);
+      await _transport.connect(device.id, baudRate: baudRate);
       if (_connectionState == DeviceConnectionState.disconnected) return;
     } catch (e) {
       _errorMessage    = 'Connection failed: $e';

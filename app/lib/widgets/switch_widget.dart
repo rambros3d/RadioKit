@@ -27,14 +27,14 @@ class SwitchWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _isOn
-              ? Theme.of(context).colorScheme.primary.withOpacity(0.6)
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.6)
               : Theme.of(context).dividerColor,
           width: 1.5,
         ),
         boxShadow: [
           if (_isOn)
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
               blurRadius: 8,
               spreadRadius: 1,
             ),
@@ -90,7 +90,7 @@ class SwitchWidget extends StatelessWidget {
                     height: 24,
                     decoration: BoxDecoration(
                       color: _isOn
-                          ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
                           : Theme.of(context).dividerColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -111,7 +111,7 @@ class SwitchWidget extends StatelessWidget {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
+                                color: Colors.black.withValues(alpha: 0.3),
                                 blurRadius: 3,
                                 offset: const Offset(0, 1),
                               ),

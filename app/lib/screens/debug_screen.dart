@@ -119,9 +119,9 @@ class _DebugScreenState extends State<DebugScreen>
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.5)),
+            border: Border.all(color: color.withValues(alpha: 0.5)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -432,9 +432,9 @@ class _LogRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: dirColor.withOpacity(0.05),
+        color: dirColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: dirColor.withOpacity(0.2)),
+        border: Border.all(color: dirColor.withValues(alpha: 0.2)),
       ),
       child: ExpansionTile(
         dense: true,
@@ -443,7 +443,7 @@ class _LogRow extends StatelessWidget {
           width: 30,
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           decoration: BoxDecoration(
-            color: dirColor.withOpacity(0.2),
+            color: dirColor.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Text(

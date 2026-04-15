@@ -17,7 +17,10 @@ abstract class TransportService {
   bool get isConnected;
 
   /// Connect to the device identified by [deviceId].
-  Future<void> connect(String deviceId);
+  ///
+  /// The optional [baudRate] is used by serial transports only; BLE transports
+  /// ignore it.
+  Future<void> connect(String deviceId, {int baudRate = 115200});
 
   /// Disconnect and release resources.
   Future<void> disconnect();
