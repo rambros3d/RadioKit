@@ -110,7 +110,6 @@ class ProtocolService {
   //   bit order: LABEL(0), ICON(1), ONTEXT(2), OFFTEXT(3), CONTENT(4)
 
   static ParsedConf? parseConfData(List<int> payload) {
-    // Minimum: VERSION + THEME + ORIENTATION + NUM_WIDGETS + NAME_LEN + PWD_LEN = 6
     if (payload.length < 6) {
       debugPrint('RadioKit CONF_DATA: payload too short (${payload.length} bytes)');
       return null;
@@ -156,7 +155,6 @@ class ProtocolService {
     final widgets = <WidgetConfig>[];
 
     for (int i = 0; i < numWidgets; i++) {
-      // 10 fixed bytes per widget
       if (offset + 10 > payload.length) {
         debugPrint('RadioKit CONF_DATA: truncated at widget $i fixed header '
             '(offset=$offset, payload=${payload.length})');
@@ -167,8 +165,8 @@ class ProtocolService {
       final widgetId = payload[offset + 1];
       final x        = payload[offset + 2].toDouble();
       final y        = payload[offset + 3].toDouble();
-      final scale    = payload[offset + 4]; // ×10  e.g. 20 = 2.0
-      final aspect   = payload[offset + 5]; // ×10  e.g. 0 = default
+      final scale    = payload[offset + 4]; // ×10  e.g. 20 = 2.0×
+      final aspect   = payload[offset + 5]; // ×10  e.g. 0 = use type default
       // Rotation: signed LE int16
       final rotRaw   = payload[offset + 6] | (payload[offset + 7] << 8);
       final rotation = rotRaw >= 0x8000 ? rotRaw - 0x10000 : rotRaw;
@@ -176,7 +174,6 @@ class ProtocolService {
       final variant  = payload[offset + 9];
       offset += 10;
 
-      // String bitmask
       if (offset >= payload.length) {
         debugPrint('RadioKit CONF_DATA: truncated before STR_MASK at widget $i');
         break;
@@ -190,7 +187,7 @@ class ProtocolService {
         final len = payload[offset++];
         if (len == 0) return '';
         if (offset + len > payload.length) {
-          offset = payload.length; // clamp
+          offset = payload.length;
           return '';
         }
         final s = utf8.decode(payload.sublist(offset, offset + len),
@@ -210,9 +207,8 @@ class ProtocolService {
         widgetId: widgetId,
         x:        x,
         y:        y,
-        size:     scale,
-        aspect:   aspect,
         scale:    scale,
+        aspect:   aspect,
         rotation: rotation,
         style:    style,
         variant:  variant,
@@ -223,6 +219,8 @@ class ProtocolService {
         offText:  offText,
         content:  content,
       ));
+
+      debugPrint('  widget[$i]: ${widgets.last}');
     }
 
     debugPrint('RadioKit CONF_DATA: parsed ${widgets.length}/$numWidgets widgets OK');
@@ -266,11 +264,11 @@ class ProtocolService {
         state = state.copyWithOutput(widget.widgetId, text);
         offset += 32;
       } else if (widget.typeId == kWidgetLed) {
-        // v3: LED output = 4 bytes [R, G, B, OPACITY]
-        if (offset + 4 > payload.length) break;
-        final rgba = payload.sublist(offset, offset + 4);
-        state = state.copyWithOutput(widget.widgetId, List<int>.from(rgba));
-        offset += 4;
+        // v3: LED output = 5 bytes [STATE, R, G, B, OPACITY]
+        if (offset + 5 > payload.length) break;
+        final led = List<int>.from(payload.sublist(offset, offset + 5));
+        state = state.copyWithOutput(widget.widgetId, led);
+        offset += 5;
       } else {
         if (offset + 1 > payload.length) break;
         state = state.copyWithOutput(widget.widgetId, payload[offset]);

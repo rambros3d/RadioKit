@@ -40,15 +40,26 @@ const Map<int, int> kWidgetInputSize = {
 };
 
 // Widget output sizes in bytes (device → app)
-// LED: 4 bytes — R G B OPACITY (v3)
+// LED v3: 5 bytes — STATE(1) R(1) G(1) B(1) OPACITY(1)
 const Map<int, int> kWidgetOutputSize = {
   kWidgetButton:   0,
   kWidgetSwitch:   0,
   kWidgetSlider:   0,
   kWidgetJoystick: 0,
-  kWidgetLed:      4,
+  kWidgetLed:      5,
   kWidgetText:     32,
   kWidgetMultiple: 0,
+};
+
+// Default aspect × 10 per widget type (mirrors Arduino defaultAspect())
+const Map<int, int> kWidgetDefaultAspect = {
+  kWidgetButton:   10,  // 1.0 (square)
+  kWidgetSwitch:   10,  // 1.0
+  kWidgetSlider:   50,  // 5.0 (wide)
+  kWidgetJoystick: 10,  // 1.0 (square)
+  kWidgetLed:      10,  // 1.0
+  kWidgetText:     30,  // 3.0 (wide)
+  kWidgetMultiple: 20,  // 2.0
 };
 
 // Protocol version

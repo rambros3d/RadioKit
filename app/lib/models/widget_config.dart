@@ -1,5 +1,19 @@
 import 'protocol.dart';
 
+// ── Per-type base sizes in canvas units ──────────────────────────────────────
+// These are the default H of each widget at scale=1.0.
+// W = baseH * scale * (aspect / 10.0)
+// H = baseH * scale
+const Map<int, double> kWidgetBaseSize = {
+  kWidgetButton:   10.0,
+  kWidgetSwitch:   10.0,
+  kWidgetSlider:   10.0,
+  kWidgetJoystick: 20.0,
+  kWidgetLed:       8.0,
+  kWidgetText:      8.0,
+  kWidgetMultiple: 10.0,
+};
+
 /// Configuration for a single UI widget, parsed from a v3 CONF_DATA payload.
 ///
 /// Coordinate system:
@@ -16,14 +30,11 @@ class WidgetConfig {
   /// Center Y in virtual canvas coordinates, bottom-left origin (uint8).
   final double y;
 
-  /// Height of the widget in canvas units (wire field SIZE, uint8).
-  final int size;
-
-  /// Aspect ratio × 10 (uint8). Width = size × (aspect / 10.0).
-  final int aspect;
-
-  /// Scale factor × 10 (uint8, v3). Default 10 = 1.0×.
+  /// Scale factor × 10 (uint8). e.g. 20 = 2.0×.
   final int scale;
+
+  /// Aspect ratio × 10 (uint8). e.g. 10 = 1.0 (square). 0 = use widget default.
+  final int aspect;
 
   /// Style / color variant (uint8, v3). See kStyle* constants.
   final int style;
@@ -52,15 +63,27 @@ class WidgetConfig {
   /// (present if kStrMaskContent bit is set).
   final String content;
 
-  /// Rotation as stored on the wire (int8, −90 to +90).
+  /// Rotation as stored on the wire (int16, degrees ÷ 2).
   /// Multiply by 2 to get display degrees.
   final int rotation;
 
-  /// Computed width in canvas units.
-  double get w => size * (aspect / 10.0);
+  /// Scale as a float (scale / 10.0).
+  double get scaleF => scale / 10.0;
+
+  /// Aspect ratio as a float. Falls back to widget-type default if 0.
+  double get aspectF {
+    if (aspect != 0) return aspect / 10.0;
+    return (kWidgetDefaultAspect[typeId] ?? 10) / 10.0;
+  }
+
+  /// Base height for this widget type in canvas units at scale 1.0.
+  double get baseH => kWidgetBaseSize[typeId] ?? 10.0;
 
   /// Computed height in canvas units.
-  double get h => size.toDouble();
+  double get h => baseH * scaleF;
+
+  /// Computed width in canvas units.
+  double get w => h * aspectF;
 
   /// Display rotation in degrees.
   double get rotationDegrees => rotation * 2.0;
@@ -70,9 +93,8 @@ class WidgetConfig {
     required this.widgetId,
     required this.x,
     required this.y,
-    required this.size,
+    required this.scale,
     required this.aspect,
-    this.scale   = 10,
     this.style   = 0,
     this.variant = 0,
     this.strMask = 0,
@@ -99,7 +121,7 @@ class WidgetConfig {
   @override
   String toString() =>
       'WidgetConfig(id=$widgetId, type=$typeName, label="$label", '
-      'pos=($x,$y), size=$size, aspect=${aspect / 10.0} → '
+      'pos=($x,$y), scale=${scaleF}× aspect=${aspectF} → '
       '${w.toStringAsFixed(1)}×${h.toStringAsFixed(1)}, '
       'style=$style, variant=$variant, rot=${rotationDegrees}°)';
 }
@@ -112,7 +134,7 @@ class RadioWidgetState {
   final Map<int, List<int>> inputValues;
 
   /// Output variable values keyed by widgetId.
-  /// LED: [r, g, b, opacity]  (v3 – 4 bytes)
+  /// LED: [state, r, g, b, opacity]  (v3 – 5 bytes)
   /// Text: String
   final Map<int, dynamic> outputValues;
 
@@ -137,7 +159,7 @@ class RadioWidgetState {
         if (w.typeId == kWidgetText) {
           outputs[w.widgetId] = '';
         } else if (w.typeId == kWidgetLed) {
-          outputs[w.widgetId] = [0, 0, 0, 0]; // R G B OPACITY
+          outputs[w.widgetId] = [0, 0, 0, 0, 0]; // STATE R G B OPACITY
         } else {
           outputs[w.widgetId] = 0;
         }
