@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/widget_config.dart';
 
-/// LED widget — displays an RGB colour set by the device (v3: 4-byte output).
+/// LED widget — displays an RGB colour set by the device.
 ///
-/// The device sends [R, G, B, OPACITY] as the output value.
-/// [value] is either:
-///   - a List<int> [r, g, b, opacity]  (v3 VAR_DATA / VAR_UPDATE)
-///   - an int (legacy palette index, retained for backwards compat)
+/// v3 wire format: [STATE(1), R(1), G(1), B(1), OPACITY(1)]
+/// STATE != 0 means the LED is on (device-side flag).
 class LedWidget extends StatelessWidget {
   final WidgetConfig config;
+
+  /// Expected: List<int> [state, r, g, b, opacity]
   final dynamic value;
 
   const LedWidget({
@@ -17,31 +17,32 @@ class LedWidget extends StatelessWidget {
     required this.value,
   });
 
+  // v3: index 0 = STATE, 1 = R, 2 = G, 3 = B, 4 = OPACITY
+  bool get _isOn {
+    if (value is List<int>) {
+      final v = value as List<int>;
+      return v.isNotEmpty && v[0] != 0;
+    }
+    return (value as int) != 0;
+  }
+
   Color get _color {
     if (value is List<int>) {
-      final rgba    = value as List<int>;
-      final r       = rgba.isNotEmpty ? rgba[0] : 0;
-      final g       = rgba.length > 1 ? rgba[1] : 0;
-      final b       = rgba.length > 2 ? rgba[2] : 0;
-      final opacity = rgba.length > 3 ? rgba[3] : 255;
+      final v       = value as List<int>;
+      final r       = v.length > 1 ? v[1] : 0;
+      final g       = v.length > 2 ? v[2] : 0;
+      final b       = v.length > 3 ? v[3] : 0;
+      final opacity = v.length > 4 ? v[4] : 255;
       return Color.fromARGB(opacity, r, g, b);
     }
-    // Legacy: palette index
+    // Legacy palette index fallback
     switch (value as int) {
       case 1:  return Colors.red;
       case 2:  return Colors.green;
       case 3:  return Colors.blue;
       case 4:  return Colors.yellow;
-      default: return Colors.transparent;
+      default: return Colors.grey;
     }
-  }
-
-  bool get _isOn {
-    if (value is List<int>) {
-      final rgba = value as List<int>;
-      return rgba.any((v) => v > 0);
-    }
-    return (value as int) != 0;
   }
 
   @override
@@ -71,7 +72,7 @@ class LedWidget extends StatelessWidget {
                         color: col.withValues(alpha: 0.7),
                         blurRadius: 12,
                         spreadRadius: 3,
-                      )
+                      ),
                     ]
                   : null,
             ),
