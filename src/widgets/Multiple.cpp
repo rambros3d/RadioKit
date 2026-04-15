@@ -2,25 +2,21 @@
 #include <string.h>
 
 void RadioKit_Multiple::_initFromProps(const RK_MultipleProps& p, uint8_t tid) {
-    props     = p;
-    typeId    = tid;
+    props      = p;
+    typeId     = tid;
     _poolCount = 0;
     memset(_pool, 0, sizeof(_pool));
 
-    // Load initial items from initializer_list into pool
     for (const RK_Item& item : p.items) {
         if (_poolCount >= RADIOKIT_MAX_ITEMS) break;
-        uint8_t slot = (_poolCount < RADIOKIT_MAX_ITEMS) ? _poolCount : 0;
-        // If pos is fixed, place at that slot
-        if (item.pos < RADIOKIT_MAX_ITEMS) {
-            slot = item.pos;
-        }
+        uint8_t slot = _poolCount;
+        if (item.pos < RADIOKIT_MAX_ITEMS) slot = item.pos;
         _pool[slot] = item;
         _poolCount++;
     }
 
     _init(p.label, p.x, p.y, p.scale, 0.0f, p.style, p.variant,
-          p.icon, nullptr, nullptr);
+          p.icon, nullptr, nullptr, p.rotation);
 }
 
 void RadioKit_Multiple::deserializeInput(const uint8_t* buf) {
@@ -57,12 +53,10 @@ void RadioKit_Multiple::setIcon(const char* val) {
     }
 }
 
-// ── MultipleButton ───────────────────────────────────────────
 RK_MultipleButton::RK_MultipleButton(RK_MultipleProps p) {
     _initFromProps(p, RK_TYPE_MULTIPLE);
 }
 
-// ── MultipleSelect ───────────────────────────────────────────
 RK_MultipleSelect::RK_MultipleSelect(RK_MultipleProps p) {
     _initFromProps(p, RK_TYPE_MULTIPLE);
 }
