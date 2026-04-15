@@ -14,13 +14,10 @@ import '../widgets/slider_widget.dart';
 import '../widgets/joystick_widget.dart';
 import '../widgets/led_widget.dart';
 import '../widgets/text_widget.dart';
+import '../widgets/multiple_widget.dart';
 import 'debug_screen.dart';
 
 /// Dynamic widget rendering screen for the connected RadioKit device.
-///
-/// A floating debug FAB is shown in assert (debug) builds only.
-/// Tapping it wraps the current transport in a [DebugTransport] and
-/// pushes [DebugScreen].
 class ControlScreen extends StatefulWidget {
   const ControlScreen({super.key});
 
@@ -74,8 +71,6 @@ class _ControlScreenState extends State<ControlScreen> {
     await dp.disconnect();
   }
 
-  /// Wrap the current transport in [DebugTransport] (idempotent),
-  /// attach it to [DebugProvider], then open [DebugScreen].
   void _openDebug() {
     final dp     = context.read<DeviceProvider>();
     final debugP = context.read<DebugProvider>();
@@ -136,7 +131,6 @@ class _ControlScreenState extends State<ControlScreen> {
               ],
             ),
             actions: [
-              // Debug monitor button — debug builds only
               if (kDebugMode)
                 IconButton(
                   icon: const Icon(Icons.bug_report_rounded),
@@ -296,14 +290,14 @@ class _ControlScreenState extends State<ControlScreen> {
     double canvasVH,
     DeviceProvider deviceProvider,
   ) {
-    final scaledW = config.w * scaleX;
-    final scaledH = config.h * scaleY;
-    final screenX = config.x * scaleX;
-    final screenY = (canvasVH - config.y) * scaleY;
-    final left    = screenX - scaledW / 2;
-    final top     = screenY - scaledH / 2;
+    final scaledW  = config.w * scaleX;
+    final scaledH  = config.h * scaleY;
+    final screenX  = config.x * scaleX;
+    final screenY  = (canvasVH - config.y) * scaleY;
+    final left     = screenX - scaledW / 2;
+    final top      = screenY - scaledH / 2;
     final angleRad = config.rotationDegrees * pi / 180.0;
-    final state   = deviceProvider.widgetState;
+    final state    = deviceProvider.widgetState;
 
     return Positioned(
       left: left,
@@ -324,21 +318,27 @@ class _ControlScreenState extends State<ControlScreen> {
       case kWidgetButton:
         final value = state?.inputValues[config.widgetId]?.first ?? 0;
         return ButtonWidget(
-          config: config, value: value,
+          config: config,
+          value: value,
           onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
         );
+
       case kWidgetSwitch:
         final value = state?.inputValues[config.widgetId]?.first ?? 0;
         return SwitchWidget(
-          config: config, value: value,
+          config: config,
+          value: value,
           onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
         );
+
       case kWidgetSlider:
         final value = state?.inputValues[config.widgetId]?.first ?? 0;
         return SliderWidget(
-          config: config, value: value,
+          config: config,
+          value: value,
           onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
         );
+
       case kWidgetJoystick:
         final values = state?.inputValues[config.widgetId] ?? [0, 0];
         return JoystickWidget(
@@ -347,12 +347,23 @@ class _ControlScreenState extends State<ControlScreen> {
           y: values.length > 1 ? values[1] : 0,
           onChanged: (x, y) => dp.setInputValue(config.widgetId, [x, y]),
         );
+
       case kWidgetLed:
-        final value = state?.outputValues[config.widgetId] ?? 0;
-        return LedWidget(config: config, value: value as int);
+        final value = state?.outputValues[config.widgetId] ?? [0, 0, 0, 0];
+        return LedWidget(config: config, value: value);
+
       case kWidgetText:
         final value = state?.outputValues[config.widgetId] ?? '';
         return TextWidget(config: config, text: value.toString());
+
+      case kWidgetMultiple:
+        final value = state?.inputValues[config.widgetId]?.first ?? 0;
+        return MultipleWidget(
+          config: config,
+          value: value,
+          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
+        );
+
       default:
         return Container(
           decoration: BoxDecoration(
@@ -361,18 +372,18 @@ class _ControlScreenState extends State<ControlScreen> {
             border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Center(
-            child: Text('Unknown\n${config.widgetId}',
-                style: Theme.of(context).textTheme.labelSmall,
-                textAlign: TextAlign.center),
+            child: Text(
+              'Unknown\n${config.widgetId}',
+              style: Theme.of(context).textTheme.labelSmall,
+              textAlign: TextAlign.center,
+            ),
           ),
         );
     }
   }
 }
 
-// ---------------------------------------------------------------------------
-// Grid background painter
-// ---------------------------------------------------------------------------
+// ── Grid background painter ───────────────────────────────────────────────────
 
 class _GridPainter extends CustomPainter {
   final Color color;

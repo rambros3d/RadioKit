@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import '../models/widget_config.dart';
-import '../theme/app_theme.dart';
 
-/// LED indicator widget.
+/// LED widget — displays an RGB colour set by the device (v3: 4-byte output).
 ///
-/// Displays a colored circle based on the LED state value:
-///   0 = off (grey), 1 = red, 2 = green, 3 = blue, 4 = yellow
+/// The device sends [R, G, B, OPACITY] as the output value.
+/// [value] is either:
+///   - a List<int> [r, g, b, opacity]  (v3 VAR_DATA / VAR_UPDATE)
+///   - an int (legacy palette index, retained for backwards compat)
 class LedWidget extends StatelessWidget {
   final WidgetConfig config;
-  final int value;
+  final dynamic value;
 
   const LedWidget({
     super.key,
@@ -16,118 +17,76 @@ class LedWidget extends StatelessWidget {
     required this.value,
   });
 
-  Color get _ledColor => AppColors.ledColor(value);
-  bool get _isOn => value != 0;
-
-  String get _colorName {
-    switch (value) {
-      case 1:
-        return 'Red';
-      case 2:
-        return 'Green';
-      case 3:
-        return 'Blue';
-      case 4:
-        return 'Yellow';
-      default:
-        return 'Off';
+  Color get _color {
+    if (value is List<int>) {
+      final rgba    = value as List<int>;
+      final r       = rgba.isNotEmpty ? rgba[0] : 0;
+      final g       = rgba.length > 1 ? rgba[1] : 0;
+      final b       = rgba.length > 2 ? rgba[2] : 0;
+      final opacity = rgba.length > 3 ? rgba[3] : 255;
+      return Color.fromARGB(opacity, r, g, b);
     }
+    // Legacy: palette index
+    switch (value as int) {
+      case 1:  return Colors.red;
+      case 2:  return Colors.green;
+      case 3:  return Colors.blue;
+      case 4:  return Colors.yellow;
+      default: return Colors.transparent;
+    }
+  }
+
+  bool get _isOn {
+    if (value is List<int>) {
+      final rgba = value as List<int>;
+      return rgba.any((v) => v > 0);
+    }
+    return (value as int) != 0;
   }
 
   @override
   Widget build(BuildContext context) {
+    final col = _color;
+    final on  = _isOn;
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _isOn ? _ledColor.withValues(alpha: 0.5) : Theme.of(context).dividerColor,
-          width: 1.5,
-        ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Size the LED circle proportionally to the allocated canvas space,
-          // capped so it never looks absurd in very large allocations.
-          final ledSize = (constraints.maxWidth * 0.45).clamp(16.0, 72.0);
-          return Column(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // LED circle with glow effect
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: ledSize,
-            height: ledSize,
+            duration: const Duration(milliseconds: 120),
+            width: 24,
+            height: 24,
             decoration: BoxDecoration(
+              color: on ? col : col.withValues(alpha: 0.15),
               shape: BoxShape.circle,
-              color: _ledColor,
-              boxShadow: _isOn
+              boxShadow: on
                   ? [
                       BoxShadow(
-                        color: _ledColor.withValues(alpha: 0.8),
-                        blurRadius: 14,
+                        color: col.withValues(alpha: 0.7),
+                        blurRadius: 12,
                         spreadRadius: 3,
-                      ),
-                      BoxShadow(
-                        color: _ledColor.withValues(alpha: 0.4),
-                        blurRadius: 28,
-                        spreadRadius: 6,
-                      ),
+                      )
                     ]
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 4,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                  : null,
             ),
-            child: _isOn
-                ? const Center(
-                    child: SizedBox(
-                      width: 10,
-                      height: 10,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white30,
-                        ),
-                      ),
-                    ),
-                  )
-                : null,
           ),
-
-          if (config.label.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              config.label,
-              style: TextStyle(
-                color: _isOn ? Theme.of(context).textTheme.titleMedium?.color : Theme.of(context).disabledColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.3,
+          if (config.label.isNotEmpty) ...
+            [
+              const SizedBox(height: 4),
+              Text(
+                config.label,
+                style: Theme.of(context).textTheme.labelSmall,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-
-          const SizedBox(height: 2),
-          Text(
-            _colorName,
-            style: TextStyle(
-              color: _isOn ? _ledColor : Theme.of(context).disabledColor,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.8,
-            ),
-          ),
+            ],
         ],
-      );
-        },
       ),
     );
   }

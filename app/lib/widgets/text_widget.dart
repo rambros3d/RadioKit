@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/widget_config.dart';
-import '../theme/app_theme.dart';
+import '../models/protocol.dart';
+import 'button_widget.dart' show parseIconFromName;
 
-/// Read-only text display widget.
-///
-/// Shows a string value received from the Arduino (up to 32 bytes).
+/// Displays a read-only text value sent by the device.
+/// If [config.icon] is set (kStrMaskIcon), an icon is shown alongside the text.
 class TextWidget extends StatelessWidget {
   final WidgetConfig config;
   final String text;
@@ -18,76 +17,57 @@ class TextWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasIcon = (config.strMask & kStrMaskIcon) != 0 &&
+        config.icon.isNotEmpty;
+
     return Container(
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).dividerColor, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 4,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Header bar with label
           if (config.label.isNotEmpty)
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondary,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(11),
-                  topRight: Radius.circular(11),
-                ),
-              ),
-              child: Text(
-                config.label,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSecondary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.8,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+            Text(
+              config.label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
+              overflow: TextOverflow.ellipsis,
             ),
-
-          // Text content
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: text.isEmpty
-                    ? Text(
-                        '—',
-                        style: TextStyle(
-                          color: Theme.of(context).disabledColor,
-                          fontSize: 14,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      )
-                    : Text(
-                        text,
-                        style: GoogleFonts.robotoMono(
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.5,
-                        ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 2),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (hasIcon) ...
+                [
+                  Icon(
+                    parseIconFromName(config.icon),
+                    size: 14,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                ],
+              Flexible(
+                child: Text(
+                  text.isEmpty ? '—' : text,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.w600,
                       ),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
