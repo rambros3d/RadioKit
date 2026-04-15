@@ -3,44 +3,40 @@
  *
  * Minimal USB Serial sketch for testing the RadioKit app
  * over Web Serial (Chrome / Edge) or Android USB OTG.
+ *
+ * Wiring: LED anode → 220Ω → pin 7 → GND
  */
 
 #include <Arduino.h>
 #include <RadioKit.h>
 
-// ── Pin definitions ───────────────────────────────────────────
 #define LED_PIN 7
 
 // ── Widget declarations ───────────────────────────────────────────
-RK_PushButton btn({ .label="Press", .x=20,  .y=50, .scale=2.0 });
-RK_ToggleButton sw({  .label="LED",   .x=60,  .y=80, .scale=2.0 });
-RK_Slider sld({ .label="Level", .x=100, .y=50, .aspect=8.0, .value=12 });
-RK_Joystick joy({ .label="Stick", .x=160, .y=50, .scale=4.0 });
-RK_LED statusLED({ .label="Status", .x=20,  .y=20, .scale=1.4 });
-RK_Text uptimeText({ .label="Uptime", .x=80,  .y=20 });
+RK_PushButton   btn({ .label="Press",  .x=20,  .y=50, .scale=2.0f });
+RK_ToggleButton sw ({  .label="LED",   .x=60,  .y=80, .scale=2.0f });
+RK_Slider       sld({ .label="Level",  .x=100, .y=50, .aspect=8.0f, .value=12 });
+RK_Joystick     joy({ .label="Stick",  .x=160, .y=50, .scale=4.0f });
+RK_LED          statusLED({ .label="Status", .x=20,  .y=20, .scale=1.4f });
+RK_Text         uptimeText({ .label="Uptime", .x=80,  .y=20 });
 
-// ────────────────────────────────────────────────────────────
 void setup() {
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
-  // Global Configuration
-  RadioKit.config.name = "Serial Test v2.0";
-  RadioKit.config.theme = RK_DEFAULT;
+  RadioKit.config.name     = "Serial Test v2.0";
+  RadioKit.config.theme    = RK_DEFAULT;
   RadioKit.config.password = "1234";
 
   RadioKit.begin();
-  
-  // USB Serial transport — app connects over Web Serial or Android USB
   RadioKit.startSerial(Serial);
 }
 
-// ────────────────────────────────────────────────────────────
 void loop() {
   RadioKit.update();
 
-  // Button: blink LED on press
+  // Push button: blink LED on press
   if (btn.isPressed()) {
     digitalWrite(LED_PIN, HIGH);
     delay(80);
@@ -48,14 +44,14 @@ void loop() {
     digitalWrite(LED_PIN, LOW);
   }
 
-  // Switch: hold LED on
+  // Toggle switch: hold LED on
   if (sw.get()) {
     digitalWrite(LED_PIN, HIGH);
   } else {
     digitalWrite(LED_PIN, LOW);
   }
 
-  // Status LED: reflects slider level
+  // Status LED reflects slider level
   uint8_t level = sld.get();
   if (level < 34) {
     statusLED.setColor(RK_RED);
@@ -65,7 +61,7 @@ void loop() {
     statusLED.setColor(RK_GREEN);
   }
 
-  // Uptime text (updates every second)
+  // Uptime text updates every second
   static uint32_t lastSec = 0;
   uint32_t nowSec = millis() / 1000;
   if (nowSec != lastSec) {

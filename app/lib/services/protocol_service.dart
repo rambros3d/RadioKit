@@ -13,7 +13,7 @@ class ParsedConf {
 /// Handles all packet building, parsing, and CRC computation for the
 /// RadioKit binary protocol v3.0.
 class ProtocolService {
-  // ── CRC-16/CCITT  (poly 0x1021, init 0xFFFF) ────────────────────────────
+  // ── CRC-16/CCITT-FALSE  (poly 0x1021, init 0xFFFF) ──────────────────────
 
   static int _crc16(List<int> data) {
     int crc = 0xFFFF;
@@ -96,43 +96,64 @@ class ProtocolService {
 
   // ── CONF_DATA parsing (protocol v3) ──────────────────────────────────────
   //
-  // v3 header:  [VERSION(1)] [ORIENTATION(1)] [NUM_WIDGETS(1)]
+  // Global header (variable length):
+  //   [VERSION(1)] [THEME(1)] [ORIENTATION(1)] [NUM_WIDGETS(1)]
+  //   [NAME_LEN(1)] [NAME(NAME_LEN)]
+  //   [PWD_LEN(1)]  [PWD(PWD_LEN)]
   //
-  // Per widget: [TYPE_ID(1)] [WIDGET_ID(1)] [X(1)] [Y(1)] [SIZE(1)]
-  //             [ASPECT(1)] [SCALE(1)] [ROTATION(1,int8)]
-  //             [STYLE(1)] [VARIANT(1)] [STR_MASK(1)]
-  //             then for each set bit in STR_MASK: [LEN(1)] [STR(LEN)]
-  //             order: LABEL, ICON, ONTEXT, OFFTEXT, CONTENT
+  // Per widget — 10 fixed bytes:
+  //   [TYPE(1)] [ID(1)] [X(1)] [Y(1)] [SCALE(1)] [ASPECT(1)]
+  //   [ROT_LO(1)] [ROT_HI(1)] [STYLE(1)] [VARIANT(1)]
+  // Then string section:
+  //   [STR_MASK(1)]  followed by [LEN(1)][STR] for each set bit
+  //   in order: LABEL(bit0), ICON(bit1), ONTEXT(bit2), OFFTEXT(bit3), CONTENT(bit4)
 
   static ParsedConf? parseConfData(List<int> payload) {
-    if (payload.length < 3) return null;
+    if (payload.length < 4) return null;
     if (payload[0] != kProtocolVersion) return null;
 
-    final orientation = payload[1];
-    final numWidgets  = payload[2];
-    final widgets     = <WidgetConfig>[];
-    int offset        = 3;
+    // Global header
+    // payload[1] = THEME (read but not stored yet)
+    final orientation = payload[2];
+    final numWidgets  = payload[3];
+    int offset        = 4;
+
+    // Device name
+    if (offset >= payload.length) return null;
+    final nameLen = payload[offset++];
+    offset += nameLen; // skip name bytes
+
+    // Password
+    if (offset >= payload.length) return null;
+    final pwdLen = payload[offset++];
+    offset += pwdLen; // skip password bytes
+
+    final widgets = <WidgetConfig>[];
 
     for (int i = 0; i < numWidgets; i++) {
-      if (offset + 11 > payload.length) break;
+      // 10 fixed bytes per widget
+      if (offset + 10 > payload.length) break;
 
       final typeId   = payload[offset];
       final widgetId = payload[offset + 1];
       final x        = payload[offset + 2].toDouble();
       final y        = payload[offset + 3].toDouble();
-      final size     = payload[offset + 4];
-      final aspect   = payload[offset + 5];
-      final scale    = payload[offset + 6];
-      final rotRaw   = payload[offset + 7];
-      final rotation = rotRaw >= 128 ? rotRaw - 256 : rotRaw;
+      final scale    = payload[offset + 4]; // SCALE ×10
+      final aspect   = payload[offset + 5]; // ASPECT ×10
+      // Rotation: signed LE int16
+      final rotRaw   = payload[offset + 6] | (payload[offset + 7] << 8);
+      final rotation = rotRaw >= 0x8000 ? rotRaw - 0x10000 : rotRaw;
       final style    = payload[offset + 8];
       final variant  = payload[offset + 9];
-      final strMask  = payload[offset + 10];
-      offset += 11;
+      offset += 10;
+
+      // String bitmask
+      if (offset >= payload.length) break;
+      final strMask = payload[offset++];
 
       String label = '', icon = '', onText = '', offText = '', content = '';
 
-      String _readStr() {
+      String readStr() {
         if (offset >= payload.length) return '';
         final len = payload[offset++];
         if (len == 0 || offset + len > payload.length) return '';
@@ -142,18 +163,18 @@ class ProtocolService {
         return s;
       }
 
-      if (strMask & kStrMaskLabel   != 0) label   = _readStr();
-      if (strMask & kStrMaskIcon    != 0) icon    = _readStr();
-      if (strMask & kStrMaskOnText  != 0) onText  = _readStr();
-      if (strMask & kStrMaskOffText != 0) offText = _readStr();
-      if (strMask & kStrMaskContent != 0) content = _readStr();
+      if (strMask & kStrMaskLabel   != 0) label   = readStr();
+      if (strMask & kStrMaskIcon    != 0) icon    = readStr();
+      if (strMask & kStrMaskOnText  != 0) onText  = readStr();
+      if (strMask & kStrMaskOffText != 0) offText = readStr();
+      if (strMask & kStrMaskContent != 0) content = readStr();
 
       widgets.add(WidgetConfig(
         typeId:   typeId,
         widgetId: widgetId,
         x:        x,
         y:        y,
-        size:     size,
+        size:     scale,  // size field carries SCALE wire value
         aspect:   aspect,
         scale:    scale,
         rotation: rotation,
