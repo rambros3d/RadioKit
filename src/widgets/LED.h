@@ -9,18 +9,18 @@
 #include "Widget.h"
 
 struct RK_LEDProps {
-    const char* label   = nullptr;
-    const char* icon    = nullptr;
-    uint8_t     x       = 0;
-    uint8_t     y       = 0;
-    float       scale   = 1.0f;
-    uint8_t     style   = 0;
-    bool        state   = false;
-    uint8_t     red     = 255;
-    uint8_t     green   = 0;
-    uint8_t     blue    = 0;
-    uint8_t     opacity = 255;
-    int16_t     rotation = 0;  ///< Rotation in degrees.
+  const char *label = nullptr;
+  const char *icon = nullptr;
+  uint8_t x = 0;
+  uint8_t y = 0;
+  int16_t rotation = 0; ///< Rotation in degrees.
+  float scale = 1.0f;
+  uint8_t style = 0;
+  bool state = false;
+  uint8_t red = 255;
+  uint8_t green = 0;
+  uint8_t blue = 0;
+  uint8_t opacity = 255;
 };
 
 class RK_LED : public RadioKit_Widget {

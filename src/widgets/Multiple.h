@@ -11,23 +11,22 @@
 #include <initializer_list>
 
 struct RK_Item {
-    const char* label = nullptr;
-    const char* icon  = nullptr;
-    uint32_t    color = 0;
-    uint8_t     pos   = 255;
+  const char *label = nullptr;
+  const char *icon = nullptr;
+  uint8_t pos = 255;
 };
 
 struct RK_MultipleProps {
-    const char* label   = nullptr;
-    const char* icon    = nullptr;
-    uint8_t     x       = 0;
-    uint8_t     y       = 0;
-    float       scale   = 1.0f;
-    uint8_t     style   = 0;
-    uint8_t     variant = 0;
-    uint8_t     value   = 0;
-    int16_t     rotation = 0;  ///< Rotation in degrees.
-    std::initializer_list<RK_Item> items = {};
+  const char *label = nullptr;
+  const char *icon = nullptr;
+  uint8_t x = 0;
+  uint8_t y = 0;
+  int16_t rotation = 0; ///< Rotation in degrees.
+  float scale = 1.0f;
+  uint8_t style = 0;
+  uint8_t variant = 0;
+  uint8_t value = 0;
+  std::initializer_list<RK_Item> items = {};
 };
 
 class RadioKit_Multiple : public RadioKit_Widget {

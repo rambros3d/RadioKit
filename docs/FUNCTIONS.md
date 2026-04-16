@@ -127,10 +127,11 @@ RK_Slider speed({ .label="Speed", .value=50 });
 | Field            | Type          | Description                                            | Default  |
 | ---------------- | ------------- | ------------------------------------------------------ | -------- |
 | `**label**`      | `const char*` | The text label displayed.                              | REQUIRED |
+| `**icon**`       | `const char*` | Optional icon name (e.g. "wifi")                       | `nullptr`|
 | `**x**`, `**y**` | `uint8_t`     | Center coordinates ($0\dots 250$).                     | REQUIRED |
-| `**scale**`      | `float`       | Global size multiplier.                                | `1.0`    |
-| `**aspect**`     | `float`       | Width/Height ratio ($1$ = default).                    | `1.0`    |
 | `**rotation**`   | `int16_t`     | Rotation in degrees.                                   | `0`      |
+| `**scale**`      | `float`       | Global size multiplier.                                | `1.0`    |
+| `**aspect**`     | `float`       | Width/Height ratio.                                    | `1.0`    |
 | `**enabled**`    | `bool`        | Visibility and traffic toggle.                         | `true`   |
 | `**variant**`    | `uint8_t`     | Widget-specific variation (visual style).              | `0`      |
 | `**style**`      | `uint8_t`     | Visual theme index (Primary, Secondary, Danger, etc.). | `0`      |
@@ -152,11 +153,12 @@ The primary binary input widgets.
 ```cpp
 struct RK_ButtonProps {
     const char* label = nullptr;
-    const char* icon  = nullptr;  // Standard icon name (e.g. "wifi")
+    const char* icon  = nullptr;
     uint8_t     x = 0, y = 0;
+    int16_t     rotation = 0;
     float       scale = 1.0;
     //--------------------------
-    uint8_t     style = 0;    // See Widget Styles below
+    uint8_t     style = 0;
     bool        state = false;
     const char* onText = nullptr; 
     const char* offText = nullptr;
@@ -201,10 +203,12 @@ Analog input slider (0-100).
 struct RK_SliderProps {
     const char* label = nullptr;
     uint8_t     x = 0, y = 0;
+    int16_t     rotation = 0;
+    float       scale = 1.0;
     float       aspect = 1.0;
     //--------------------------
     uint8_t     variant = 0;
-    uint8_t     value = 0; // 0-100
+    uint8_t     value = 0; 
 };
 ```
 
@@ -247,11 +251,12 @@ struct RK_JoystickProps {
     const char* label = nullptr;
     uint8_t     x = 0, y = 0;
     int16_t     rotation = 0;
+    float       scale = 1.0;
     bool        enabled = true;
     uint8_t     variant = 0;
     //--------------------------
-    int8_t      xvalue = 0; // -100 to +100
-    int8_t      yvalue = 0; // -100 to +100
+    int8_t      xvalue = 0;
+    int8_t      yvalue = 0;
 };
 ```
 
@@ -293,11 +298,14 @@ Selection groups (Radio or Checkbox). State is an **8-bit Bitmask**.
 ```cpp
 struct RK_MultipleProps {
     const char* label = nullptr;
+    const char* icon  = nullptr;
     uint8_t     x = 0, y = 0;
+    int16_t     rotation = 0;
+    float       scale = 1.0;
+    //--------------------------
     uint8_t     style = 0;
     uint8_t     variant = 0;
-    //--------------------------
-    uint8_t     value = 0; // Bitmask
+    uint8_t     value = 0;
     std::initializer_list<RK_Item> items = {};
 };
 ```
@@ -308,7 +316,6 @@ struct RK_MultipleProps {
 struct RK_Item {
     const char* label = nullptr; // Display text
     const char* icon  = nullptr; // Optional Icon name
-    uint32_t    color = 0;       // Optional color override
     uint8_t     pos   = 255;     // Fixed bitmask position (0-7). 255 = Auto.
 };
 ```
@@ -353,13 +360,15 @@ Visual status indicator (Arduino -> App).
 ```cpp
 struct RK_LEDProps {
     const char* label = nullptr;
-    const char* icon  = nullptr;  // Optional status icon
+    const char* icon  = nullptr;
     uint8_t     x = 0, y = 0;
-    uint8_t     style = 0;        // See Widget Styles below
+    int16_t     rotation = 0;
+    float       scale = 1.0;
     //--------------------------
-    bool        state = false; // ON/OFF
-    uint8_t     red = 255, green = 0, blue = 0; // RGB Components
-    uint8_t     opacity = 255;         // 0-255
+    uint8_t     style = 0;
+    bool        state = false;
+    uint8_t     red = 255, green = 0, blue = 0;
+    uint8_t     opacity = 255;
 };
 ```
 
@@ -399,10 +408,12 @@ Dynamic text display label (Arduino -> App).
 ```cpp
 struct RK_TextProps {
     const char* label = nullptr;
-    const char* icon  = nullptr;  // Optional prefix icon
+    const char* icon  = nullptr;
     uint8_t     x = 0, y = 0;
-    uint8_t     style = 0;
+    int16_t     rotation = 0;
+    float       scale = 1.0;
     //--------------------------
+    uint8_t     style = 0;
     const char* text = nullptr;
 };
 ```

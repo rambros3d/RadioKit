@@ -13,7 +13,8 @@
 #define LED_PIN 7
 
 // ── Widget declarations ───────────────────────────────────────────
-RK_PushButton btn({.label = "Press", .icon = "wifi", .x = 20, .y = 60, .scale = 2.0f});
+RK_PushButton
+    btn({.label = "Press", .icon = "wifi", .x = 20, .y = 60, .scale = 2.0f});
 RK_ToggleButton sw({.label = "LED", .x = 20, .y = 80, .scale = 2.0f});
 RK_Slider sld({.label = "Level",
                .x = 100,
@@ -40,8 +41,8 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
-  RadioKit.config.name     = "Serial Test v2.0";
-  RadioKit.config.theme    = RK_DEFAULT;
+  RadioKit.config.name = "Serial Test v2.0";
+  RadioKit.config.theme = RK_DEFAULT;
   RadioKit.config.password = "1234";
 
   RadioKit.begin();
@@ -81,8 +82,16 @@ void loop() {
   uint32_t nowSec = millis() / 1000;
   if (nowSec != lastSec) {
     lastSec = nowSec;
-    char buf[20];
-    snprintf(buf, sizeof(buf), "%lus", (unsigned long)nowSec);
+    char buf[32];
+    const char *modeName = (mode.get() == 0) ? "AUTO" : "MAN";
+    snprintf(buf, sizeof(buf), "%s | %lus", modeName, (unsigned long)nowSec);
     uptimeText.set(buf);
+  }
+
+  // Options logic: if Mute is active, turn off LED regardless of slider
+  if (opts.get(1)) { // "Mute" is the second item (bit 1)
+    statusLED.off();
+  } else {
+    statusLED.on();
   }
 }
