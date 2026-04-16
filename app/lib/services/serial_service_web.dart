@@ -136,15 +136,6 @@ class SerialService implements TransportService {
     );
     await port.open(options).toDart;
 
-    // Set DTR and RTS to true (required by many boards to send data)
-    try {
-      await port.setSignals(JSSerialOutputSignals(
-        dataTerminalReady: true,
-        requestToSend: true,
-      )).toDart;
-    } catch (e) {
-      debugPrint('RadioKit: Failed to set DTR/RTS signals: $e');
-    }
 
     _receiveBuffer.clear();
     _connected = false;
@@ -284,7 +275,8 @@ class SerialService implements TransportService {
     final reader = _reader;
     final port   = _port;
     _reader = null;
-    _port   = null;
+    // _port is intentionally NOT nullified here so we can reconnect
+    // using the same DeviceInfo object without triggering the picker.
 
     if (reader != null) {
       try {
