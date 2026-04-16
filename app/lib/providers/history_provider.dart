@@ -7,13 +7,17 @@ import '../models/device_info.dart';
 class PairedDevice {
   final String id;
   final String name;
-  final String type; // 'ble' or 'serial'
+  final String type;
+  final String? configName;
+  final String? description;
   final DateTime lastConnected;
 
   PairedDevice({
     required this.id,
     required this.name,
     required this.type,
+    this.configName,
+    this.description,
     required this.lastConnected,
   });
 
@@ -21,6 +25,8 @@ class PairedDevice {
         'id': id,
         'name': name,
         'type': type,
+        'configName': configName,
+        'description': description,
         'lastConnected': lastConnected.toIso8601String(),
       };
 
@@ -28,6 +34,8 @@ class PairedDevice {
         id: json['id'],
         name: json['name'],
         type: json['type'],
+        configName: json['configName'],
+        description: json['description'],
         lastConnected: DateTime.parse(json['lastConnected']),
       );
 
@@ -60,7 +68,7 @@ class HistoryProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> saveDevice(DeviceInfo device, String type) async {
+  Future<void> saveDevice(DeviceInfo device, String type, {String? configName, String? description}) async {
     // Check if exists
     final index = _pairedDevices.indexWhere((d) => d.id == device.id);
     final now = DateTime.now();
@@ -70,6 +78,8 @@ class HistoryProvider extends ChangeNotifier {
         id: device.id,
         name: device.displayName,
         type: type,
+        configName: configName,
+        description: description,
         lastConnected: now,
       );
     } else {
@@ -79,6 +89,8 @@ class HistoryProvider extends ChangeNotifier {
           id: device.id,
           name: device.displayName,
           type: type,
+          configName: configName,
+          description: description,
           lastConnected: now,
         ),
       );

@@ -50,6 +50,7 @@ void setup() {
   digitalWrite(LED_PIN, LOW);
 
   RadioKit.config.name = "Serial Test v2.0";
+  RadioKit.config.description = "USB Serial Connection Test Example";
   RadioKit.config.theme = RK_DEFAULT;
   RadioKit.config.password = "1234";
 

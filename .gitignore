@@ -36,6 +36,7 @@ app/.flutter-plugins-dependencies
 app/pubspec.lock
 app/.metadata
 app/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+.screenshots/
 
 # Android
 app/android/.gradle/

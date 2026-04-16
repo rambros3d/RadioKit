@@ -61,7 +61,9 @@ class _PairTabState extends State<PairTab> {
     deviceProvider.setTransport(bleProvider.bleService);
     final success = await _connect(device, deviceProvider, console);
 
-    if (success) await history.saveDevice(device, 'ble');
+    if (success) {
+      await history.saveDevice(device, 'ble', configName: deviceProvider.configName);
+    }
   }
 
   Future<void> _connectSerial(DeviceInfo device, {int baudRate = 115200}) async {

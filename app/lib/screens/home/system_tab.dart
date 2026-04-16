@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/history_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/logo_icon.dart';
 
@@ -143,15 +144,14 @@ class SystemTab extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Expanded(
-                  child: _SettingLabel(
-                    label: 'TELEMETRY_ALERTS', 
-                    value: 'Real-time status broadcasting'
-                  ),
+                  child: _SettingLabel(label: 'SHOW_DEMO', value: 'Display interactive examples'),
                 ),
-                Switch(
-                  value: true,
-                  onChanged: (v) {},
-                  activeColor: AppColors.brandOrange,
+                Consumer<SettingsProvider>(
+                  builder: (context, settings, _) => Switch(
+                    value: settings.showDemo,
+                    onChanged: (v) => settings.setShowDemo(v),
+                    activeColor: AppColors.brandOrange,
+                  ),
                 ),
               ],
             ),

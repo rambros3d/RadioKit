@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/device_provider.dart';
 import '../../providers/history_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/ble_provider.dart';
 import '../../providers/serial_provider.dart';
 import '../../providers/console_provider.dart';
@@ -63,9 +64,21 @@ class ModelsTab extends StatelessWidget {
           _ActiveLinkSection(),
           
           const SizedBox(height: 32),
-          _buildSectionTag(context, '02. PAIRED_MODELS'),
+          _buildSectionTag(context, 'PAIRED_MODELS'),
           _PairedModelsList(),
           const SizedBox(height: 32),
+          Consumer<SettingsProvider>(
+            builder: (context, settings, _) {
+              if (!settings.showDemo) return const SizedBox.shrink();
+              return Column(
+                children: [
+                  _buildSectionTag(context, 'INTERACTIVE_DEMO'),
+                  _InteractiveDemoSection(),
+                  const SizedBox(height: 32),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -108,13 +121,12 @@ class _ActiveLinkSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTag(context, '01. ACTIVE_LINK'),
+        _buildSectionTag(context, 'ACTIVE_LINK'),
         Card(
           clipBehavior: Clip.antiAlias,
           color: Colors.white.withValues(alpha: 0.05),
           child: Stack(
             children: [
-              // Ghost Icon Background
               Positioned(
                 right: -20,
                 bottom: -20,
@@ -182,7 +194,7 @@ class _ActiveLinkSection extends StatelessWidget {
                               Row(
                                 children: [
                                   Text(
-                                    '6X6_OFF-ROAD_CHASSIS', // Placeholder
+                                    '6X6_OFF-ROAD_CHASSIS',
                                     style: TextStyle(
                                       color: AppColors.brandOrange.withValues(alpha: 0.7),
                                       fontSize: 10,
@@ -198,7 +210,7 @@ class _ActiveLinkSection extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(2),
                                       border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.3)),
                                     ),
-                                    child: const Text('UNIT 02', // Placeholder
+                                    child: const Text('UNIT 02',
                                       style: TextStyle(color: AppColors.brandOrange, fontSize: 8, fontWeight: FontWeight.bold),
                                     ),
                                   ),
@@ -339,6 +351,13 @@ class _PairedModelsList extends StatelessWidget {
 
     return Column(
       children: devices.map((device) {
+        final displayName = device.configName?.isNotEmpty == true
+            ? device.configName!
+            : device.name;
+        final connectionIcon = device.type == 'ble'
+            ? Icons.bluetooth_rounded
+            : Icons.usb_rounded;
+
         return Card(
           color: Colors.white.withValues(alpha: 0.05),
           margin: const EdgeInsets.only(bottom: 8),
@@ -351,18 +370,31 @@ class _PairedModelsList extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-                device.type == 'ble' ? Icons.airplanemode_active : Icons.smart_toy_rounded,
+                connectionIcon,
                 color: AppColors.brandOrange.withValues(alpha: 0.7),
               ),
             ),
-            title: Text(
-              device.name.toUpperCase(),
-              style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  displayName.toUpperCase(),
+                  style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  connectionIcon,
+                  size: 14,
+                  color: AppColors.brandOrange.withValues(alpha: 0.5),
+                ),
+              ],
             ),
-            subtitle: Text(
-              'LAST SEEN: ${device.lastConnected.hour}:${device.lastConnected.minute.toString().padLeft(2, '0')}',
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
+            subtitle: device.description?.isNotEmpty == true
+                ? Text(device.description!)
+                : Text(
+                    'LAST SEEN: ${device.lastConnected.hour}:${device.lastConnected.minute.toString().padLeft(2, '0')}',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
             trailing: const Icon(Icons.chevron_right_rounded, size: 20),
             onTap: () => _handleReconnect(context, device),
           ),
@@ -411,3 +443,82 @@ class _PairedModelsList extends StatelessWidget {
   }
 }
 
+class _InteractiveDemoSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _DemoModelTile(
+          icon: Icons.widgets_rounded,
+          title: 'WIDGETS_DEMO',
+          subtitle: 'Explore all available widget types',
+        ),
+        _DemoModelTile(
+          icon: Icons.sports_esports_rounded,
+          title: 'RC_CONTROLLER',
+          subtitle: 'Simulated remote control interface',
+        ),
+        _DemoModelTile(
+          icon: Icons.dashboard_rounded,
+          title: 'IOT_DASHBOARD',
+          subtitle: 'IoT monitoring and control panel',
+        ),
+      ],
+    );
+  }
+}
+
+class _DemoModelTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _DemoModelTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.white.withValues(alpha: 0.05),
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: AppColors.brandOrange,
+          ),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.wifi_tethering_rounded,
+              size: 14,
+              color: AppColors.brandOrange,
+            ),
+          ],
+        ),
+        subtitle: Text(
+          subtitle,
+          style: Theme.of(context).textTheme.labelSmall,
+        ),
+        trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+        onTap: () => context.go('/control'),
+      ),
+    );
+  }
+}

@@ -46,7 +46,7 @@ Layout settings are managed through the global `RadioKit.config` object in `setu
 void setup() {
     RadioKit.config.name = "B-52 Stratofort";
     RadioKit.config.password = "1234"; // Optional security
-    RadioKit.config.theme = RK_FUTURISTIC; // Global theme
+    RadioKit.config.theme = "futuristic"; // Controller skin
     RadioKit.config.orientation = RK_LANDSCAPE;
     
     RadioKit.begin();
@@ -61,12 +61,23 @@ void setup() {
 
 ---
 
-## 4. Themes & Icons
+## 4. Skins & Icons
 
 RadioKit delegates complex rendering to the mobile application. This "Lean" approach allows for premium visuals without taxing the Arduino's RAM.
 
-### Global Themes
-Setting `RadioKit.config.theme` changes the aesthetic of the entire interface (e.g., modern dark mode vs. retro industrial).
+### Controller UI Skins
+
+Setting `RadioKit.config.theme` changes the aesthetic of the entire controller interface (e.g., retro industrial vs. cyberpunk). These define the "skin" of the controls, and are distinct from the overall App Theme.
+
+- `"default"` (Default)
+- `"debug"`
+
+> [!NOTE]
+> The following skins are planned for future implementation:
+- `"futuristic"`
+- `"retro"`
+- `"neon"`
+- `"minimal"`
 
 ### Semantic Styles
 Use the `style` field to define the **purpose** of a widget. The app automatically maps these to theme-appropriate color palettes (Success, Warning, Danger, etc.).

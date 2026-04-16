@@ -9,6 +9,7 @@ import 'providers/debug_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/history_provider.dart';
 import 'providers/console_provider.dart';
+import 'providers/settings_provider.dart';
 import 'router.dart';
 
 class RadioKitApp extends StatefulWidget {
@@ -65,6 +66,7 @@ class _RadioKitAppState extends State<RadioKitApp> {
         ChangeNotifierProvider<HistoryProvider>.value(value: _historyProvider),
         ChangeNotifierProvider<ConsoleProvider>.value(value: _consoleProvider),
         ChangeNotifierProvider<DeviceProvider>.value(value: _deviceProvider),
+        ChangeNotifierProvider<SettingsProvider>.value(value: SettingsProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
