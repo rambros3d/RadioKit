@@ -152,19 +152,22 @@ uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
 
     const char* name = config.name ? config.name : "";
     const char* pwd  = config.password ? config.password : "";
+    const char* themeStr = config.theme ? config.theme : RK_DEFAULT;
     uint8_t nameLen  = (uint8_t)strnlen(name, RADIOKIT_MAX_LABEL);
     uint8_t pwdLen   = (uint8_t)strnlen(pwd,  RADIOKIT_MAX_LABEL);
+    uint8_t themeLen = (uint8_t)strnlen(themeStr, 64);
 
-    if (out + 5 + nameLen + pwdLen > bufSize) return 0;
+    if (out + 6 + nameLen + pwdLen + themeLen > bufSize) return 0;
 
     buf[out++] = RK_PROTOCOL_VERSION;
-    buf[out++] = config.theme;
     buf[out++] = config.orientation;
     buf[out++] = _widgetCount;
     buf[out++] = nameLen;
     memcpy(&buf[out], name, nameLen); out += nameLen;
     buf[out++] = pwdLen;
     memcpy(&buf[out], pwd, pwdLen);   out += pwdLen;
+    buf[out++] = themeLen;
+    memcpy(&buf[out], themeStr, themeLen); out += themeLen;
 
     for (uint8_t i = 0; i < _widgetCount; i++) {
         RadioKit_Widget* w = _widgets[i];

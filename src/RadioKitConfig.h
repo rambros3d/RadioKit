@@ -46,14 +46,14 @@
 // ─────────────────────────────────────────────
 //  UI Skins
 // ─────────────────────────────────────────────
-#define RK_DEBUG 0
-#define RK_DEFAULT 1
-#define RK_FUTURISTIC 2
-#define RK_RETRO 3
-#define RK_MILITARY 4
-#define RK_CYBERPUNK 5
-#define RK_NEON 6
-#define RK_MINIMAL 7
+#define RK_DEBUG "debug"
+#define RK_DEFAULT "default"
+#define RK_FUTURISTIC "futuristic"
+#define RK_RETRO "retro"
+#define RK_MILITARY "military"
+#define RK_CYBERPUNK "cyberpunk"
+#define RK_NEON "neon"
+#define RK_MINIMAL "minimal"
 
 // ─────────────────────────────────────────────
 //  Widget Styles

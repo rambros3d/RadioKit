@@ -9,6 +9,7 @@ import '../services/protocol_service.dart';
 import '../services/debug_transport.dart';
 
 import '../providers/console_provider.dart';
+import '../providers/skin_provider.dart';
 import '../models/console_entry.dart';
 
 enum DeviceConnectionState {
@@ -40,6 +41,7 @@ class _PendingUpdate {
 class DeviceProvider extends ChangeNotifier {
   TransportService _transport;
   ConsoleProvider? _console;
+  SkinProvider? _skinProvider;
 
   DeviceInfo?              _connectedDevice;
   DeviceConnectionState    _connectionState = DeviceConnectionState.disconnected;
@@ -62,9 +64,11 @@ class DeviceProvider extends ChangeNotifier {
     required TransportService transport,
     DebugLogSink? debugSink,
     ConsoleProvider? console,
+    SkinProvider? skinProvider,
   })  : _transport = transport,
         _debugSink = debugSink,
-        _console = console;
+        _console = console,
+        _skinProvider = skinProvider;
 
   void _log(String message, {ConsoleLogLevel level = ConsoleLogLevel.info}) {
     _console?.log(message, level: level);
@@ -256,6 +260,10 @@ class DeviceProvider extends ChangeNotifier {
     _orientation     = conf.orientation;
     _widgetState     = RadioWidgetState.initial(conf.widgets);
     _connectionState = DeviceConnectionState.connected;
+    
+    // Apply the skin provided by the device
+    _skinProvider?.setSkin(conf.theme);
+
     _startPolling();
     notifyListeners();
     final completer = _confCompleter;

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/widget_config.dart';
+import '../providers/skin_provider.dart';
+import '../models/skin_manifest.dart';
 import '../theme/app_theme.dart';
 
 /// Linear slider widget (0 to 100).
@@ -19,11 +23,18 @@ class SliderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.watch<SkinProvider>().tokens;
+    final surfaceColor = tokens.colors['surface'] ?? Theme.of(context).cardTheme.color;
+    final primaryColor = tokens.colors['primary'] ?? Theme.of(context).colorScheme.primary;
+    final fgColor = tokens.colors['dim'] ?? Theme.of(context).textTheme.bodyMedium?.color ?? Colors.white;
+
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).dividerColor, width: 1.5),
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(tokens.borderRadius + 4),
+        border: Border.all(
+            color: primaryColor!.withValues(alpha: 0.3),
+            width: tokens.borderWidth),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -41,8 +52,9 @@ class SliderWidget extends StatelessWidget {
                     Expanded(
                       child: Text(
                         config.label.isNotEmpty ? config.label : 'Slider',
-                        style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        style: GoogleFonts.getFont(
+                          tokens.fontFamily,
+                          color: fgColor,
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.3,
@@ -56,18 +68,18 @@ class SliderWidget extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
+                        color: primaryColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(tokens.borderRadius),
                       ),
                       child: Text(
                         value.toString(),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
+                        style: GoogleFonts.getFont(
+                          tokens.fontFamily,
+                          color: primaryColor,
                           fontSize: 13,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: tokens.fontWeight == 'bold' || tokens.fontWeight == '700' 
+                                      ? FontWeight.bold 
+                                      : (tokens.fontWeight == '900' ? FontWeight.w900 : FontWeight.bold),
                         ),
                       ),
                     ),
@@ -78,6 +90,8 @@ class SliderWidget extends StatelessWidget {
                 // Slider
                 SliderTheme(
                   data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: primaryColor,
+                    thumbColor: primaryColor,
                     trackHeight: 4,
                     thumbShape:
                         const RoundSliderThumbShape(enabledThumbRadius: 10),
@@ -99,15 +113,17 @@ class SliderWidget extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('0',
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelSmall
-                            ?.copyWith(fontSize: 10)),
+                        style: GoogleFonts.getFont(
+                          tokens.fontFamily,
+                          color: fgColor.withValues(alpha: 0.5),
+                          fontSize: 10,
+                        )),
                     Text('100',
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelSmall
-                            ?.copyWith(fontSize: 10)),
+                        style: GoogleFonts.getFont(
+                          tokens.fontFamily,
+                          color: fgColor.withValues(alpha: 0.5),
+                          fontSize: 10,
+                        )),
                   ],
                 ),
               ],

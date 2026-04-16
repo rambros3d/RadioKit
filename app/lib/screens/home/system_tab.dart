@@ -144,7 +144,7 @@ class SystemTab extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Expanded(
-                  child: _SettingLabel(label: 'SHOW_DEMO', value: 'Display interactive examples'),
+                  child: _SettingLabel(label: 'ENABLE_DEMO', value: 'Show interactive examples'),
                 ),
                 Consumer<SettingsProvider>(
                   builder: (context, settings, _) => Switch(

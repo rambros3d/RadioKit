@@ -226,52 +226,57 @@ class _BleTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<BleProvider>(
       builder: (context, ble, _) {
-        return Column(
-          children: [
-            _buildStatusHeader(
-              context,
-              label: ble.isScanning ? 'SCANNING' : 'IDLE',
-              subtitle: 'BLUETOOTH LOW ENERGY',
-              protocol: 'BT_SIG_4.2',
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('DISCOVERED_UNITS',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(color: AppColors.brandOrange)),
-                  Text(
-                      '${ble.devices.length.toString().padLeft(2, '0')}_NODES_FOUND',
-                      style: const TextStyle(
-                          color: Colors.white24, fontSize: 9)),
-                ],
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildStatusHeader(
+                context,
+                label: ble.isScanning ? 'SCANNING' : 'IDLE',
+                subtitle: 'BLUETOOTH LOW ENERGY',
+                protocol: 'BT_SIG_4.2',
               ),
-            ),
-            Expanded(
-              child: ble.devices.isEmpty
-                  ? Center(
-                      child: Text(
-                          ble.isScanning ? '...' : 'No units found',
-                          style:
-                              const TextStyle(color: Colors.white12)))
-                  : ListView.builder(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: ble.devices.length,
-                      itemBuilder: (context, index) {
-                        return _UnitCard(
-                          device: ble.devices[index],
-                          onTap: () =>
-                              onDeviceTapped(ble.devices[index]),
-                        );
-                      },
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('DISCOVERED_UNITS',
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall
+                            ?.copyWith(color: AppColors.brandOrange)),
+                    Text(
+                        '${ble.devices.length.toString().padLeft(2, '0')}_NODES_FOUND',
+                        style: const TextStyle(
+                            color: Colors.white24, fontSize: 9)),
+                  ],
+                ),
+              ),
+              if (ble.devices.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Text(
+                      ble.isScanning ? '...' : 'No units found',
+                      style: const TextStyle(color: Colors.white12),
                     ),
-            ),
-          ],
+                  ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: ble.devices.length,
+                  itemBuilder: (context, index) {
+                    return _UnitCard(
+                      device: ble.devices[index],
+                      onTap: () => onDeviceTapped(ble.devices[index]),
+                    );
+                  },
+                ),
+            ],
+          ),
         );
       },
     );

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app.dart';
+import 'services/skin_manager.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize dynamic skins
+  final skinManager = SkinManager();
+  await skinManager.init();
 
   // Lock orientation to portrait for consistent widget layout
   SystemChrome.setPreferredOrientations([
@@ -19,5 +24,5 @@ void main() {
     ),
   );
 
-  runApp(const RadioKitApp());
+  runApp(RadioKitApp(skinManager: skinManager));
 }

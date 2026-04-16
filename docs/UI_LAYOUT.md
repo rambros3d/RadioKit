@@ -67,17 +67,14 @@ RadioKit delegates complex rendering to the mobile application. This "Lean" appr
 
 ### Controller UI Skins
 
-Setting `RadioKit.config.theme` changes the aesthetic of the entire controller interface (e.g., retro industrial vs. cyberpunk). These define the "skin" of the controls, and are distinct from the overall App Theme.
+Setting `RadioKit.config.theme` changes the aesthetic of the entire controller interface. RadioKit supports built-in skins, sideloaded packs, and automatic GitHub synchronization.
 
-- `"default"` (Default)
-- `"debug"`
+**Resolution Priority:**
+1.  Built-in (e.g., `"default"`, `"debug"`)
+2.  Sideloaded/Local Library (e.g., `"custom-gold"`)
 
-> [!NOTE]
-> The following skins are planned for future implementation:
-- `"futuristic"`
-- `"retro"`
-- `"neon"`
-- `"minimal"`
+> [!TIP]
+> For a full list of available skins and instructions on creating custom skin packs, see the **[UI Skins Documentation](file:///home/sun/Apps/RadioKit/docs/UI_SKINS.md)**.
 
 ### Semantic Styles
 Use the `style` field to define the **purpose** of a widget. The app automatically maps these to theme-appropriate color palettes (Success, Warning, Danger, etc.).

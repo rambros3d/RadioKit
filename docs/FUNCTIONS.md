@@ -35,7 +35,7 @@ RK_PushButton fireBtn({ .label="Fire", .x=20, .y=50, .scale=1.5, .icon="flame" }
 void setup() {
     RadioKit.config.name = "GP7 Locomotive";
     RadioKit.config.password = "1234";
-    RadioKit.config.theme = RK_RETRO;
+    RadioKit.config.theme = "retro"; // Controller skin name or GitHub URL
     RadioKit.begin();
     RadioKit.startBLE("Train_01");
 }
@@ -71,7 +71,7 @@ Global settings object.
 | `**password**`    | `const char*` | Optional connection password (leave empty for none).            |
 | `**description**` | `const char*` | Short overview of the device's function.                        |
 | `**version**`     | `const char*` | User-defined firmware version string (e.g. `"1.0.4"`).          |
-| `**theme**`       | `uint8_t`     | UI-theme index (e.g. `RK_DEFAULT`, `RK_RETRO`).                 |
+| `**theme**`       | `const char*` | Controller skin identifier. Supports built-in names or GitHub URLs. See [UI Skins](file:///home/sun/Apps/RadioKit/docs/UI_SKINS.md). |
 | `**type**`        | `const char*` | Category of device (e.g. `"truck"`, `"robot"`, `"locomotive"`). |
 | `**orientation**` | `uint8_t`     | `RK_LANDSCAPE` (Default) or `RK_PORTRAIT`.                      |
 | `**width**`       | `uint8_t`     | Canvas width (0-250).                                           |
@@ -498,15 +498,7 @@ RK_Text status({
 
 ### UI Theme
 
-- `RK_DEFAULT` (0)
-
-// the following is yet to be implemented
-- `RK_FUTURISTIC` (1)
-- `RK_RETRO` (2)
-- `RK_MILITARY` (3)
-- `RK_CYBERPUNK` (4)
-- `RK_NEON` (5)
-- `RK_MINIMAL` (6)
+RadioKit uses string-based identifiers for UI skins. For a full list of built-in skins and details on custom skin packs, refer to **[UI Skins Documentation](file:///home/sun/Apps/RadioKit/docs/UI_SKINS.md)**.
 
 ### Widget Styles
 

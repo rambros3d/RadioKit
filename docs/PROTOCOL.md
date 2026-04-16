@@ -53,20 +53,21 @@ Sent in response to `GET_CONF`.
 ### Global Header
 
 ```
-[PROTO_03][THEME][ORIENTATION][NUM_WIDGETS][NAME_LEN][NAME...][PWD_LEN][PWD...]
+[PROTO_03][ORIENTATION][NUM_WIDGETS][NAME_LEN][NAME...][PWD_LEN][PWD...][THEME_LEN][THEME...]
 ```
 
 
 | Field           | Type          | Description                                            |
 | --------------- | ------------- | ------------------------------------------------------ |
 | `PROTO_VERSION` | `uint8_t`     | Current: `0x03`                                        |
-| `THEME`         | `uint8_t`     | Global UI Theme index (e.g., `RK_RETRO`).              |
 | `ORIENTATION`   | `uint8_t`     | `0x00` = Landscape, `0x01` = Portrait                  |
 | `NUM_WIDGETS`   | `uint8_t`     | Number of widget descriptors that follow               |
 | `NAME_LEN`      | `uint8_t`     | Length of device name string.                          |
 | `NAME`          | `char[N]`     | Device identity name (UTF-8).                          |
 | `PWD_LEN`       | `uint8_t`     | Length of password string.                             |
 | `PWD`           | `char[N]`     | Plaintext identity password (UTF-8).                   |
+| `THEME_LEN`     | `uint8_t`     | Length of theme/skin identifier string.                |
+| `THEME`         | `char[N]`     | Skin identifier name (e.g. `"retro"`, `"custom-gold"`).|
 
 
 ### Widget Descriptor

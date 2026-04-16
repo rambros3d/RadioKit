@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/widget_config.dart';
 import '../models/protocol.dart';
 import '../theme/app_theme.dart';
-
+import '../providers/skin_provider.dart';
+import '../models/skin_manifest.dart';
 /// Renders a push button (momentary) or toggle button (latched) based on
 /// [config.variant]: 0 = push/momentary, 1 = toggle.
 class ButtonWidget extends StatelessWidget {
@@ -18,15 +21,16 @@ class ButtonWidget extends StatelessWidget {
     required this.onChanged,
   });
 
-  Color _styleColor(BuildContext context, bool active) {
-    final cs = Theme.of(context).colorScheme;
+  Color _styleColor(SkinTokens tokens, bool active) {
+    Color c(String key, Color fallback) => tokens.colors[key] ?? fallback;
+
     switch (config.style) {
-      case kStylePrimary: return active ? AppColors.brandOrange : AppColors.brandOrange.withValues(alpha: 0.35);
-      case kStyleSuccess: return active ? AppColors.connected   : AppColors.connected.withValues(alpha: 0.35);
-      case kStyleWarning: return active ? Colors.amber          : Colors.amber.withValues(alpha: 0.35);
-      case kStyleDanger:  return active ? AppColors.brandRed    : AppColors.brandRed.withValues(alpha: 0.35);
-      case kStyleDim:     return active ? cs.onSurface.withValues(alpha: 0.4) : cs.onSurface.withValues(alpha: 0.15);
-      default:            return active ? cs.primary            : cs.primary.withValues(alpha: 0.25);
+      case kStylePrimary: return active ? c('primary', AppColors.brandOrange) : c('primary', AppColors.brandOrange).withValues(alpha: 0.35);
+      case kStyleSuccess: return active ? c('success', AppColors.connected)   : c('success', AppColors.connected).withValues(alpha: 0.35);
+      case kStyleWarning: return active ? c('warning', Colors.amber)          : c('warning', Colors.amber).withValues(alpha: 0.35);
+      case kStyleDanger:  return active ? c('danger', AppColors.brandRed)    : c('danger', AppColors.brandRed).withValues(alpha: 0.35);
+      case kStyleDim:     return active ? c('dim', Colors.grey.shade400)      : c('dim', Colors.grey.shade400).withValues(alpha: 0.15);
+      default:            return active ? c('primary', AppColors.brandOrange) : c('primary', AppColors.brandOrange).withValues(alpha: 0.25);
     }
   }
 
@@ -43,8 +47,9 @@ class ButtonWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active   = value != 0;
-    final bgColor  = _styleColor(context, active);
-    final fgColor  = Theme.of(context).colorScheme.onPrimary;
+    final tokens   = context.watch<SkinProvider>().tokens;
+    final bgColor  = _styleColor(tokens, active);
+    final fgColor  = Colors.white; // Or derive from background contrast
 
     return GestureDetector(
       onTapDown:   _isToggle ? null : (_) => onChanged(1),
@@ -55,10 +60,10 @@ class ButtonWidget extends StatelessWidget {
         duration: const Duration(milliseconds: 80),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(tokens.borderRadius),
           border: Border.all(
             color: bgColor.withValues(alpha: 0.8),
-            width: active ? 2 : 1,
+            width: active ? tokens.borderWidth + 1 : tokens.borderWidth,
           ),
           boxShadow: active
               ? [BoxShadow(color: bgColor.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)]
@@ -75,10 +80,14 @@ class ButtonWidget extends StatelessWidget {
               ],
               Text(
                 _label,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: fgColor,
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: GoogleFonts.getFont(
+                  tokens.fontFamily,
+                  textStyle: Theme.of(context).textTheme.labelSmall,
+                  color: fgColor,
+                  fontWeight: tokens.fontWeight == 'bold' || tokens.fontWeight == '700' 
+                      ? FontWeight.bold 
+                      : (tokens.fontWeight == '900' ? FontWeight.w900 : FontWeight.normal),
+                ),
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
               ),

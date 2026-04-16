@@ -7,10 +7,12 @@ import '../models/widget_config.dart';
 /// Result of parsing a CONF_DATA payload.
 class ParsedConf {
   final String name;
+  final String theme;
   final int orientation;
   final List<WidgetConfig> widgets;
   const ParsedConf({
     required this.name,
+    required this.theme,
     required this.orientation,
     required this.widgets,
   });
@@ -103,9 +105,10 @@ class ProtocolService {
   // ── CONF_DATA parsing (protocol v3) ─────────────────────────────────────
   //
   // Global header (variable length):
-  //   [VERSION(1)] [THEME(1)] [ORIENTATION(1)] [NUM_WIDGETS(1)]
+  //   [VERSION(1)] [ORIENTATION(1)] [NUM_WIDGETS(1)]
   //   [NAME_LEN(1)] [NAME(NAME_LEN)]
   //   [PWD_LEN(1)]  [PWD(PWD_LEN)]
+  //   [THEME_LEN(1)] [THEME(THEME_LEN)]
   //
   // Per widget — 10 fixed bytes:
   //   [TYPE(1)] [ID(1)] [X(1)] [Y(1)] [SCALE(1)] [ASPECT(1)]
@@ -128,10 +131,9 @@ class ProtocolService {
       return null;
     }
 
-    // payload[1] = THEME  (stored but not yet used by UI)
-    final orientation = payload[2];
-    final numWidgets  = payload[3];
-    int offset        = 4;
+    final orientation = payload[1];
+    final numWidgets  = payload[2];
+    int offset        = 3;
 
     // Skip device name
     if (offset >= payload.length) {
@@ -158,6 +160,20 @@ class ProtocolService {
       return null;
     }
     offset += pwdLen;
+
+    // Parse theme string
+    if (offset >= payload.length) {
+      debugPrint('RadioKit CONF_DATA: truncated before THEME_LEN');
+      return null;
+    }
+    final themeLen = payload[offset++];
+    if (offset + themeLen > payload.length) {
+      debugPrint('RadioKit CONF_DATA: truncated in THEME field');
+      return null;
+    }
+    final theme = utf8.decode(payload.sublist(offset, offset + themeLen),
+        allowMalformed: true);
+    offset += themeLen;
 
     final widgets = <WidgetConfig>[];
 
@@ -233,6 +249,7 @@ class ProtocolService {
     debugPrint('RadioKit CONF_DATA: parsed ${widgets.length}/$numWidgets widgets OK');
     return ParsedConf(
       name: name,
+      theme: theme,
       orientation: orientation,
       widgets: widgets,
     );

@@ -89,14 +89,7 @@ const Duration kConfTimeout     = Duration(seconds: 8);
 const int kVarUpdateTimeoutMs  = 200;
 const int kVarUpdateMaxRetries = 5;
 
-// ── Theme IDs ──────────────────────────────────────────────────────────────
-const int kThemeDefault  = 0;
-const int kThemeMinimal  = 1;
-const int kThemeDark     = 2;
-const int kThemeLight    = 3;
-const int kThemeNeon     = 4;
-const int kThemeRetro    = 5;
-const int kThemeCustom   = 6;
+// Theme is now string-based (e.g. "default", "retro")
 
 // ── Style / variant IDs ───────────────────────────────────────────────────
 const int kStyleDefault = 0;

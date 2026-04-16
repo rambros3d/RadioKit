@@ -10,10 +10,13 @@ import 'providers/theme_provider.dart';
 import 'providers/history_provider.dart';
 import 'providers/console_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/skin_provider.dart';
+import 'services/skin_manager.dart';
 import 'router.dart';
 
 class RadioKitApp extends StatefulWidget {
-  const RadioKitApp({super.key});
+  final SkinManager skinManager;
+  const RadioKitApp({super.key, required this.skinManager});
 
   @override
   State<RadioKitApp> createState() => _RadioKitAppState();
@@ -26,6 +29,7 @@ class _RadioKitAppState extends State<RadioKitApp> {
   late final HistoryProvider _historyProvider;
   late final ConsoleProvider _consoleProvider;
   late final DeviceProvider _deviceProvider;
+  late final SkinProvider _skinProvider;
   late final ConnectionNotifier _connectionNotifier;
   late final GoRouter _router;
 
@@ -33,6 +37,7 @@ class _RadioKitAppState extends State<RadioKitApp> {
   void initState() {
     super.initState();
 
+    _skinProvider = SkinProvider(widget.skinManager);
     _bleProvider = BleProvider();
     _serialProvider = SerialProvider();
     _debugProvider = DebugProvider();
@@ -43,6 +48,7 @@ class _RadioKitAppState extends State<RadioKitApp> {
       transport: _bleProvider.bleService,
       debugSink: _debugProvider,
       console: _consoleProvider,
+      skinProvider: _skinProvider,
     );
 
     _connectionNotifier = ConnectionNotifier(_deviceProvider);
@@ -60,6 +66,7 @@ class _RadioKitAppState extends State<RadioKitApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<ThemeProvider>.value(value: ThemeProvider()),
+        ChangeNotifierProvider<SkinProvider>.value(value: _skinProvider),
         ChangeNotifierProvider<BleProvider>.value(value: _bleProvider),
         ChangeNotifierProvider<SerialProvider>.value(value: _serialProvider),
         ChangeNotifierProvider<DebugProvider>.value(value: _debugProvider),
