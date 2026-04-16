@@ -9,6 +9,7 @@ class ConsoleProvider extends ChangeNotifier {
   List<ConsoleEntry> get entries => _entries;
 
   void log(String message, {ConsoleLogLevel level = ConsoleLogLevel.info}) {
+    debugPrint('RadioKit Console: $message');
     if (_entries.length >= _maxEntries) {
       _entries.removeAt(0);
     }

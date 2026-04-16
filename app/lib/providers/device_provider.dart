@@ -379,11 +379,56 @@ class DeviceProvider extends ChangeNotifier {
   Future<void> setInputValue(int widgetId, List<int> values) async {
     final current = _widgetState;
     if (current == null) return;
+
+    // Human-readable interaction log
+    final widget = _widgets.where((w) => w.widgetId == widgetId).firstOrNull;
+    if (widget != null) {
+      final label = widget.label.isNotEmpty ? '"${widget.label}"' : '#$widgetId';
+      final desc = _describeInteraction(widget, values);
+      _log('⚡ ${widget.typeName} $label $desc');
+    }
+
     final next = current.copyWithInput(widgetId, values);
     _widgetState = next;
     notifyListeners();
     if (!_transport.isConnected) return;
     await _sendVarUpdate(widgetId, values);
+  }
+
+  String _describeInteraction(WidgetConfig w, List<int> values) {
+    final v = values.isNotEmpty ? values[0] : 0;
+    switch (w.typeId) {
+      case kWidgetButton:
+        if (w.variant == 1) {
+          // Toggle button
+          return v != 0 ? '→ ON' : '→ OFF';
+        }
+        return v != 0 ? '→ PRESSED' : '→ RELEASED';
+      case kWidgetSwitch:
+        final onLabel = w.onText.isNotEmpty ? w.onText : 'ON';
+        final offLabel = w.offText.isNotEmpty ? w.offText : 'OFF';
+        return v != 0 ? '→ $onLabel' : '→ $offLabel';
+      case kWidgetSlideSwitch:
+        final items = w.multipleItems;
+        if (v < items.length) {
+          return '→ "${items[v].label}" (idx:$v)';
+        }
+        return '→ position $v';
+      case kWidgetSlider:
+        return '→ $v (${(v / 255 * 100).round()}%)';
+      case kWidgetJoystick:
+        final x = v;
+        final y = values.length > 1 ? values[1] : 0;
+        return '→ X:$x Y:$y';
+      case kWidgetMultiple:
+        final items = w.multipleItems;
+        if (v < items.length) {
+          return '→ "${items[v].label}" (idx:$v)';
+        }
+        return '→ option $v';
+      default:
+        return '→ $values';
+    }
   }
 
   // ── Disconnect ─────────────────────────────────────────────────────────────

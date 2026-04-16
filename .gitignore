@@ -42,7 +42,13 @@ app/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
 # Android
 app/android/.gradle/
 app/android/local.properties
+app/android/gradle-wrapper.jar
+app/android/gradlew
+app/android/gradlew.bat
+app/android/captures/
+app/android/.cxx/
 app/android/app/build/
+app/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
 *.apk
 *.aab
 
@@ -66,3 +72,28 @@ app/ios/Runner.xcworkspace/
 *.a
 *.so
 *.dylib
+
+# Specific Flutter & Android additions
+app/android/key.properties
+app/android/*.keystore
+app/android/*.jks
+app/android/app/src/main/res/raw/
+app/android/app/src/main/res/xml/
+app/android/app/google-services.json
+app/android/app/src/debug/lib*
+app/android/app/src/main/jniLibs
+app/assets/fonts/
+!app/assets/fonts/.gitkeep
+
+# AI Agent Specifics (Comprehensive)
+.agent/
+.antigravity/
+.gemini/
+.cursor/
+.kilo/
+.codex/
+.claude/
+.screenshots/
+walkthrough.md
+task.md
+implementation_plan.md
