@@ -138,8 +138,20 @@ class SerialService implements TransportService {
 
 
     _receiveBuffer.clear();
+    _writeQueue.clear();
     _connected = false;
     _reading = true;
+
+    // Assert DTR/RTS to standard "Terminal Ready" states
+    // Important for Native USB CDC devices so they know a host is listening
+    try {
+      await port.setSignals(JSSerialOutputSignals(
+        dataTerminalReady: true,
+        requestToSend: true,
+      )).toDart;
+    } catch (_) {}
+
+    _writer = port.writable?.getWriter() as WritableStreamDefaultWriter?;
 
     // Start continuous read loop in background
     _readLoop(port);
@@ -228,27 +240,32 @@ class SerialService implements TransportService {
   // Write path
   // ---------------------------------------------------------------------------
 
+  WritableStreamDefaultWriter? _writer;
+  final List<Uint8List> _writeQueue = [];
+  bool _isWriting = false;
+
   @override
   Future<void> writePacket(Uint8List data) async {
-    final port = _port;
-    if (port == null) throw StateError('Serial port not open');
+    if (_port == null) throw StateError('Serial port not open');
 
-    final writable = port.writable;
-    if (writable == null) throw StateError('Serial port has no writable stream');
+    _writeQueue.add(data);
+    _flushWriteQueue();
+  }
 
-    if (writable.locked) {
-      debugPrint('RadioKit: Serial write skipped — stream is locked (busy)');
-      return;
-    }
+  Future<void> _flushWriteQueue() async {
+    if (_isWriting) return;
+    if (_writer == null) return;
 
-    final writer = writable.getWriter() as WritableStreamDefaultWriter;
+    _isWriting = true;
     try {
-      await writer.write(data.toJS).toDart;
+      while (_writeQueue.isNotEmpty) {
+        final chunk = _writeQueue.removeAt(0);
+        await _writer!.write(chunk.toJS).toDart;
+      }
     } catch (e) {
       debugPrint('RadioKit: Serial write error: $e');
-      rethrow;
     } finally {
-      try { writer.releaseLock(); } catch (_) {}
+      _isWriting = false;
     }
   }
 
@@ -273,10 +290,16 @@ class SerialService implements TransportService {
     
     // Grab local references and nullify immediately
     final reader = _reader;
+    final writer = _writer;
     final port   = _port;
     _reader = null;
+    _writer = null;
     // _port is intentionally NOT nullified here so we can reconnect
     // using the same DeviceInfo object without triggering the picker.
+
+    if (writer != null) {
+      try { writer.releaseLock(); } catch (_) {}
+    }
 
     if (reader != null) {
       try {

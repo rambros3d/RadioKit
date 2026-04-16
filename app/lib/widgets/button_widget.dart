@@ -9,6 +9,7 @@ import '../providers/skin_provider.dart';
 import '../models/skin_manifest.dart';
 /// Renders a push button (momentary) or toggle button (latched) based on
 /// [config.variant]: 0 = push/momentary, 1 = toggle.
+/// Also renders [WidgetType.Switch] entirely as a latched toggle button.
 class ButtonWidget extends StatelessWidget {
   final WidgetConfig config;
   final int value;
@@ -34,7 +35,7 @@ class ButtonWidget extends StatelessWidget {
     }
   }
 
-  bool get _isToggle => config.variant == 1;
+  bool get _isToggle => config.variant == 1 || config.typeId == kWidgetSwitch;
 
   String get _label {
     if (_isToggle) {
