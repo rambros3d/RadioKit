@@ -65,7 +65,7 @@ RK_MultipleSelect::RK_MultipleSelect(RK_MultipleProps p) {
     _initFromProps(p, RK_TYPE_MULTIPLE);
 }
 
-uint8_t RadioKit_Multiple::serializeStrings(uint8_t* buf) const {
+uint16_t RadioKit_Multiple::serializeStrings(uint8_t* buf) const {
     uint8_t mask = 0;
     if (_label[0]  != '\0') mask |= RK_STR_LABEL;
     if (_icon[0]   != '\0') mask |= RK_STR_ICON;
@@ -73,8 +73,6 @@ uint8_t RadioKit_Multiple::serializeStrings(uint8_t* buf) const {
     if (_offText[0]!= '\0') mask |= RK_STR_OFFTEXT;
 
     // Build pipe-delimited content string: "label:icon|label:icon|..."
-    // Format per item: "<label>" or "<label>:<icon>" if icon present.
-    // Items with no label AND no icon are skipped.
     char itemsStr[RADIOKIT_MAX_ITEMS * (RADIOKIT_MAX_LABEL + RADIOKIT_MAX_ICON + 2) + 1];
     itemsStr[0] = '\0';
     size_t remaining = sizeof(itemsStr) - 1;
@@ -105,7 +103,7 @@ uint8_t RadioKit_Multiple::serializeStrings(uint8_t* buf) const {
     }
     if (itemsStr[0] != '\0') mask |= RK_STR_CONTENT;
 
-    uint8_t out = 0;
+    uint16_t out = 0;
     buf[out++] = mask;
 
     // len field is uint8_t — content capped at 255 bytes safely by buffer sizing above

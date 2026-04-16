@@ -27,49 +27,54 @@ class TextWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (config.label.isNotEmpty)
-            Text(
-              config.label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
-                  ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          const SizedBox(height: 2),
-          Row(
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (hasIcon) ...
-                [
-                  Icon(
-                    parseIconFromName(config.icon),
-                    size: 14,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 4),
-                ],
-              Flexible(
-                child: Text(
-                  text.isEmpty ? '—' : text,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.w600,
+              if (config.label.isNotEmpty)
+                Text(
+                  config.label,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                       ),
                   overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
                 ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasIcon) ...[
+                    Icon(
+                      parseIconFromName(config.icon),
+                      size: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Flexible(
+                    child: Text(
+                      text.isEmpty ? '—' : text,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.w600,
+                          ),
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

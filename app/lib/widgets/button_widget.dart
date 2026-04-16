@@ -64,19 +64,21 @@ class ButtonWidget extends StatelessWidget {
               ? [BoxShadow(color: bgColor.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)]
               : null,
         ),
-        child: Center(
+        child: FittedBox(
+          fit: BoxFit.contain,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (config.icon.isNotEmpty) ...
-                [Icon(parseIconFromName(config.icon), color: fgColor, size: 18),
-                 const SizedBox(height: 4)],
+              if (config.icon.isNotEmpty) ...[
+                Icon(parseIconFromName(config.icon), color: fgColor, size: 18),
+                const SizedBox(height: 4)
+              ],
               Text(
                 _label,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: fgColor,
-                  fontWeight: FontWeight.bold,
-                ),
+                      color: fgColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
               ),

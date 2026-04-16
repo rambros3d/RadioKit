@@ -119,6 +119,12 @@ class SerialService implements TransportService {
       throw Exception('No serial port selected. Please choose a port first.');
     }
 
+    // Proactive reset: if we think we might be in a weird state, try to close
+    // but ignore errors (it might already be closed).
+    try {
+      await port.close().toDart.timeout(const Duration(milliseconds: 200));
+    } catch (_) {}
+
     // Build JSSerialOptions with baudRate
     final options = JSSerialOptions(
       baudRate: baudRate,
@@ -134,7 +140,7 @@ class SerialService implements TransportService {
     try {
       await port.setSignals(JSSerialOutputSignals(
         dataTerminalReady: true,
-        requestToSend: false,
+        requestToSend: true,
       )).toDart;
     } catch (e) {
       debugPrint('RadioKit: Failed to set DTR/RTS signals: $e');
@@ -203,7 +209,17 @@ class SerialService implements TransportService {
         _connected = true;
         _resetSessionTimer();
         onPacketReceived?.call(packet);
+      } else {
+        // Log corrupted packet or junk
+        final junk = String.fromCharCodes(packetBytes);
+        debugPrint('RadioKit: Junk/Partial data: $junk');
       }
+    }
+    // If there's 1..5 bytes trailing and we haven't found a 0x55, log them too
+    if (_receiveBuffer.isNotEmpty && _receiveBuffer[0] != 0x55) {
+      final junk = String.fromCharCodes(_receiveBuffer);
+      debugPrint('RadioKit: Serial string: $junk');
+      _receiveBuffer.clear();
     }
   }
 

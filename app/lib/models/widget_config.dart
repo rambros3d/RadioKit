@@ -14,6 +14,13 @@ const Map<int, double> kWidgetBaseSize = {
   kWidgetMultiple: 10.0,
 };
 
+/// Represents a single item in a Multiple widget.
+class MultipleItem {
+  final String label;
+  final String icon;
+  const MultipleItem(this.label, this.icon);
+}
+
 /// Configuration for a single UI widget, parsed from a v3 CONF_DATA payload.
 ///
 /// Coordinate system:
@@ -113,9 +120,17 @@ class WidgetConfig {
   String get typeName => widgetTypeName(typeId);
 
   /// For Multiple widget: parse pipe-delimited items from [content].
-  List<String> get multipleItems {
+  /// Format is "label:icon|label:icon|..."
+  List<MultipleItem> get multipleItems {
     if (typeId != kWidgetMultiple || content.isEmpty) return [];
-    return content.split('|').map((s) => s.trim()).toList();
+    return content.split('|').map((s) {
+      final parts = s.split(':');
+      if (parts.length >= 2) {
+        return MultipleItem(parts[0].trim(), parts[1].trim());
+      } else {
+        return MultipleItem(s.trim(), '');
+      }
+    }).toList();
   }
 
   @override

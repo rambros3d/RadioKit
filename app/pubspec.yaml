@@ -11,11 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # BLE: native (Android/iOS)
-  flutter_reactive_ble: ^5.3.1
-
-  # BLE: web (Web Bluetooth API — Chrome/Edge)
-  flutter_web_bluetooth: ^1.1.0
+  # BLE: Unified (All platforms)
+  universal_ble: ^1.2.0
 
   # Serial: native Android USB-CDC (FTDI, CDC, CP210x, CH340 …)
   usb_serial: ^0.5.2
@@ -26,9 +23,6 @@ dependencies:
 
   # State management
   provider: ^6.1.2
-
-  # Permissions for BLE on Android/iOS (not needed on web)
-  permission_handler: ^11.3.1
 
   cupertino_icons: ^1.0.2
   shared_preferences: ^2.5.5

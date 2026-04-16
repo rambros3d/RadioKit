@@ -121,6 +121,7 @@ class DeviceProvider extends ChangeNotifier {
       _log('CONNECTION FAILED: $e', level: ConsoleLogLevel.error);
       _errorMessage    = 'Connection failed: $e';
       _connectionState = DeviceConnectionState.error;
+      await _transport.disconnect(); // Hardened cleanup
       notifyListeners();
       return;
     }
@@ -177,6 +178,7 @@ class DeviceProvider extends ChangeNotifier {
 
         _errorMessage = 'Device did not respond to GET_CONF after 3 attempts.';
         _connectionState = DeviceConnectionState.error;
+        await _transport.disconnect(); // Hardened cleanup
         notifyListeners();
         return;
       } catch (e) {
@@ -240,15 +242,16 @@ class DeviceProvider extends ChangeNotifier {
           '${payload.take(32).map((b) => b.toRadixString(16).padLeft(2, "0")).join(" ")}');
       return;
     }
-    _log('RECEIVED CONFIG: "${conf.name}" with ${conf.widgets.length} widgets', level: ConsoleLogLevel.success);
+    _log('RECEIVED CONFIG: "${(conf as ParsedConf).name}" with ${conf.widgets.length} widgets', level: ConsoleLogLevel.success);
     _widgets         = conf.widgets;
     _orientation     = conf.orientation;
     _widgetState     = RadioWidgetState.initial(conf.widgets);
     _configReceived  = true;
     _connectionState = DeviceConnectionState.connected;
     notifyListeners();
-    if (_confCompleter != null && !_confCompleter!.isCompleted) {
-      _confCompleter!.complete();
+    final completer = _confCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
     }
   }
 

@@ -45,7 +45,7 @@ public:
     virtual void serializeOutput(uint8_t* buf)         const = 0;
     virtual void deserializeInput(const uint8_t* buf)        = 0;
 
-    virtual uint8_t serializeStrings(uint8_t* buf) const;
+    virtual uint16_t serializeStrings(uint8_t* buf) const;
 
 protected:
     uint8_t  _x, _y;

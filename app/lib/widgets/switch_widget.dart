@@ -45,44 +45,48 @@ class SwitchWidget extends StatelessWidget {
     return GestureDetector(
       onTap: () => onChanged(active ? 0 : 1),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Theme.of(context).dividerColor),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (config.label.isNotEmpty) ...
-              [
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (config.label.isNotEmpty) ...[
                 Text(
                   config.label,
                   style: Theme.of(context).textTheme.labelSmall,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
               ],
-            Switch(
-              value: active,
-              onChanged: (v) => onChanged(v ? 1 : 0),
-              activeColor: trackCol,
-              activeTrackColor: trackCol.withValues(alpha: 0.5),
-              inactiveThumbColor:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-              inactiveTrackColor:
-                  Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-            ),
-            if (_stateLabel.isNotEmpty)
-              Text(
-                _stateLabel,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.copyWith(color: trackCol),
-                overflow: TextOverflow.ellipsis,
+              Switch(
+                value: active,
+                onChanged: (v) => onChanged(v ? 1 : 0),
+                activeColor: trackCol,
+                activeTrackColor: trackCol.withValues(alpha: 0.5),
+                inactiveThumbColor: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.4),
+                inactiveTrackColor:
+                    Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
               ),
-          ],
+              if (_stateLabel.isNotEmpty)
+                Text(
+                  _stateLabel,
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelSmall
+                      ?.copyWith(color: trackCol),
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
         ),
       ),
     );

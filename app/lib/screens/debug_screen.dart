@@ -436,106 +436,110 @@ class _LogRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: dirColor.withValues(alpha: 0.2)),
       ),
-      child: ExpansionTile(
-        dense: true,
-        tilePadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-        leading: Container(
-          width: 30,
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          decoration: BoxDecoration(
-            color: dirColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            entry.dirLabel,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: dirColor,
-                fontFamily: 'monospace'),
-          ),
-        ),
-        title: Row(
-          children: [
-            Text(
-              entry.cmdName,
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+      child: Material(
+        color: Colors.transparent,
+        child: ExpansionTile(
+          dense: true,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+          leading: Container(
+            width: 30,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: dirColor.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              entry.dirLabel,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: dirColor,
                   fontFamily: 'monospace'),
             ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                entry.hexDump,
-                style: TextStyle(
-                    fontSize: 10,
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                    fontFamily: 'monospace'),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        subtitle: Row(
-          children: [
-            Text(
-              entry.timeLabel,
-              style: TextStyle(
-                  fontSize: 9,
-                  color: Theme.of(context).disabledColor,
-                  fontFamily: 'monospace'),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '${entry.bytes.length} B',
-              style: TextStyle(
-                  fontSize: 9,
-                  color: Theme.of(context).disabledColor),
-            ),
-            if (entry.crcOk != null) ...[
-              const SizedBox(width: 8),
+          ),
+          title: Row(
+            children: [
               Text(
-                entry.crcOk! ? 'CRC ✓' : 'CRC ✗',
-                style: TextStyle(
-                    fontSize: 9,
-                    color: crcColor,
-                    fontWeight: FontWeight.bold),
+                entry.cmdName,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'monospace'),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  entry.hexDump,
+                  style: TextStyle(
+                      fontSize: 10,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                      fontFamily: 'monospace'),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
-          ],
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _DetailRow(label: 'HEX', value: entry.hexDump),
-                _DetailRow(label: 'ASCII', value: entry.asciiDump),
-                if (entry.payloadHex.isNotEmpty)
-                  _DetailRow(label: 'PAYLOAD', value: entry.payloadHex),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.copy_rounded, size: 14),
-                    label: const Text('Copy hex', style: TextStyle(fontSize: 11)),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: entry.hexDump));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Copied'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                  ),
+          ),
+          subtitle: Row(
+            children: [
+              Text(
+                entry.timeLabel,
+                style: TextStyle(
+                    fontSize: 9,
+                    color: Theme.of(context).disabledColor,
+                    fontFamily: 'monospace'),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${entry.bytes.length} B',
+                style: TextStyle(
+                    fontSize: 9,
+                    color: Theme.of(context).disabledColor),
+              ),
+              if (entry.crcOk != null) ...[
+                const SizedBox(width: 8),
+                Text(
+                  entry.crcOk! ? 'CRC ✓' : 'CRC ✗',
+                  style: TextStyle(
+                      fontSize: 9,
+                      color: crcColor,
+                      fontWeight: FontWeight.bold),
                 ),
               ],
-            ),
+            ],
           ),
-        ],
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _DetailRow(label: 'HEX', value: entry.hexDump),
+                  _DetailRow(label: 'ASCII', value: entry.asciiDump),
+                  if (entry.payloadHex.isNotEmpty)
+                    _DetailRow(label: 'PAYLOAD', value: entry.payloadHex),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.copy_rounded, size: 14),
+                      label:
+                          const Text('Copy hex', style: TextStyle(fontSize: 11)),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: entry.hexDump));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Copied'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

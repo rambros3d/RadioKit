@@ -182,16 +182,13 @@ uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
         buf[out++] = w->style();
         buf[out++] = w->variant();
 
-        // Use heap allocation to avoid stack overflow on large Multiple widgets.
-        uint8_t* strBuf = new uint8_t[RK_STR_BUF_SIZE];
-        uint16_t strLen = w->serializeStrings(strBuf);
-        bool fits = (out + strLen <= bufSize);
-        if (fits) {
-            memcpy(&buf[out], strBuf, strLen);
+        // Write strings directly to the target buffer.
+        uint16_t strLen = w->serializeStrings(&buf[out]);
+        if (out + strLen <= bufSize) {
             out += strLen;
+        } else {
+            break; // No more room for this widget's strings
         }
-        delete[] strBuf;
-        if (!fits) break;
     }
     return out;
 }

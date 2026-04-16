@@ -112,99 +112,102 @@ class _JoystickWidgetState extends State<JoystickWidget>
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final size = constraints.smallest;
-        final radius = (size.shortestSide / 2) - 8;
-        final thumbRadius = radius * 0.28;
-        final trackRadius = radius - thumbRadius;
-
-        final thumbOffsetX = _nx * trackRadius;
-        final thumbOffsetY = _ny * trackRadius;
-
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            shape: BoxShape.circle,
-            border: Border.all(color: Theme.of(context).dividerColor, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 8,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Track circle
-              Container(
-                width: trackRadius * 2,
-                height: trackRadius * 2,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                      color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
-                      width: 1),
+        return FittedBox(
+          fit: BoxFit.contain,
+          child: Container(
+            width: 100, // Fixed internal dimension
+            height: 100,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              shape: BoxShape.circle,
+              border:
+                  Border.all(color: Theme.of(context).dividerColor, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 8,
+                  spreadRadius: 1,
                 ),
-              ),
-
-              // Crosshair lines
-              _Crosshair(size: trackRadius * 2),
-
-              // Label
-              if (config.label.isNotEmpty)
-                Positioned(
-                  bottom: 6,
-                  child: Text(
-                    config.label,
-                    style: TextStyle(
-                      color: Theme.of(context).disabledColor,
-                      fontSize: 10,
-                      letterSpacing: 0.3,
-                    ),
+              ],
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Track circle
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: Theme.of(context)
+                            .dividerColor
+                            .withValues(alpha: 0.5),
+                        width: 1),
                   ),
                 ),
 
-              // Thumb
-              Transform.translate(
-                offset: Offset(thumbOffsetX, thumbOffsetY),
-                child: GestureDetector(
-                  onPanStart: _onPanStart,
-                  onPanUpdate: (d) => _onPanUpdate(d, trackRadius),
-                  onPanEnd: _onPanEnd,
-                  child: Container(
-                    width: thumbRadius * 2,
-                    height: thumbRadius * 2,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          AppColors.brandOrange,
-                          AppColors.brandOrange.withValues(alpha: 0.7),
+                // Crosshair lines
+                const _Crosshair(size: 80),
+
+                // Label
+                if (config.label.isNotEmpty)
+                  Positioned(
+                    bottom: 6,
+                    child: Text(
+                      config.label,
+                      style: TextStyle(
+                        color: Theme.of(context).disabledColor,
+                        fontSize: 10,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+
+                // Thumb
+                Transform.translate(
+                  offset: Offset(_nx * 40, _ny * 40),
+                  child: GestureDetector(
+                    onPanStart: _onPanStart,
+                    onPanUpdate: (d) => _onPanUpdate(d, 40),
+                    onPanEnd: _onPanEnd,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            AppColors.brandOrange,
+                            AppColors.brandOrange.withValues(alpha: 0.7),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
                         ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ],
                     ),
                   ),
                 ),
-              ),
 
-              // Drag capture overlay
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onPanStart: _onPanStart,
-                  onPanUpdate: (d) => _onPanUpdate(d, trackRadius),
-                  onPanEnd: _onPanEnd,
+                // Drag capture overlay
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onPanStart: _onPanStart,
+                    onPanUpdate: (d) => _onPanUpdate(d, 40),
+                    onPanEnd: _onPanEnd,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/widget_config.dart';
 import '../models/protocol.dart';
 import '../theme/app_theme.dart';
+import 'button_widget.dart'; // For parseIconFromName
 
 /// Multiple / segmented-button widget for [kWidgetMultiple].
 ///
@@ -55,46 +57,50 @@ class MultipleWidget extends StatelessWidget {
     final activeCol = _activeColor(context);
 
     return LayoutBuilder(builder: (context, constraints) {
-      final isHorizontal = constraints.maxWidth >= constraints.maxHeight;
-
       return Container(
+        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Theme.of(context).dividerColor),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Theme.of(context).dividerColor, width: 1.5),
         ),
-        padding: const EdgeInsets.all(4),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (config.label.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  config.label,
-                  style: Theme.of(context).textTheme.labelSmall,
-                  overflow: TextOverflow.ellipsis,
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: config.variant * 60.0, // Base width based on items
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (config.label.isNotEmpty) ...[
+                  Text(
+                    config.label,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+                // Header (Switch style row or grid depending on variant)
+                SizedBox(
+                  height: 32,
+                  child: Row(
+                    children: _buildItems(context, items, activeCol, true),
+                  ),
                 ),
-              ),
-            Expanded(
-              child: isHorizontal
-                  ? Row(
-                      children: _buildItems(context, items, activeCol, true),
-                    )
-                  : Column(
-                      children: _buildItems(context, items, activeCol, false),
-                    ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     });
   }
 
-  List<Widget> _buildItems(
-      BuildContext context, List<String> items, Color activeCol, bool horizontal) {
+  List<Widget> _buildItems(BuildContext context, List<MultipleItem> items,
+      Color activeCol, bool horizontal) {
     final List<Widget> children = [];
     for (int i = 0; i < items.length; i++) {
+      final item = items[i];
       final isActive = value == i;
       if (i > 0) {
         children.add(horizontal
@@ -108,33 +114,47 @@ class MultipleWidget extends StatelessWidget {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 100),
               decoration: BoxDecoration(
-                color: isActive
-                    ? activeCol
-                    : activeCol.withValues(alpha: 0.12),
+                color: isActive ? activeCol : activeCol.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(5),
                 border: Border.all(
-                  color: isActive
-                      ? activeCol
-                      : activeCol.withValues(alpha: 0.3),
+                  color: isActive ? activeCol : activeCol.withValues(alpha: 0.3),
                   width: isActive ? 1.5 : 1,
                 ),
               ),
               child: Center(
-                child: Text(
-                  items[i],
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (item.icon.isNotEmpty) ...[
+                      Icon(
+                        parseIconFromName(item.icon),
+                        size: 14,
                         color: isActive
                             ? Theme.of(context).colorScheme.onPrimary
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.75),
-                        fontWeight: isActive
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
+                      if (item.label.isNotEmpty) const SizedBox(width: 4),
+                    ],
+                    if (item.label.isNotEmpty)
+                      Flexible(
+                        child: Text(
+                          item.label,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: isActive
+                                    ? Theme.of(context).colorScheme.onPrimary
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.75),
+                                fontWeight:
+                                    isActive ? FontWeight.bold : FontWeight.normal,
+                              ),
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),

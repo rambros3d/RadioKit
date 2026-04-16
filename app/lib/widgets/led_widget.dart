@@ -56,38 +56,46 @@ class LedWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: on ? col : col.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-              boxShadow: on
-                  ? [
-                      BoxShadow(
-                        color: col.withValues(alpha: 0.7),
-                        blurRadius: 12,
-                        spreadRadius: 3,
-                      ),
-                    ]
-                  : null,
-            ),
-          ),
-          if (config.label.isNotEmpty) ...
-            [
-              const SizedBox(height: 4),
-              Text(
-                config.label,
-                style: Theme.of(context).textTheme.labelSmall,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: on ? col : col.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                  boxShadow: on
+                      ? [
+                          BoxShadow(
+                            color: col.withValues(alpha: 0.7),
+                            blurRadius: 18,
+                            spreadRadius: 4,
+                          ),
+                        ]
+                      : null,
+                ),
               ),
+              if (config.label.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  config.label,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ],
-        ],
+          ),
+        ),
       ),
     );
   }

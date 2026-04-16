@@ -27,17 +27,19 @@ class ControlScreen extends StatefulWidget {
 
 class _ControlScreenState extends State<ControlScreen> {
   bool _debugWrapped = false;
+  late DeviceProvider _deviceProvider;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _listenForDisconnect();
-    });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _deviceProvider = context.read<DeviceProvider>();
+    _deviceProvider.addListener(_checkConnection);
   }
 
-  void _listenForDisconnect() {
-    context.read<DeviceProvider>().addListener(_checkConnection);
+  @override
+  void dispose() {
+    _deviceProvider.removeListener(_checkConnection);
+    super.dispose();
   }
 
   void _checkConnection() {
@@ -47,21 +49,18 @@ class _ControlScreenState extends State<ControlScreen> {
         !dp.isConnected) {
       dp.removeListener(_checkConnection);
       final reason = dp.errorMessage ?? 'Device disconnected';
-      Navigator.of(context).popUntil((route) => route.isFirst);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(reason),
-          backgroundColor: AppColors.disconnected,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    }
-  }
 
-  @override
-  void dispose() {
-    context.read<DeviceProvider>().removeListener(_checkConnection);
-    super.dispose();
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(reason),
+            backgroundColor: AppColors.disconnected,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _disconnect() async {
@@ -73,6 +72,7 @@ class _ControlScreenState extends State<ControlScreen> {
 
   void _openDebug() {
     final dp     = context.read<DeviceProvider>();
+    if (!mounted) return;
     final debugP = context.read<DebugProvider>();
 
     if (!_debugWrapped) {
@@ -83,9 +83,11 @@ class _ControlScreenState extends State<ControlScreen> {
       _debugWrapped = true;
     }
 
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const DebugScreen()),
-    );
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const DebugScreen()),
+      );
+    }
   }
 
   @override

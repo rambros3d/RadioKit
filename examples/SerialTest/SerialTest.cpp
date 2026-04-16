@@ -47,10 +47,18 @@ void setup() {
 
   RadioKit.begin();
   RadioKit.startSerial(Serial);
+  Serial.println("RADIOKIT_READY");
 }
 
 void loop() {
   RadioKit.update();
+
+  // Simple heartbeat on LED_PIN
+  static uint32_t lastHeartbeat = 0;
+  if (millis() - lastHeartbeat > 1000) {
+    digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+    lastHeartbeat = millis();
+  }
 
   // Push button: blink LED on press
   if (btn.isPressed()) {
