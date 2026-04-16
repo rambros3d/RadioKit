@@ -1,3 +1,19 @@
+# IDE
+.idea/
+.vscode/
+.gemini/
+.cursor/
+.agent/
+.kilo/
+.antigravity/
+.codex/
+.claude/
+*.iml
+*.swp
+*.swo
+*~
+*.log
+
 # PlatformIO
 .pio/
 .pioenvs/
@@ -20,9 +36,6 @@ app/.flutter-plugins-dependencies
 app/pubspec.lock
 app/.metadata
 app/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
-.gemini/
-.cursor/
-.agent/
 
 # Android
 app/android/.gradle/
@@ -42,15 +55,6 @@ app/ios/Flutter/ephemeral/
 app/ios/Runner/GeneratedPluginRegistrant.h
 app/ios/Runner/GeneratedPluginRegistrant.m
 app/ios/Runner.xcworkspace/
-
-# IDE
-.idea/
-.vscode/
-*.iml
-*.swp
-*.swo
-*~
-*.log
 
 # macOS
 .DS_Store

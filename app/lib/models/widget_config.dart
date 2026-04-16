@@ -5,13 +5,14 @@ import 'protocol.dart';
 // W = baseH * scale * (aspect / 10.0)
 // H = baseH * scale
 const Map<int, double> kWidgetBaseSize = {
-  kWidgetButton:   10.0,
-  kWidgetSwitch:   10.0,
-  kWidgetSlider:   10.0,
-  kWidgetJoystick: 20.0,
-  kWidgetLed:       8.0,
-  kWidgetText:      8.0,
-  kWidgetMultiple: 10.0,
+  kWidgetButton:      10.0,
+  kWidgetSwitch:      10.0,
+  kWidgetSlider:      10.0,
+  kWidgetJoystick:    20.0,
+  kWidgetLed:          8.0,
+  kWidgetText:         8.0,
+  kWidgetMultiple:    10.0,
+  kWidgetSlideSwitch:  8.0,
 };
 
 /// Represents a single item in a Multiple widget.

@@ -19,91 +19,93 @@
 // ─────────────────────────────────────────────
 //  Canvas orientation
 // ─────────────────────────────────────────────
-#define RK_LANDSCAPE  0x00
-#define RK_PORTRAIT   0x01
+#define RK_LANDSCAPE 0x00
+#define RK_PORTRAIT 0x01
 
 // ─────────────────────────────────────────────
 //  Architecture IDs (auto-detected)
 // ─────────────────────────────────────────────
-#define RK_ARCH_UNKNOWN  0
-#define RK_ARCH_ESP32    1
-#define RK_ARCH_NORDIC   2
-#define RK_ARCH_SAMD     3
-#define RK_ARCH_STM32    4
+#define RK_ARCH_UNKNOWN 0
+#define RK_ARCH_ESP32 1
+#define RK_ARCH_NORDIC 2
+#define RK_ARCH_SAMD 3
+#define RK_ARCH_STM32 4
 
 #if defined(ESP32)
-  #define RK_ARCH_DETECTED RK_ARCH_ESP32
+#define RK_ARCH_DETECTED RK_ARCH_ESP32
 #elif defined(NRF52) || defined(NRF51)
-  #define RK_ARCH_DETECTED RK_ARCH_NORDIC
+#define RK_ARCH_DETECTED RK_ARCH_NORDIC
 #elif defined(ARDUINO_ARCH_SAMD)
-  #define RK_ARCH_DETECTED RK_ARCH_SAMD
+#define RK_ARCH_DETECTED RK_ARCH_SAMD
 #elif defined(STM32)
-  #define RK_ARCH_DETECTED RK_ARCH_STM32
+#define RK_ARCH_DETECTED RK_ARCH_STM32
 #else
-  #define RK_ARCH_DETECTED RK_ARCH_UNKNOWN
+#define RK_ARCH_DETECTED RK_ARCH_UNKNOWN
 #endif
 
 // ─────────────────────────────────────────────
-//  UI Themes
+//  UI Skins
 // ─────────────────────────────────────────────
-#define RK_DEFAULT    0
-#define RK_FUTURISTIC 1
-#define RK_RETRO      2
-#define RK_MILITARY   3
-#define RK_CYBERPUNK  4
-#define RK_NEON       5
-#define RK_MINIMAL    6
+#define RK_DEBUG 0
+#define RK_DEFAULT 1
+#define RK_FUTURISTIC 2
+#define RK_RETRO 3
+#define RK_MILITARY 4
+#define RK_CYBERPUNK 5
+#define RK_NEON 6
+#define RK_MINIMAL 7
 
 // ─────────────────────────────────────────────
 //  Widget Styles
 // ─────────────────────────────────────────────
-#define RK_PRIMARY    0
-#define RK_DIM        1
-#define RK_SUCCESS    2
-#define RK_WARNING    3
-#define RK_DANGER     4
+#define RK_PRIMARY 0
+#define RK_DIM 1
+#define RK_SUCCESS 2
+#define RK_WARNING 3
+#define RK_DANGER 4
 
 // ─────────────────────────────────────────────
 //  Color hex constants (for RK_LED::setColor)
 // ─────────────────────────────────────────────
-#define RK_OFF     0x000000
-#define RK_RED     0xFF0000
-#define RK_GREEN   0x00FF00
-#define RK_BLUE    0x0000FF
-#define RK_YELLOW  0xFFFF00
+#define RK_OFF 0x000000
+#define RK_RED 0xFF0000
+#define RK_GREEN 0x00FF00
+#define RK_BLUE 0x0000FF
+#define RK_YELLOW 0xFFFF00
 
 // ─────────────────────────────────────────────
 //  Widget type IDs (protocol)
 // ─────────────────────────────────────────────
-#define RK_TYPE_PUSH_BUTTON    0x01
-#define RK_TYPE_TOGGLE_BUTTON  0x02
-#define RK_TYPE_SLIDER         0x03
-#define RK_TYPE_JOYSTICK       0x04
-#define RK_TYPE_LED            0x05
-#define RK_TYPE_TEXT           0x06
-#define RK_TYPE_MULTIPLE       0x07
+#define RK_TYPE_PUSH_BUTTON 0x01
+#define RK_TYPE_TOGGLE_BUTTON 0x02
+#define RK_TYPE_SLIDER 0x03
+#define RK_TYPE_JOYSTICK 0x04
+#define RK_TYPE_LED 0x05
+#define RK_TYPE_TEXT 0x06
+#define RK_TYPE_MULTIPLE 0x07
+#define RK_TYPE_SLIDE_SWITCH 0x08
 
 // Legacy aliases (kept for internal use)
-#define RK_TYPE_BUTTON   RK_TYPE_PUSH_BUTTON
-#define RK_TYPE_SWITCH   RK_TYPE_TOGGLE_BUTTON
+#define RK_TYPE_BUTTON RK_TYPE_PUSH_BUTTON
+#define RK_TYPE_SWITCH RK_TYPE_TOGGLE_BUTTON
 
 // ─────────────────────────────────────────────
 //  String Bitmask bits (CONF_DATA widget descriptor)
 // ─────────────────────────────────────────────
-#define RK_STR_LABEL    (1 << 0)  ///< Label string present
-#define RK_STR_ICON     (1 << 1)  ///< Icon string present
-#define RK_STR_ONTEXT   (1 << 2)  ///< OnText string present
-#define RK_STR_OFFTEXT  (1 << 3)  ///< OffText string present
-#define RK_STR_CONTENT  (1 << 4)  ///< Content (Text widget initial value)
+#define RK_STR_LABEL (1 << 0)   ///< Label string present
+#define RK_STR_ICON (1 << 1)    ///< Icon string present
+#define RK_STR_ONTEXT (1 << 2)  ///< OnText string present
+#define RK_STR_OFFTEXT (1 << 3) ///< OffText string present
+#define RK_STR_CONTENT (1 << 4) ///< Content (Text widget initial value)
 
 // ─────────────────────────────────────────────
 //  Widget limits
 // ─────────────────────────────────────────────
-#define RADIOKIT_MAX_WIDGETS   16
-#define RADIOKIT_MAX_LABEL     32
-#define RADIOKIT_MAX_ICON      24
-#define RADIOKIT_TEXT_LEN      32
-#define RADIOKIT_MAX_ITEMS      8  ///< MultipleButton/Select item pool size
+#define RADIOKIT_MAX_WIDGETS 16
+#define RADIOKIT_MAX_LABEL 32
+#define RADIOKIT_MAX_ICON 24
+#define RADIOKIT_TEXT_LEN 32
+#define RADIOKIT_MAX_ITEMS 8 ///< MultipleButton/Select item pool size
 
 // ─────────────────────────────────────────────
 //  Rotation helper

@@ -16,6 +16,14 @@
 RK_PushButton
     btn({.label = "Press", .icon = "wifi", .x = 20, .y = 60, .scale = 2.0f});
 RK_ToggleButton sw({.label = "LED", .x = 20, .y = 80, .scale = 2.0f});
+RK_SlideSwitch slideSw({.label = "Power",
+                        .icon = "power",
+                        .x = 20,
+                        .y = 40,
+                        .aspect = 2.5f,
+                        .state = false,
+                        .onText = "ON",
+                        .offText = "OFF"});
 RK_Slider sld({.label = "Level",
                .x = 100,
                .y = 50,
@@ -30,10 +38,10 @@ RK_MultipleButton mode({.label = "Mode",
                                   {.label = "Man", .icon = "hand"}}});
 RK_MultipleSelect opts({.label = "Config",
                         .x = 60,
-                        .y = 80,
+                        .y = 90,
                         .items = {{.label = "Log", .icon = "file-text"},
                                   {.label = "Mute", .icon = "volume-x"}}});
-RK_LED statusLED({.label = "Status", .x = 20, .y = 40, .scale = 1.4f});
+RK_LED statusLED({.label = "Status", .x = 20, .y = 20, .scale = 1.4f});
 RK_Text uptimeText({.label = "Uptime", .x = 20, .y = 10});
 
 void setup() {
@@ -69,7 +77,7 @@ void loop() {
   }
 
   // Toggle switch: hold LED on
-  if (sw.get()) {
+  if (sw.get() || slideSw.get()) {
     digitalWrite(LED_PIN, HIGH);
   } else {
     digitalWrite(LED_PIN, LOW);

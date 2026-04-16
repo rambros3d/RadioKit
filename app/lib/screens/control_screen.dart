@@ -11,6 +11,7 @@ import '../models/protocol.dart';
 import '../theme/app_theme.dart';
 import '../widgets/button_widget.dart';
 import '../widgets/switch_widget.dart';
+import '../widgets/slide_switch_widget.dart';
 import '../widgets/slider_widget.dart';
 import '../widgets/joystick_widget.dart';
 import '../widgets/led_widget.dart';
@@ -292,6 +293,14 @@ class _ControlScreenState extends State<ControlScreen> {
         return SwitchWidget(
           config: config,
           value: value,
+          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
+        );
+
+      case kWidgetSlideSwitch:
+        final slideValue = state?.inputValues[config.widgetId]?.first ?? 0;
+        return SlideSwitchWidget(
+          config: config,
+          value: slideValue,
           onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
         );
 

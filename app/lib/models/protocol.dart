@@ -27,39 +27,43 @@ const int kWidgetJoystick = 0x04;
 const int kWidgetLed      = 0x05;
 const int kWidgetText     = 0x06;
 const int kWidgetMultiple = 0x07;
+const int kWidgetSlideSwitch = 0x08;
 
 // Widget input sizes in bytes (app → device)
 const Map<int, int> kWidgetInputSize = {
-  kWidgetButton:   1,
-  kWidgetSwitch:   1,
-  kWidgetSlider:   1,
-  kWidgetJoystick: 2,
-  kWidgetLed:      0,
-  kWidgetText:     0,
-  kWidgetMultiple: 1,
+  kWidgetButton:      1,
+  kWidgetSwitch:      1,
+  kWidgetSlider:      1,
+  kWidgetJoystick:    2,
+  kWidgetLed:         0,
+  kWidgetText:        0,
+  kWidgetMultiple:    1,
+  kWidgetSlideSwitch: 1,
 };
 
 // Widget output sizes in bytes (device → app)
 // LED v3: 5 bytes — STATE(1) R(1) G(1) B(1) OPACITY(1)
 const Map<int, int> kWidgetOutputSize = {
-  kWidgetButton:   0,
-  kWidgetSwitch:   0,
-  kWidgetSlider:   0,
-  kWidgetJoystick: 0,
-  kWidgetLed:      5,
-  kWidgetText:     32,
-  kWidgetMultiple: 0,
+  kWidgetButton:      0,
+  kWidgetSwitch:      0,
+  kWidgetSlider:      0,
+  kWidgetJoystick:    0,
+  kWidgetLed:         5,
+  kWidgetText:        32,
+  kWidgetMultiple:    0,
+  kWidgetSlideSwitch: 0,
 };
 
 // Default aspect × 10 per widget type (mirrors Arduino defaultAspect())
 const Map<int, int> kWidgetDefaultAspect = {
-  kWidgetButton:   10,  // 1.0 (square)
-  kWidgetSwitch:   10,  // 1.0
-  kWidgetSlider:   50,  // 5.0 (wide)
-  kWidgetJoystick: 10,  // 1.0 (square)
-  kWidgetLed:      10,  // 1.0
-  kWidgetText:     30,  // 3.0 (wide)
-  kWidgetMultiple: 20,  // 2.0
+  kWidgetButton:      10,  // 1.0 (square)
+  kWidgetSwitch:      10,  // 1.0
+  kWidgetSlider:      50,  // 5.0 (wide)
+  kWidgetJoystick:    10,  // 1.0 (square)
+  kWidgetLed:         10,  // 1.0
+  kWidgetText:        30,  // 3.0 (wide)
+  kWidgetMultiple:    20,  // 2.0
+  kWidgetSlideSwitch: 25,  // 2.5 (wide track)
 };
 
 // Protocol version
@@ -112,13 +116,14 @@ const int kStrMaskContent = 0x10;
 // Widget type name for display
 String widgetTypeName(int typeId) {
   switch (typeId) {
-    case kWidgetButton:   return 'Button';
-    case kWidgetSwitch:   return 'Switch';
-    case kWidgetSlider:   return 'Slider';
-    case kWidgetJoystick: return 'Joystick';
-    case kWidgetLed:      return 'LED';
-    case kWidgetText:     return 'Text';
-    case kWidgetMultiple: return 'Multiple';
-    default:              return 'Unknown';
+    case kWidgetButton:      return 'Button';
+    case kWidgetSwitch:      return 'Switch';
+    case kWidgetSlider:      return 'Slider';
+    case kWidgetJoystick:    return 'Joystick';
+    case kWidgetLed:         return 'LED';
+    case kWidgetText:        return 'Text';
+    case kWidgetMultiple:    return 'Multiple';
+    case kWidgetSlideSwitch: return 'SlideSwitch';
+    default:                 return 'Unknown';
   }
 }

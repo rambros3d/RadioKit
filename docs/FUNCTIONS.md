@@ -11,6 +11,7 @@
 3. [Widget Composition (Specific Props)](#3-widget-composition-specific-props)
 4. [Widget Class Reference](#4-widget-class-reference)
   - [Push & Toggle Buttons](#push--toggle-buttons)
+  - [SlideSwitch](#slideswitch)
   - [Slider](#slider)
   - [Joystick](#joystick)
   - [MultipleButton / MultipleSelect](#multiplebutton--multipleselect)
@@ -188,6 +189,52 @@ RK_ToggleButton power({
     .icon = "power",
     .onText = "ON", 
     .offText = "OFF" 
+});
+```
+
+---
+
+### SlideSwitch
+
+iOS-style slide/toggle switch for binary on/off control. Unlike `ToggleButton` (which renders as a button), `SlideSwitch` renders as a horizontal track with a sliding thumb.
+
+**Structure:**
+
+```cpp
+struct RK_SlideSwitchProps {
+    const char* label = nullptr;
+    const char* icon  = nullptr;
+    uint8_t     x = 0, y = 0;
+    int16_t     rotation = 0;
+    float       scale = 1.0;
+    float       aspect = 1.0;
+    //--------------------------
+    uint8_t     style = 0;
+    bool        state = false;
+    const char* onText = nullptr;
+    const char* offText = nullptr;
+};
+```
+
+
+| Function           | Variable (Direct Access) | Description                                |
+| ------------------ | ------------------------ | ------------------------------------------ |
+| `get()`            | `props.state == true`    | Returns `true` if active.                  |
+| `set(bool)`        | `props.state = val;`     | Force update the app-side state.           |
+| `setIcon(char*)`   | `props.icon = val;`      | Updates icon (e.g. "wifi", "wifi-off").    |
+
+
+**Example:**
+
+```cpp
+RK_SlideSwitch headlights({
+    .label = "Headlights",
+    .x = 50,
+    .y = 60,
+    .state = false,
+    .icon = "sun",
+    .onText = "ON",
+    .offText = "OFF"
 });
 ```
 

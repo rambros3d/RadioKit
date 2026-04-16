@@ -9,6 +9,7 @@
 
 #include "widgets/Widget.h"
 #include "widgets/Button.h"
+#include "widgets/SlideSwitch.h"
 #include "widgets/Slider.h"
 #include "widgets/Joystick.h"
 #include "widgets/LED.h"
