@@ -20,10 +20,6 @@ void RadioKitSerialTransport::begin(Stream& stream, RK_PacketCallback cb) {
     _lastByteMs   = 0;
     _everReceived = false;
     rk_rxReset();
-
-    // Diagnostic LED (Lolin S3 Mini)
-    pinMode(7, OUTPUT);
-    digitalWrite(7, LOW);
 }
 
 void RadioKitSerialTransport::begin(const char* /*name*/, RK_PacketCallback cb) {
@@ -41,21 +37,10 @@ void RadioKitSerialTransport::update() {
         uint8_t byte = (uint8_t)_stream->read();
         _lastByteMs = millis();
 
-        // Flicker LED on byte reception
-        digitalWrite(7, HIGH);
-
         if (rk_rxFeedByte(byte, cmd, payload, payloadLen)) {
             _everReceived = true;
             _lastPacketMs = millis();
-            
-            // Toggle LED on valid packet
-            static bool toggle = false;
-            toggle = !toggle;
-            digitalWrite(7, toggle ? HIGH : LOW);
-
             if (_cb) _cb(cmd, payload, payloadLen);
-        } else {
-            digitalWrite(7, LOW);
         }
     }
 

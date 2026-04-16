@@ -125,7 +125,7 @@ class DeviceProvider extends ChangeNotifier {
       return;
     }
 
-    await Future.delayed(const Duration(milliseconds: 2500));
+    await Future.delayed(const Duration(milliseconds: 3500));
     if (_connectionState == DeviceConnectionState.disconnected) return;
 
     await _requestConfig();
@@ -164,22 +164,18 @@ class DeviceProvider extends ChangeNotifier {
         await _confCompleter!.future;
         _confTimeoutTimer?.cancel();
         _confTimeoutTimer = null;
-        if (_connectionState == DeviceConnectionState.disconnected) return;
-        _log('HANDSHAKE SUCCESS!', level: ConsoleLogLevel.success);
-        // Guard: only start polling if not already running
-        if (_pollTimer == null) _startPolling();
-        return;
-      } on TimeoutException catch (e) {
+        _confCompleter = null;
+        _log('RX <- CONF_DATA (${_transport.isConnected ? "connected" : "handshake done"})');
+        break; // Success
+      } on TimeoutException catch (_) {
         _confTimeoutTimer?.cancel();
         _confTimeoutTimer = null;
-        _log('TIMEOUT: Device did not respond to GET_CONF.', level: ConsoleLogLevel.warning);
-        debugPrint('RadioKit: $e — retrying (attempt ${attempt + 1}/3)');
+        _log('TIMEOUT: Device did not respond to GET_CONF.',
+            level: ConsoleLogLevel.warning);
         if (_connectionState == DeviceConnectionState.disconnected) return;
-        if (attempt < 2) {
-          try { await _transport.writePacket(ProtocolService.buildGetConf()); } catch (_) {}
-          continue;
-        }
-        _errorMessage    = 'Device did not respond after 3 attempts. Please reconnect.';
+        if (attempt < 2) continue;
+
+        _errorMessage = 'Device did not respond to GET_CONF after 3 attempts.';
         _connectionState = DeviceConnectionState.error;
         notifyListeners();
         return;
