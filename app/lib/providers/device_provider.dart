@@ -47,7 +47,6 @@ class DeviceProvider extends ChangeNotifier {
   int                      _orientation = kOrientationLandscape;
   RadioWidgetState?        _widgetState;
   String?                  _errorMessage;
-  bool                     _configReceived = false;
 
   Timer?                   _pollTimer;
   Timer?                   _pingTimer;
@@ -101,7 +100,6 @@ class DeviceProvider extends ChangeNotifier {
     _connectionState = DeviceConnectionState.connecting;
     _connectedDevice = device;
     _errorMessage    = null;
-    _configReceived  = false;
     notifyListeners();
 
     _transport.onPacketReceived = _handlePacket;
@@ -205,12 +203,20 @@ class DeviceProvider extends ChangeNotifier {
 
     _pollTimer = Timer.periodic(kGetVarsInterval, (_) async {
       if (!_transport.isConnected) return;
-      try { await _transport.writePacket(ProtocolService.buildGetVars()); } catch (_) {}
+      try {
+        await _transport.writePacket(ProtocolService.buildGetVars());
+      } catch (e) {
+        _log('POLL ERROR: $e', level: ConsoleLogLevel.warning);
+      }
     });
 
     _pingTimer = Timer.periodic(kPingInterval, (_) async {
       if (!_transport.isConnected) return;
-      try { await _transport.writePacket(ProtocolService.buildPing()); } catch (_) {}
+      try {
+        await _transport.writePacket(ProtocolService.buildPing());
+      } catch (e) {
+        debugPrint('RadioKit: Ping error: $e');
+      }
     });
   }
 
@@ -246,8 +252,8 @@ class DeviceProvider extends ChangeNotifier {
     _widgets         = conf.widgets;
     _orientation     = conf.orientation;
     _widgetState     = RadioWidgetState.initial(conf.widgets);
-    _configReceived  = true;
     _connectionState = DeviceConnectionState.connected;
+    _startPolling();
     notifyListeners();
     final completer = _confCompleter;
     if (completer != null && !completer.isCompleted) {

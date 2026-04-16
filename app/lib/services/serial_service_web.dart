@@ -245,11 +245,19 @@ class SerialService implements TransportService {
     final writable = port.writable;
     if (writable == null) throw StateError('Serial port has no writable stream');
 
+    if (writable.locked) {
+      debugPrint('RadioKit: Serial write skipped — stream is locked (busy)');
+      return;
+    }
+
     final writer = writable.getWriter() as WritableStreamDefaultWriter;
     try {
       await writer.write(data.toJS).toDart;
+    } catch (e) {
+      debugPrint('RadioKit: Serial write error: $e');
+      rethrow;
     } finally {
-      writer.releaseLock();
+      try { writer.releaseLock(); } catch (_) {}
     }
   }
 

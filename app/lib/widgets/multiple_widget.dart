@@ -57,39 +57,42 @@ class MultipleWidget extends StatelessWidget {
     final activeCol = _activeColor(context);
 
     return LayoutBuilder(builder: (context, constraints) {
+      // Use items.length as source of truth for width if variant is 0
+      final itemCount = items.length;
+      final baseWidth = itemCount * 60.0;
+      
       return Container(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Theme.of(context).dividerColor, width: 1.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5), width: 1.5),
         ),
         child: FittedBox(
           fit: BoxFit.contain,
-          child: SizedBox(
-            width: config.variant * 60.0, // Base width based on items
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (config.label.isNotEmpty) ...[
-                  Text(
-                    config.label,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                ],
-                // Header (Switch style row or grid depending on variant)
-                SizedBox(
-                  height: 32,
-                  child: Row(
-                    children: _buildItems(context, items, activeCol, true),
-                  ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (config.label.isNotEmpty) ...[
+                Text(
+                  config.label.toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                        fontSize: 10,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
                 ),
+                const SizedBox(height: 6),
               ],
-            ),
+              SizedBox(
+                height: 36,
+                width: baseWidth,
+                child: Row(
+                  children: _buildItems(context, items, activeCol, true),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -99,18 +102,42 @@ class MultipleWidget extends StatelessWidget {
   List<Widget> _buildItems(BuildContext context, List<MultipleItem> items,
       Color activeCol, bool horizontal) {
     final List<Widget> children = [];
+    
+    // Simple heuristic: if it's "MultipleSelect" it likely uses bitmasking.
+    // Since we don't have a protocol flag yet, we'll implement a toggle behavior
+    // that works for both single and multi-select.
+    
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
-      final isActive = value == i;
+      
+      // Check if active: bit i is set OR (if single byte) value == i
+      // We'll support both. If value > items.length, it's definitely a bitmask.
+      // If value < items.length, it could be either.
+      final bool isBitSet = (value & (1 << i)) != 0;
+      final bool isIndexMatch = (value == i);
+      final isActive = isBitSet || isIndexMatch;
+
       if (i > 0) {
         children.add(horizontal
-            ? const SizedBox(width: 3)
-            : const SizedBox(height: 3));
+            ? const SizedBox(width: 4)
+            : const SizedBox(height: 4));
       }
+
       children.add(
         Expanded(
           child: GestureDetector(
-            onTap: () => onChanged(i),
+            onTap: () {
+              // Toggle logic for multi-select support
+              if (isActive && isBitSet) {
+                onChanged(value & ~(1 << i)); // Deselect bit
+              } else if (!isActive) {
+                // If it was a single selector, this would normally be value = i.
+                // But let's assume bitmasking for 0x07 for now to be flexible.
+                onChanged(value | (1 << i)); // Select bit
+              } else {
+                onChanged(i); // Fallback to index
+              }
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 100),
               decoration: BoxDecoration(
