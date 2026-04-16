@@ -6,9 +6,14 @@ import '../models/widget_config.dart';
 
 /// Result of parsing a CONF_DATA payload.
 class ParsedConf {
+  final String name;
   final int orientation;
   final List<WidgetConfig> widgets;
-  const ParsedConf({required this.orientation, required this.widgets});
+  const ParsedConf({
+    required this.name,
+    required this.orientation,
+    required this.widgets,
+  });
 }
 
 /// Handles all packet building, parsing, and CRC computation for the
@@ -138,6 +143,8 @@ class ProtocolService {
       debugPrint('RadioKit CONF_DATA: truncated in NAME field');
       return null;
     }
+    final name = utf8.decode(payload.sublist(offset, offset + nameLen),
+        allowMalformed: true);
     offset += nameLen;
 
     // Skip password
@@ -196,11 +203,11 @@ class ProtocolService {
         return s;
       }
 
-      if (strMask & kStrMaskLabel   != 0) label   = readStr();
-      if (strMask & kStrMaskIcon    != 0) icon    = readStr();
-      if (strMask & kStrMaskOnText  != 0) onText  = readStr();
-      if (strMask & kStrMaskOffText != 0) offText = readStr();
-      if (strMask & kStrMaskContent != 0) content = readStr();
+      if ((strMask & kStrMaskLabel)   != 0) label   = readStr();
+      if ((strMask & kStrMaskIcon)    != 0) icon    = readStr();
+      if ((strMask & kStrMaskOnText)  != 0) onText  = readStr();
+      if ((strMask & kStrMaskOffText) != 0) offText = readStr();
+      if ((strMask & kStrMaskContent) != 0) content = readStr();
 
       widgets.add(WidgetConfig(
         typeId:   typeId,
@@ -224,7 +231,11 @@ class ProtocolService {
     }
 
     debugPrint('RadioKit CONF_DATA: parsed ${widgets.length}/$numWidgets widgets OK');
-    return ParsedConf(orientation: orientation, widgets: widgets);
+    return ParsedConf(
+      name: name,
+      orientation: orientation,
+      widgets: widgets,
+    );
   }
 
   // ── VAR_DATA parsing ─────────────────────────────────────────────────────

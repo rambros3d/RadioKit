@@ -10,3 +10,7 @@ RK_Slider::RK_Slider(RK_SliderProps p) : props(p) {
 void RK_Slider::deserializeInput(const uint8_t* buf) {
     props.value = buf[0] > 100 ? 100 : buf[0];
 }
+
+void RK_Slider::serializeInput(uint8_t* buf) const {
+    buf[0] = props.value;
+}

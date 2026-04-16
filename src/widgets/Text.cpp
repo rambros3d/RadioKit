@@ -30,7 +30,14 @@ void RK_Text::setIcon(const char* val) {
     }
 }
 
+void RK_Text::serializeInput(uint8_t* buf) const {
+    // Text widgets have no input state
+}
+
 void RK_Text::serializeOutput(uint8_t* buf) const {
     memset(buf, 0, RADIOKIT_TEXT_LEN);
-    strncpy((char*)buf, _text, RADIOKIT_TEXT_LEN - 1);
+    if (_text[0] != '\0') {
+        strncpy((char*)buf, _text, RADIOKIT_TEXT_LEN - 1);
+        buf[RADIOKIT_TEXT_LEN - 1] = '\0';
+    }
 }

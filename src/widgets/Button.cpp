@@ -8,7 +8,7 @@ void RadioKit_Button::_initFromProps(const RK_ButtonProps& p, uint8_t tid) {
           p.icon, p.onText, p.offText, p.rotation);
 }
 
-void RadioKit_Button::serializeOutput(uint8_t* buf) const {
+void RadioKit_Button::serializeInput(uint8_t* buf) const {
     buf[0] = props.state ? 1 : 0;
 }
 

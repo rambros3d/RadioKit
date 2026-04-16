@@ -126,7 +126,7 @@ class SerialService implements TransportService {
       stopBits: 1,
       parity: 'none',
       flowControl: 'none',
-      bufferSize: 255,
+      bufferSize: 4096,
     );
     await port.open(options).toDart;
 
@@ -134,7 +134,7 @@ class SerialService implements TransportService {
     try {
       await port.setSignals(JSSerialOutputSignals(
         dataTerminalReady: true,
-        requestToSend: true,
+        requestToSend: false,
       )).toDart;
     } catch (e) {
       debugPrint('RadioKit: Failed to set DTR/RTS signals: $e');

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radiokit/services/protocol_service.dart';
 import 'package:radiokit/models/protocol.dart';
+import 'package:radiokit/models/widget_config.dart';
 
 void main() {
   group('ProtocolService', () {
@@ -54,42 +55,54 @@ void main() {
 
     group('CONF_DATA parsing', () {
       test('returns empty list for zero widgets', () {
-        final payload = [0x01, 0x00]; // version=1, count=0
-        final widgets = ProtocolService.parseConfData(payload);
-        expect(widgets, isNotNull);
-        expect(widgets!, isEmpty);
+        final payload = [
+          0x03, // version
+          0x00, // theme
+          0x00, // orientation
+          0x00, // 0 widgets
+          0x00, // nameLen=0
+          0x00, // pwdLen=0
+        ];
+        final parsed = ProtocolService.parseConfData(payload);
+        expect(parsed, isNotNull);
+        expect(parsed!.widgets, isEmpty);
       });
 
       test('returns null for truncated payload', () {
         final payload = [0x01]; // Missing count byte
-        final widgets = ProtocolService.parseConfData(payload);
-        expect(widgets, isNull);
+        final parsed = ProtocolService.parseConfData(payload);
+        expect(parsed, isNull);
       });
 
       test('parses a single button widget descriptor', () {
-        // TYPE(1=btn) ID(5) X(100 LE) Y(200 LE) W(150 LE) H(50 LE) LABEL_LEN(3) LABEL
+        // [version][theme][orientation][count][nameLen][name...][pwdLen][pwd...][TYPE][ID][X][Y][SCALE][ASPECT][ROT_L][ROT_H][STYLE][VARIANT][STR_MASK][STRINGS...]
         final payload = [
-          0x01, // version
+          0x03, // version
+          0x00, // theme
+          0x00, // orientation
           0x01, // 1 widget
+          0x04, 0x54, 0x65, 0x73, 0x74, // nameLen=4, "Test"
+          0x00, // pwdLen=0
           0x01, // TYPE = BUTTON
           0x05, // WIDGET_ID = 5
-          0x64, 0x00, // X = 100
-          0xC8, 0x00, // Y = 200
-          0x96, 0x00, // W = 150
-          0x32, 0x00, // H = 50
-          0x03, // LABEL_LEN = 3
-          0x42, 0x54, 0x4E, // "BTN"
+          0x64, // X = 100
+          0xC8, // Y = 200
+          0x14, // Scale = 20 (2.0x)
+          0x0A, // Aspect = 10 (1.0)
+          0x00, 0x00, // Rotation = 0
+          0x00, // Style
+          0x00, // Variant
+          0x01, // StrMask (Label only)
+          0x03, 0x42, 0x54, 0x4E, // Prefix(3) + "BTN"
         ];
-        final widgets = ProtocolService.parseConfData(payload);
-        expect(widgets, isNotNull);
-        expect(widgets!.length, equals(1));
-        expect(widgets[0].typeId, equals(kWidgetButton));
-        expect(widgets[0].widgetId, equals(5));
-        expect(widgets[0].x, equals(100.0));
-        expect(widgets[0].y, equals(200.0));
-        expect(widgets[0].w, equals(150.0));
-        expect(widgets[0].h, equals(50.0));
-        expect(widgets[0].label, equals('BTN'));
+        final parsed = ProtocolService.parseConfData(payload);
+        expect(parsed, isNotNull);
+        expect(parsed!.widgets.length, equals(1));
+        expect(parsed.widgets[0].typeId, equals(kWidgetButton));
+        expect(parsed.widgets[0].widgetId, equals(5));
+        expect(parsed.widgets[0].x, equals(100.0));
+        expect(parsed.widgets[0].y, equals(200.0));
+        expect(parsed.widgets[0].label, equals('BTN'));
       });
     });
 
@@ -105,9 +118,6 @@ void main() {
   });
 }
 
-// Helper to create an empty WidgetState for tests.
-import 'package:radiokit/models/widget_config.dart';
-
-WidgetState _emptyState() {
-  return const WidgetState(inputValues: {}, outputValues: {});
+RadioWidgetState _emptyState() {
+  return const RadioWidgetState(inputValues: {}, outputValues: {});
 }

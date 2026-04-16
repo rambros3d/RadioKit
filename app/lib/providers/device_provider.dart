@@ -8,6 +8,9 @@ import '../services/transport_service.dart';
 import '../services/protocol_service.dart';
 import '../services/debug_transport.dart';
 
+import '../providers/console_provider.dart';
+import '../models/console_entry.dart';
+
 enum DeviceConnectionState {
   disconnected,
   connecting,
@@ -36,6 +39,7 @@ class _PendingUpdate {
 /// polling/update loop. Transport-agnostic.
 class DeviceProvider extends ChangeNotifier {
   TransportService _transport;
+  ConsoleProvider? _console;
 
   DeviceInfo?              _connectedDevice;
   DeviceConnectionState    _connectionState = DeviceConnectionState.disconnected;
@@ -57,8 +61,14 @@ class DeviceProvider extends ChangeNotifier {
   DeviceProvider({
     required TransportService transport,
     DebugLogSink? debugSink,
+    ConsoleProvider? console,
   })  : _transport = transport,
-        _debugSink = debugSink;
+        _debugSink = debugSink,
+        _console = console;
+
+  void _log(String message, {ConsoleLogLevel level = ConsoleLogLevel.info}) {
+    _console?.log(message, level: level);
+  }
 
   // ── Getters ──────────────────────────────────────────────────────────────
 
@@ -103,23 +113,26 @@ class DeviceProvider extends ChangeNotifier {
       _transport.onConnectionLost = _handleConnectionLost;
     }
 
+    _log('CONNECTING TO: ${device.name} (${device.id})');
     try {
       await _transport.connect(device.id, baudRate: baudRate);
       if (_connectionState == DeviceConnectionState.disconnected) return;
     } catch (e) {
+      _log('CONNECTION FAILED: $e', level: ConsoleLogLevel.error);
       _errorMessage    = 'Connection failed: $e';
       _connectionState = DeviceConnectionState.error;
       notifyListeners();
       return;
     }
 
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 2500));
     if (_connectionState == DeviceConnectionState.disconnected) return;
 
     await _requestConfig();
   }
 
   Future<void> _requestConfig() async {
+    _log('ESTABLISHING HANDSHAKE (Protocol v${kProtocolVersion})...');
     _connectionState = DeviceConnectionState.fetchingConfig;
     notifyListeners();
 
@@ -127,8 +140,12 @@ class DeviceProvider extends ChangeNotifier {
       _confCompleter = Completer<void>();
 
       try {
-        await _transport.writePacket(ProtocolService.buildGetConf());
+        final pkt = ProtocolService.buildGetConf();
+        final hex = pkt.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join(' ');
+        _log('TX -> GET_CONF (attempt ${attempt + 1}/3) bytes: $hex');
+        await _transport.writePacket(pkt);
       } catch (e) {
+        _log('FAILED TO SEND GET_CONF: $e', level: ConsoleLogLevel.error);
         _errorMessage    = 'Failed to send GET_CONF: $e';
         _connectionState = DeviceConnectionState.error;
         notifyListeners();
@@ -148,12 +165,14 @@ class DeviceProvider extends ChangeNotifier {
         _confTimeoutTimer?.cancel();
         _confTimeoutTimer = null;
         if (_connectionState == DeviceConnectionState.disconnected) return;
+        _log('HANDSHAKE SUCCESS!', level: ConsoleLogLevel.success);
         // Guard: only start polling if not already running
         if (_pollTimer == null) _startPolling();
         return;
       } on TimeoutException catch (e) {
         _confTimeoutTimer?.cancel();
         _confTimeoutTimer = null;
+        _log('TIMEOUT: Device did not respond to GET_CONF.', level: ConsoleLogLevel.warning);
         debugPrint('RadioKit: $e — retrying (attempt ${attempt + 1}/3)');
         if (_connectionState == DeviceConnectionState.disconnected) return;
         if (attempt < 2) {
@@ -217,13 +236,15 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   void _handleConfData(List<int> payload) {
-    debugPrint('RadioKit: CONF_DATA received, ${payload.length} bytes');
+    _log('RX <- CONF_DATA (${payload.length} bytes)');
     final conf = ProtocolService.parseConfData(payload);
     if (conf == null) {
+      _log('PARSE FAILED: Invalid CONF_DATA payload.', level: ConsoleLogLevel.error);
       debugPrint('RadioKit: CONF_DATA parse failed — raw: '
           '${payload.take(32).map((b) => b.toRadixString(16).padLeft(2, "0")).join(" ")}');
       return;
     }
+    _log('RECEIVED CONFIG: "${conf.name}" with ${conf.widgets.length} widgets', level: ConsoleLogLevel.success);
     _widgets         = conf.widgets;
     _orientation     = conf.orientation;
     _widgetState     = RadioWidgetState.initial(conf.widgets);

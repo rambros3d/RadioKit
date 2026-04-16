@@ -15,6 +15,10 @@ void RK_LED::serializeOutput(uint8_t* buf) const {
     buf[4] = props.opacity;
 }
 
+void RK_LED::serializeInput(uint8_t* buf) const {
+    // LEDs have no input state
+}
+
 void RK_LED::setColor(const char* hex) {
     if (!hex || hex[0] == '\0') return;
     const char* p = (hex[0] == '#') ? hex + 1 : hex;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/widget_config.dart';
 import '../models/protocol.dart';
 import '../theme/app_theme.dart';
@@ -87,28 +88,38 @@ class ButtonWidget extends StatelessWidget {
   }
 }
 
-/// Map simple icon name strings to Flutter [IconData].
+/// Map simple icon name strings to Lucide [IconData].
 /// Exported so [TextWidget] and others can reuse.
 IconData parseIconFromName(String name) {
   switch (name.toLowerCase()) {
-    case 'power':    return Icons.power_settings_new_rounded;
-    case 'play':     return Icons.play_arrow_rounded;
-    case 'pause':    return Icons.pause_rounded;
-    case 'stop':     return Icons.stop_rounded;
-    case 'forward':  return Icons.arrow_forward_rounded;
-    case 'back':     return Icons.arrow_back_rounded;
-    case 'up':       return Icons.arrow_upward_rounded;
-    case 'down':     return Icons.arrow_downward_rounded;
-    case 'home':     return Icons.home_rounded;
-    case 'settings': return Icons.settings_rounded;
-    case 'info':     return Icons.info_rounded;
-    case 'warning':  return Icons.warning_rounded;
-    case 'check':    return Icons.check_rounded;
-    case 'close':    return Icons.close_rounded;
-    case 'lock':     return Icons.lock_rounded;
-    case 'unlock':   return Icons.lock_open_rounded;
-    case 'light':    return Icons.light_mode_rounded;
-    case 'fan':      return Icons.air_rounded;
-    default:         return Icons.radio_button_checked_rounded;
+    case 'power':      return LucideIcons.power;
+    case 'play':       return LucideIcons.play;
+    case 'pause':      return LucideIcons.pause;
+    case 'stop':       return LucideIcons.square;
+    case 'forward':    return LucideIcons.arrowRight;
+    case 'back':       return LucideIcons.arrowLeft;
+    case 'up':          return LucideIcons.arrowUp;
+    case 'down':        return LucideIcons.arrowDown;
+    case 'home':        return LucideIcons.house;
+    case 'settings':    return LucideIcons.settings;
+    case 'info':        return LucideIcons.info;
+    case 'warning':     return LucideIcons.triangleAlert;
+    case 'check':       return LucideIcons.check;
+    case 'close':       return LucideIcons.x;
+    case 'lock':        return LucideIcons.lock;
+    case 'unlock':      return LucideIcons.lockOpen;
+    case 'light':       return LucideIcons.lightbulb;
+    case 'fan':         return LucideIcons.fan;
+    case 'wifi':        return LucideIcons.wifi;
+    case 'autorenew':
+    case 'refresh':     return LucideIcons.refreshCw;
+    case 'hand':        return LucideIcons.hand;
+    case 'receipt':     return LucideIcons.receipt;
+    case 'volume_off':
+    case 'volume-x':    return LucideIcons.volumeX;
+    case 'cpu':         return LucideIcons.cpu;
+    case 'file-text':   return LucideIcons.fileText;
+    case 'trash':       return LucideIcons.trash2;
+    default:            return LucideIcons.circle;
   }
 }

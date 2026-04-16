@@ -27,6 +27,7 @@ public:
 
     uint8_t inputSize()  const override { return 0; }
     uint8_t outputSize() const override { return RADIOKIT_TEXT_LEN; }
+    void serializeInput(uint8_t*)           const override;
     void serializeOutput(uint8_t* buf)         const override;
     void deserializeInput(const uint8_t*)            override {}
 

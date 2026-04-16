@@ -26,7 +26,7 @@ public:
     uint8_t     scale()    const { return _scale; }
     /// Aspect ×10 (e.g. 2.5 → 25). 0 = use widget default.
     uint8_t     aspect()   const { return _aspect != 0 ? _aspect : defaultAspect(); }
-    /// Rotation in degrees (wire value = degrees; displayed as degrees × 2).
+    /// Rotation in degrees (absolute).
     int16_t     rotation() const { return _rotation; }
     bool        enabled()  const { return _enabled; }
     uint8_t     style()    const { return _style; }
@@ -39,10 +39,13 @@ public:
     // ── Serialization ─────────────────────────────────────────────────────
     virtual uint8_t inputSize()  const = 0;
     virtual uint8_t outputSize() const = 0;
+    /// Writes the current input-side value(s) to [buf]. Called by GET_VARS.
+    virtual void serializeInput(uint8_t* buf)          const = 0;
+    /// Writes the current output-side value(s) to [buf]. Called by GET_VARS.
     virtual void serializeOutput(uint8_t* buf)         const = 0;
     virtual void deserializeInput(const uint8_t* buf)        = 0;
 
-    uint8_t serializeStrings(uint8_t* buf) const;
+    virtual uint8_t serializeStrings(uint8_t* buf) const;
 
 protected:
     uint8_t  _x, _y;

@@ -86,7 +86,7 @@ class WidgetConfig {
   double get w => h * aspectF;
 
   /// Display rotation in degrees.
-  double get rotationDegrees => rotation * 2.0;
+  double get rotationDegrees => rotation.toDouble();
 
   const WidgetConfig({
     required this.typeId,
@@ -121,7 +121,7 @@ class WidgetConfig {
   @override
   String toString() =>
       'WidgetConfig(id=$widgetId, type=$typeName, label="$label", '
-      'pos=($x,$y), scale=${scaleF}× aspect=${aspectF} → '
+      'pos=($x,$y), scale=$scaleF× aspect=$aspectF → '
       '${w.toStringAsFixed(1)}×${h.toStringAsFixed(1)}, '
       'style=$style, variant=$variant, rot=${rotationDegrees}°)';
 }

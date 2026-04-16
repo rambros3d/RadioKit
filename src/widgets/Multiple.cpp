@@ -23,6 +23,10 @@ void RadioKit_Multiple::deserializeInput(const uint8_t* buf) {
     props.value = buf[0];
 }
 
+void RadioKit_Multiple::serializeInput(uint8_t* buf) const {
+    buf[0] = props.value;
+}
+
 void RadioKit_Multiple::clear() {
     memset(_pool, 0, sizeof(_pool));
     _poolCount  = 0;
@@ -59,4 +63,38 @@ RK_MultipleButton::RK_MultipleButton(RK_MultipleProps p) {
 
 RK_MultipleSelect::RK_MultipleSelect(RK_MultipleProps p) {
     _initFromProps(p, RK_TYPE_MULTIPLE);
+}
+uint8_t RadioKit_Multiple::serializeStrings(uint8_t* buf) const {
+    uint8_t mask = 0;
+    if (_label[0]   != '\0') mask |= RK_STR_LABEL;
+    if (_icon[0]    != '\0') mask |= RK_STR_ICON;
+    if (_onText[0]  != '\0') mask |= RK_STR_ONTEXT;
+    if (_offText[0] != '\0') mask |= RK_STR_OFFTEXT;
+
+    // Build pipe-delimited items string
+    char itemsStr[128]; 
+    itemsStr[0] = '\0';
+    for (uint8_t i = 0; i < _poolCount; i++) {
+        if (i > 0) strncat(itemsStr, "|", sizeof(itemsStr) - strlen(itemsStr) - 1);
+        strncat(itemsStr, _pool[i].label, sizeof(itemsStr) - strlen(itemsStr) - 1);
+    }
+    if (itemsStr[0] != '\0') mask |= RK_STR_CONTENT;
+
+    uint8_t out = 0;
+    buf[out++] = mask;
+
+    auto _writeStr = [&](const char* s) {
+        uint8_t len = (uint8_t)strnlen(s, RADIOKIT_MAX_LABEL * 4); // content can be longer
+        buf[out++] = len;
+        memcpy(&buf[out], s, len);
+        out += len;
+    };
+
+    if (mask & RK_STR_LABEL)   _writeStr(_label);
+    if (mask & RK_STR_ICON)    _writeStr(_icon);
+    if (mask & RK_STR_ONTEXT)  _writeStr(_onText);
+    if (mask & RK_STR_OFFTEXT) _writeStr(_offText);
+    if (mask & RK_STR_CONTENT) _writeStr(itemsStr);
+
+    return out;
 }

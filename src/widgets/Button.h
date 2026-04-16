@@ -30,8 +30,9 @@ public:
     static constexpr uint8_t DEFAULT_ASPECT = 10;
 
     uint8_t inputSize()  const override { return 1; }
-    uint8_t outputSize() const override { return 1; }
-    void serializeOutput(uint8_t* buf)         const override;
+    uint8_t outputSize() const override { return 0; }
+    void serializeInput(uint8_t* buf)          const override;
+    void serializeOutput(uint8_t* buf)         const override {}
     void deserializeInput(const uint8_t* buf)        override;
 
     bool get() const { return props.state; }

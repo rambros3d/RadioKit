@@ -96,17 +96,24 @@ void RadioKitClass::_onPacket(uint8_t cmd,
 }
 
 void RadioKitClass::_handleGetConf() {
-    uint8_t  buf[RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE];
-    uint16_t len = _buildConfPayload(buf, sizeof(buf));
-    uint16_t pkt = rk_buildPacket(_txBuf, RK_CMD_CONF_DATA, buf, len);
-    if (_transport) _transport->sendPacket(_txBuf, pkt);
+    // Build payload directly into _txBuf starting at offset 4 (after header)
+    uint16_t payloadLen = _buildConfPayload(&_txBuf[RK_HEADER_SIZE], 
+                                            RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE);
+    
+    // Finalize packet in _txBuf. 
+    // Passing nullptr as payload because we already wrote it to &_txBuf[4].
+    uint16_t totalLen = rk_buildPacket(_txBuf, RK_CMD_CONF_DATA, nullptr, payloadLen);
+    
+    if (_transport) _transport->sendPacket(_txBuf, totalLen);
 }
 
 void RadioKitClass::_handleGetVars() {
-    uint8_t  buf[RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE];
-    uint16_t len = _buildVarPayload(buf, sizeof(buf));
-    uint16_t pkt = rk_buildPacket(_txBuf, RK_CMD_VAR_DATA, buf, len);
-    if (_transport) _transport->sendPacket(_txBuf, pkt);
+    uint16_t payloadLen = _buildVarPayload(&_txBuf[RK_HEADER_SIZE], 
+                                           RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE);
+    
+    uint16_t totalLen = rk_buildPacket(_txBuf, RK_CMD_VAR_DATA, nullptr, payloadLen);
+    
+    if (_transport) _transport->sendPacket(_txBuf, totalLen);
 }
 
 void RadioKitClass::_handleSetInput(const uint8_t* payload, uint16_t len) {
@@ -190,7 +197,7 @@ uint16_t RadioKitClass::_buildVarPayload(uint8_t* buf, uint16_t bufSize) {
         uint8_t sz = w->inputSize();
         if (sz == 0) continue;
         if (out + sz > bufSize) break;
-        memset(&buf[out], 0, sz);
+        w->serializeInput(&buf[out]);
         out += sz;
     }
     for (uint8_t i = 0; i < _widgetCount; i++) {

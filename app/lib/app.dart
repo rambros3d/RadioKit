@@ -38,16 +38,18 @@ class RadioKitApp extends StatelessWidget {
         ChangeNotifierProvider<ConsoleProvider>(
           create: (_) => ConsoleProvider(),
         ),
-        ChangeNotifierProxyProvider3<BleProvider, SerialProvider, DebugProvider, DeviceProvider>(
+        ChangeNotifierProxyProvider4<BleProvider, SerialProvider, DebugProvider, ConsoleProvider, DeviceProvider>(
           create: (context) => DeviceProvider(
             transport: context.read<BleProvider>().bleService,
             debugSink: context.read<DebugProvider>(),
+            console: context.read<ConsoleProvider>(),
           ),
-          update: (context, bleProvider, serialProvider, debugProvider, previous) =>
+          update: (context, bleProvider, serialProvider, debugProvider, consoleProvider, previous) =>
               previous ??
               DeviceProvider(
                 transport: bleProvider.bleService,
                 debugSink: debugProvider,
+                console: consoleProvider,
               ),
         ),
       ],

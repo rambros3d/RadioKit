@@ -50,7 +50,7 @@
 //  Buffer sizes
 // ─────────────────────────────────────────────
 #define RK_MAX_PACKET_SIZE   768
-#define RK_RX_BUFFER_SIZE    256
+#define RK_RX_BUFFER_SIZE    768
 
 // ─────────────────────────────────────────────
 //  CRC-16/CCITT-FALSE

@@ -107,7 +107,7 @@ class DebugTransport implements TransportService {
           .join(' ');
     }
 
-    return DebugLogEntry(
+    final entry = DebugLogEntry(
       timestamp: DateTime.now(),
       direction: direction,
       bytes: bytes,
@@ -115,6 +115,16 @@ class DebugTransport implements TransportService {
       payloadHex: payloadHex,
       crcOk: crcOk,
     );
+
+    // Notify sink with a nicely formatted string for the console
+    final dirSymbol = direction == PacketDirection.tx ? '->' : '<-';
+    final hexStr = bytes.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join(' ');
+    
+    // We send a raw message to the sink if it supports it, 
+    // but the current Sink interface only has addEntry.
+    // The DebugProvider usually handles the translation to ConsoleProvider.
+    
+    return entry;
   }
 
   bool _verifyCrc(List<int> data) {

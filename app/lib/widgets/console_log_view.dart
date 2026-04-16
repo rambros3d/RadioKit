@@ -58,12 +58,33 @@ class _ConsoleLogViewState extends State<ConsoleLogView> {
                       ),
                     ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_sweep_rounded, size: 16),
-                    onPressed: () => console.clear(),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    color: Colors.white24,
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.copy_all_rounded, size: 16),
+                        onPressed: () {
+                          console.copyToClipboard().then((_) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Log copied to clipboard'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          });
+                        },
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        color: Colors.white24,
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.delete_sweep_rounded, size: 16),
+                        onPressed: () => console.clear(),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        color: Colors.white24,
+                      ),
+                    ],
                   ),
                 ],
               ),

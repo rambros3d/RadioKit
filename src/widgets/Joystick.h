@@ -28,6 +28,7 @@ public:
 
     uint8_t inputSize()  const override { return 2; }
     uint8_t outputSize() const override { return 0; }
+    void serializeInput(uint8_t* buf)          const override;
     void serializeOutput(uint8_t*)           const override {}
     void deserializeInput(const uint8_t* buf)      override;
 

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import '../models/console_entry.dart';
 
 class ConsoleProvider extends ChangeNotifier {
@@ -17,6 +18,11 @@ class ConsoleProvider extends ChangeNotifier {
       level: level,
     ));
     notifyListeners();
+  }
+
+  Future<void> copyToClipboard() async {
+    final text = _entries.map((e) => '[${e.timeLabel}] ${e.message}').join('\n');
+    await Clipboard.setData(ClipboardData(text: text));
   }
 
   void clear() {
