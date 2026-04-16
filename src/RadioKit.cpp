@@ -33,8 +33,6 @@ void RadioKitClass::_registerWidget(RadioKit_Widget* widget) {
 }
 
 void RadioKitClass::begin() {
-    // Drain widgets that were constructed before RadioKit (static init
-    // order fiasco workaround). This assigns widgetIds in declaration order.
     RadioKit_Widget_drainDeferred();
 }
 
@@ -52,7 +50,6 @@ void RadioKitClass::startSerial(Stream& stream) {
 void RadioKitClass::update() {
     if (_transport) _transport->update();
 
-    // VAR_UPDATE reliability: retransmit on timeout
     if (_pendingVarUpdate && _transport && _transport->isConnected()) {
         uint32_t now = millis();
         if (now - _varUpdateSentAt >= RK_VAR_UPDATE_TIMEOUT_MS) {
@@ -96,23 +93,16 @@ void RadioKitClass::_onPacket(uint8_t cmd,
 }
 
 void RadioKitClass::_handleGetConf() {
-    // Build payload directly into _txBuf starting at offset 4 (after header)
-    uint16_t payloadLen = _buildConfPayload(&_txBuf[RK_HEADER_SIZE], 
+    uint16_t payloadLen = _buildConfPayload(&_txBuf[RK_HEADER_SIZE],
                                             RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE);
-    
-    // Finalize packet in _txBuf. 
-    // Passing nullptr as payload because we already wrote it to &_txBuf[4].
     uint16_t totalLen = rk_buildPacket(_txBuf, RK_CMD_CONF_DATA, nullptr, payloadLen);
-    
     if (_transport) _transport->sendPacket(_txBuf, totalLen);
 }
 
 void RadioKitClass::_handleGetVars() {
-    uint16_t payloadLen = _buildVarPayload(&_txBuf[RK_HEADER_SIZE], 
+    uint16_t payloadLen = _buildVarPayload(&_txBuf[RK_HEADER_SIZE],
                                            RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE);
-    
     uint16_t totalLen = rk_buildPacket(_txBuf, RK_CMD_VAR_DATA, nullptr, payloadLen);
-    
     if (_transport) _transport->sendPacket(_txBuf, totalLen);
 }
 
@@ -145,6 +135,18 @@ void RadioKitClass::_handleAck(const uint8_t* payload, uint16_t len) {
 }
 
 // ── CONF_DATA payload builder (Protocol v3) ──────────────────────────────
+//
+// strBuf worst-case per widget:
+//   mask(1)
+//   + label:   len(1) + RADIOKIT_MAX_LABEL(32)   = 33
+//   + icon:    len(1) + RADIOKIT_MAX_ICON(24)     = 25
+//   + onText:  len(1) + RADIOKIT_MAX_LABEL(32)   = 33
+//   + offText: len(1) + RADIOKIT_MAX_LABEL(32)   = 33
+//   + content: len(1) + RADIOKIT_MAX_ITEMS*(RADIOKIT_MAX_LABEL+RADIOKIT_MAX_ICON+2) pipes
+//            = 1 + 8*(32+24+2) = 1 + 464 = 465  (Multiple widget worst case)
+// Total worst case = 1+33+25+33+33+465 = 590 bytes → use 640 to be safe.
+#define RK_STR_BUF_SIZE 640
+
 uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
     uint16_t out = 0;
 
@@ -180,11 +182,16 @@ uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
         buf[out++] = w->style();
         buf[out++] = w->variant();
 
-        uint8_t strBuf[1 + (RADIOKIT_MAX_LABEL + 1) * 4 + (RADIOKIT_MAX_ICON + 1)];
-        uint8_t strLen = w->serializeStrings(strBuf);
-        if (out + strLen > bufSize) break;
-        memcpy(&buf[out], strBuf, strLen);
-        out += strLen;
+        // Use heap allocation to avoid stack overflow on large Multiple widgets.
+        uint8_t* strBuf = new uint8_t[RK_STR_BUF_SIZE];
+        uint16_t strLen = w->serializeStrings(strBuf);
+        bool fits = (out + strLen <= bufSize);
+        if (fits) {
+            memcpy(&buf[out], strBuf, strLen);
+            out += strLen;
+        }
+        delete[] strBuf;
+        if (!fits) break;
     }
     return out;
 }

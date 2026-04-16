@@ -64,37 +64,63 @@ RK_MultipleButton::RK_MultipleButton(RK_MultipleProps p) {
 RK_MultipleSelect::RK_MultipleSelect(RK_MultipleProps p) {
     _initFromProps(p, RK_TYPE_MULTIPLE);
 }
+
 uint8_t RadioKit_Multiple::serializeStrings(uint8_t* buf) const {
     uint8_t mask = 0;
-    if (_label[0]   != '\0') mask |= RK_STR_LABEL;
-    if (_icon[0]    != '\0') mask |= RK_STR_ICON;
-    if (_onText[0]  != '\0') mask |= RK_STR_ONTEXT;
-    if (_offText[0] != '\0') mask |= RK_STR_OFFTEXT;
+    if (_label[0]  != '\0') mask |= RK_STR_LABEL;
+    if (_icon[0]   != '\0') mask |= RK_STR_ICON;
+    if (_onText[0] != '\0') mask |= RK_STR_ONTEXT;
+    if (_offText[0]!= '\0') mask |= RK_STR_OFFTEXT;
 
-    // Build pipe-delimited items string
-    char itemsStr[128]; 
+    // Build pipe-delimited content string: "label:icon|label:icon|..."
+    // Format per item: "<label>" or "<label>:<icon>" if icon present.
+    // Items with no label AND no icon are skipped.
+    char itemsStr[RADIOKIT_MAX_ITEMS * (RADIOKIT_MAX_LABEL + RADIOKIT_MAX_ICON + 2) + 1];
     itemsStr[0] = '\0';
+    size_t remaining = sizeof(itemsStr) - 1;
+    bool first = true;
     for (uint8_t i = 0; i < _poolCount; i++) {
-        if (i > 0) strncat(itemsStr, "|", sizeof(itemsStr) - strlen(itemsStr) - 1);
-        strncat(itemsStr, _pool[i].label, sizeof(itemsStr) - strlen(itemsStr) - 1);
+        const RK_Item& item = _pool[i];
+        const char* lbl  = item.label ? item.label : "";
+        const char* icon = item.icon  ? item.icon  : "";
+        if (lbl[0] == '\0' && icon[0] == '\0') continue;
+
+        if (!first) {
+            strncat(itemsStr, "|", remaining);
+            remaining = remaining > 1 ? remaining - 1 : 0;
+        }
+        first = false;
+
+        strncat(itemsStr, lbl, remaining);
+        size_t lblLen = strnlen(lbl, remaining);
+        remaining = remaining > lblLen ? remaining - lblLen : 0;
+
+        if (icon[0] != '\0') {
+            strncat(itemsStr, ":", remaining);
+            remaining = remaining > 1 ? remaining - 1 : 0;
+            strncat(itemsStr, icon, remaining);
+            size_t iconLen = strnlen(icon, remaining);
+            remaining = remaining > iconLen ? remaining - iconLen : 0;
+        }
     }
     if (itemsStr[0] != '\0') mask |= RK_STR_CONTENT;
 
     uint8_t out = 0;
     buf[out++] = mask;
 
-    auto _writeStr = [&](const char* s) {
-        uint8_t len = (uint8_t)strnlen(s, RADIOKIT_MAX_LABEL * 4); // content can be longer
+    // len field is uint8_t — content capped at 255 bytes safely by buffer sizing above
+    auto _writeStr = [&](const char* s, size_t maxLen) {
+        uint8_t len = (uint8_t)strnlen(s, maxLen < 255 ? maxLen : 255);
         buf[out++] = len;
         memcpy(&buf[out], s, len);
         out += len;
     };
 
-    if (mask & RK_STR_LABEL)   _writeStr(_label);
-    if (mask & RK_STR_ICON)    _writeStr(_icon);
-    if (mask & RK_STR_ONTEXT)  _writeStr(_onText);
-    if (mask & RK_STR_OFFTEXT) _writeStr(_offText);
-    if (mask & RK_STR_CONTENT) _writeStr(itemsStr);
+    if (mask & RK_STR_LABEL)   _writeStr(_label,    RADIOKIT_MAX_LABEL);
+    if (mask & RK_STR_ICON)    _writeStr(_icon,     RADIOKIT_MAX_ICON);
+    if (mask & RK_STR_ONTEXT)  _writeStr(_onText,   RADIOKIT_MAX_LABEL);
+    if (mask & RK_STR_OFFTEXT) _writeStr(_offText,  RADIOKIT_MAX_LABEL);
+    if (mask & RK_STR_CONTENT) _writeStr(itemsStr,  sizeof(itemsStr) - 1);
 
     return out;
 }
