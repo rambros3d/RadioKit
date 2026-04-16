@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/device_provider.dart';
@@ -6,10 +7,8 @@ import '../../providers/history_provider.dart';
 import '../../providers/ble_provider.dart';
 import '../../providers/serial_provider.dart';
 import '../../providers/console_provider.dart';
-import '../../models/device_info.dart';
 import '../../models/console_entry.dart';
 import '../../theme/app_theme.dart';
-import '../control_screen.dart';
 import '../../widgets/logo_icon.dart';
 
 class ModelsTab extends StatelessWidget {
@@ -237,9 +236,7 @@ class _ActiveLinkSection extends StatelessWidget {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
                         ),
                         onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const ControlScreen()),
-                          );
+                          context.go('/control');
                         },
                         child: Text('OPEN_CONTROLLER', style: GoogleFonts.changa(fontWeight: FontWeight.w700, letterSpacing: 1.2, fontSize: 13)),
                       ),

@@ -1,6 +1,7 @@
 import 'dart:math' show pi;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/device_provider.dart';
 import '../providers/debug_provider.dart';
@@ -15,7 +16,6 @@ import '../widgets/joystick_widget.dart';
 import '../widgets/led_widget.dart';
 import '../widgets/text_widget.dart';
 import '../widgets/multiple_widget.dart';
-import 'debug_screen.dart';
 
 /// Dynamic widget rendering screen for the connected RadioKit device.
 class ControlScreen extends StatefulWidget {
@@ -27,47 +27,11 @@ class ControlScreen extends StatefulWidget {
 
 class _ControlScreenState extends State<ControlScreen> {
   bool _debugWrapped = false;
-  late DeviceProvider _deviceProvider;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _deviceProvider = context.read<DeviceProvider>();
-    _deviceProvider.addListener(_checkConnection);
-  }
-
-  @override
-  void dispose() {
-    _deviceProvider.removeListener(_checkConnection);
-    super.dispose();
-  }
-
-  void _checkConnection() {
-    if (!mounted) return;
-    final dp = context.read<DeviceProvider>();
-    if (dp.connectionState == DeviceConnectionState.disconnected &&
-        !dp.isConnected) {
-      dp.removeListener(_checkConnection);
-      final reason = dp.errorMessage ?? 'Device disconnected';
-
-      if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(reason),
-            backgroundColor: AppColors.disconnected,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    }
-  }
 
   Future<void> _disconnect() async {
     final dp = context.read<DeviceProvider>();
-    dp.removeListener(_checkConnection);
-    if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     await dp.disconnect();
+    if (mounted) context.go('/pair');
   }
 
   void _openDebug() {
@@ -84,9 +48,7 @@ class _ControlScreenState extends State<ControlScreen> {
     }
 
     if (mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const DebugScreen()),
-      );
+      context.push('/debug');
     }
   }
 

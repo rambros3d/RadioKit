@@ -1,39 +1,28 @@
 import 'package:flutter/material.dart';
-import 'home/models_tab.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
-import 'home/pair_tab.dart';
-import 'home/system_tab.dart';
 
-/// The main application container with bottom navigation.
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatelessWidget {
+  final StatefulNavigationShell navigationShell;
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _tabs = [
-    const ModelsTab(),
-    const PairTab(),
-    const SystemTab(),
-  ];
+  const HomeScreen({super.key, required this.navigationShell});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _tabs,
-      ),
+      body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        currentIndex: navigationShell.currentIndex,
+        onTap: (index) {
+          navigationShell.goBranch(
+            index,
+            initialLocation: index == navigationShell.currentIndex,
+          );
+        },
         selectedItemColor: AppColors.brandOrange,
-        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+        unselectedItemColor:
+            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
         selectedLabelStyle: GoogleFonts.changa(
           fontSize: 13,
           fontWeight: FontWeight.w700,

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/ble_provider.dart';
@@ -11,7 +12,6 @@ import '../../models/device_info.dart';
 import '../../models/console_entry.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/console_log_view.dart';
-import '../control_screen.dart';
 import '../../widgets/logo_icon.dart';
 
 class PairTab extends StatefulWidget {
@@ -93,9 +93,7 @@ class _PairTabState extends State<PairTab> {
 
     if (deviceProvider.connectionState == DeviceConnectionState.connected) {
       console.log('CONNECTION ESTABLISHED', level: ConsoleLogLevel.success);
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const ControlScreen()),
-      );
+      if (mounted) context.go('/control');
       return true;
     } else {
       final error = deviceProvider.errorMessage ?? 'Connection failed';

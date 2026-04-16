@@ -21,6 +21,9 @@ dependencies:
   # https://pub.dev/packages/webserial
   webserial: ^1.1.0
 
+  # Routing
+  go_router: ^14.8.0
+
   # State management
   provider: ^6.1.2
 
