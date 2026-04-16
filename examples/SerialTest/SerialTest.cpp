@@ -13,12 +13,27 @@
 #define LED_PIN 7
 
 // ── Widget declarations ───────────────────────────────────────────
-RK_PushButton   btn({ .label="Press",  .x=20,  .y=50, .scale=2.0f });
-RK_ToggleButton sw ({  .label="LED",   .x=60,  .y=80, .scale=2.0f });
-RK_Slider       sld({ .label="Level",  .x=100, .y=50, .aspect=8.0f, .value=12 });
-RK_Joystick     joy({ .label="Stick",  .x=160, .y=50, .scale=4.0f });
-RK_LED          statusLED({ .label="Status", .x=20,  .y=20, .scale=1.4f });
-RK_Text         uptimeText({ .label="Uptime", .x=80,  .y=20 });
+RK_PushButton btn({.label = "Press", .icon = "wifi", .x = 20, .y = 60, .scale = 2.0f});
+RK_ToggleButton sw({.label = "LED", .x = 20, .y = 80, .scale = 2.0f});
+RK_Slider sld({.label = "Level",
+               .x = 100,
+               .y = 50,
+               .rotation = 45,
+               .aspect = 8.0f,
+               .value = 12});
+RK_Joystick joy({.label = "Stick", .x = 160, .y = 50, .scale = 2.0f});
+RK_MultipleButton mode({.label = "Mode",
+                        .x = 60,
+                        .y = 30,
+                        .items = {{.label = "Auto", .icon = "cpu"},
+                                  {.label = "Man", .icon = "hand"}}});
+RK_MultipleSelect opts({.label = "Config",
+                        .x = 60,
+                        .y = 80,
+                        .items = {{.label = "Log", .icon = "file-text"},
+                                  {.label = "Mute", .icon = "volume-x"}}});
+RK_LED statusLED({.label = "Status", .x = 20, .y = 40, .scale = 1.4f});
+RK_Text uptimeText({.label = "Uptime", .x = 20, .y = 10});
 
 void setup() {
   Serial.begin(115200);
