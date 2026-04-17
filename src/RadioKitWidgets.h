@@ -12,6 +12,7 @@
 #include "widgets/SlideSwitch.h"
 #include "widgets/Slider.h"
 #include "widgets/Joystick.h"
+#include "widgets/Knob.h"
 #include "widgets/LED.h"
 #include "widgets/Text.h"
 #include "widgets/Multiple.h"

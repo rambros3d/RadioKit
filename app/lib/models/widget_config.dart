@@ -13,6 +13,7 @@ const Map<int, double> kWidgetBaseSize = {
   kWidgetText:         8.0,
   kWidgetMultiple:    10.0,
   kWidgetSlideSwitch:  8.0,
+  kWidgetKnob:        12.0,
 };
 
 /// Represents a single item in a Multiple widget.

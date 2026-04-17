@@ -300,8 +300,13 @@ class DeviceProvider extends ChangeNotifier {
     RadioWidgetState next = current;
     // 0x05 SET_INPUT forces a jump for an Input widget
     if (!widget.hasOutput) {
-      next = current.copyWithInput(widgetId, values);
-      _log('RX <- SET_INPUT (wid:$widgetId, seq:$seq, override:$values)');
+      // Sign-extend int8_t values for Slider and Knob
+      final cooked = (widget.typeId == kWidgetSlider ||
+                      widget.typeId == kWidgetKnob)
+          ? values.map(_signedByte).toList()
+          : values;
+      next = current.copyWithInput(widgetId, cooked);
+      _log('RX <- SET_INPUT (wid:$widgetId, seq:$seq, override:$cooked)');
     }
 
     _widgetState = next;
@@ -453,7 +458,9 @@ class DeviceProvider extends ChangeNotifier {
         }
         return '→ position $v';
       case kWidgetSlider:
-        return '→ $v (${(v / 255 * 100).round()}%)';
+        return '→ $v';
+      case kWidgetKnob:
+        return '→ $v';
       case kWidgetJoystick:
         final x = v;
         final y = values.length > 1 ? values[1] : 0;
@@ -516,3 +523,8 @@ String utf8Decode(List<int> bytes) {
   try { return const Utf8Decoder(allowMalformed: true).convert(bytes); }
   catch (_) { return ''; }
 }
+
+/// Interpret a raw unsigned wire byte as a signed int8 (-128..127).
+/// Used for Slider and Knob which use two's complement on the wire.
+int _signedByte(int b) => b > 127 ? b - 256 : b;
+

@@ -13,6 +13,7 @@
   - [Push & Toggle Buttons](#push--toggle-buttons)
   - [SlideSwitch](#slideswitch)
   - [Slider](#slider)
+  - [Knob](#knob)
   - [Joystick](#joystick)
   - [MultipleButton / MultipleSelect](#multiplebutton--multipleselect)
   - [LED](#led)
@@ -242,47 +243,90 @@ RK_SlideSwitch headlights({
 
 ### Slider
 
-Analog input slider (0-100).
+Linear analog input control (−100 to +100).
+
+The `variant` byte encodes both **centering mode** and **detent count** via the `RK_VARIANT()` macro (see [Constants](#5-constants--enums)).
 
 **Structure:**
 
 ```cpp
 struct RK_SliderProps {
-    const char* label = nullptr;
+    const char* label    = nullptr;
     uint8_t     x = 0, y = 0;
     int16_t     rotation = 0;
-    float       scale = 1.0;
-    float       aspect = 1.0;
+    float       scale    = 1.0;
+    float       aspect   = 1.0;
     //--------------------------
-    uint8_t     variant = 0;
-    uint8_t     value = 0; 
+    uint8_t     centering = RK_CENTER_NONE; // RK_CENTER_NONE/LEFT/CENTER/RIGHT
+    uint8_t     detents   = 0;             // 0=continuous, 1-63=snap positions
+    int8_t      value     = 0;             // -100 to +100
 };
 ```
 
-| Value | Name               | Behavior                          |
-| ----- | ------------------ | --------------------------------- |
-| `0`   | **Self-Centering Middle** | Center to middle |
-| `1`   | **Self-Centering Top** | Center to top |
-| `2`   | **Self-Centering Bottom** | Center to bottom |    
-| `3`   | **No-Centering**   | No Centering            |
+| Function     | Variable (Direct Access) | Description                          |
+| ------------ | ------------------------ | ------------------------------------ |
+| `get()`      | `props.value`            | Returns position (−100 to +100).     |
+| `set(v)`     | `props.value = val;`     | Force update app position (−100..+100). |
+| `centering()`| `props.centering`        | Returns the centering mode.          |
+| `detents()`  | `props.detents`          | Returns the detent count.            |
 
 
-| Function     | Variable (Direct Access) | Description                        |
-| ------------ | ------------------------ | ---------------------------------- |
-| `get()`      | `props.value`            | Returns position (0-100).          |
-| `set(value)` | `props.value = val;`     | Force update app position (0-100). |
-
-
-**Example:**
+**Examples:**
 
 ```cpp
-RK_Slider speed({ 
-    .label = "Speed", 
-    .x = 50, 
-    .y = 40, 
-    .aspect = 2.5, 
-    .value = 25 
-});
+// Continuous horizontal slider, full range:
+RK_Slider throttle({ .label="Throttle", .x=50, .y=40, .aspect=2.5 });
+
+// Spring-returns to centre (e.g. trim / pitch):
+RK_Slider pitch({ .label="Pitch", .centering=RK_CENTER, .x=80, .y=40 });
+
+// 5-position detent slider (snaps to -100, -50, 0, +50, +100):
+RK_Slider gear({ .label="Gear", .detents=5, .x=120, .y=40 });
+```
+
+---
+
+### Knob
+
+Rotary analog input control (−100 to +100). Identical wire format to `RK_Slider` but rendered as a 270° circular arc knob with a vertical-drag gesture.
+
+The `variant` byte encodes both **centering mode** and **detent count** via the `RK_VARIANT()` macro (see [Constants](#5-constants--enums)).
+
+**Structure:**
+
+```cpp
+struct RK_KnobProps {
+    const char* label    = nullptr;
+    const char* icon     = nullptr; // Shown on knob face
+    uint8_t     x = 0, y = 0;
+    float       scale    = 1.0;
+    uint8_t     style    = 0;
+    //--------------------------
+    uint8_t     centering = RK_CENTER_NONE;
+    uint8_t     detents   = 0;
+    int8_t      value     = 0; // -100 to +100
+};
+```
+
+| Function     | Variable (Direct Access) | Description                          |
+| ------------ | ------------------------ | ------------------------------------ |
+| `get()`      | `props.value`            | Returns position (−100 to +100).     |
+| `set(v)`     | `props.value = val;`     | Force update app position (−100..+100). |
+| `centering()`| `props.centering`        | Returns the centering mode.          |
+| `detents()`  | `props.detents`          | Returns the detent count.            |
+
+
+**Examples:**
+
+```cpp
+// Panning knob (spring-returns to centre):
+RK_Knob pan({ .label="Pan", .centering=RK_CENTER, .x=100, .y=60 });
+
+// Volume knob (continuous, 12 o'clock = 0):
+RK_Knob vol({ .label="Vol", .x=140, .y=60, .icon="volume-2" });
+
+// 5-detent EQ knob (-100, -50, 0, +50, +100):
+RK_Knob eq({ .label="Bass", .detents=5, .x=180, .y=60 });
 ```
 
 ---
@@ -495,6 +539,34 @@ RK_Text status({
 - `RK_ARCH_NORDIC`  (2)
 - `RK_ARCH_SAMD`    (3)
 - `RK_ARCH_STM32`   (4)
+
+### Slider / Knob Centering Modes
+
+Passed as the `centering` field of `RK_SliderProps` / `RK_KnobProps`.
+
+| Constant | Value | Behaviour |
+| --- | --- | --- |
+| `RK_CENTER_NONE` | `0` | No spring return — stays where released (default). |
+| `RK_CENTER_LEFT` | `1` | Springs to −100 on release. |
+| `RK_CENTER`      | `2` | Springs to 0 (centre) on release. |
+| `RK_CENTER_RIGHT`| `3` | Springs to +100 on release. |
+
+### `RK_VARIANT()` Macro
+
+Packs a centering mode and a detent count into the single `variant` byte:
+
+```cpp
+// Syntax
+RK_VARIANT(centering, detents)
+//   centering : RK_CENTER_NONE / LEFT / CENTER / RIGHT
+//   detents   : 0 = continuous; 1–63 = number of snap positions
+
+// Examples
+RK_VARIANT(RK_CENTER, 0)   // spring-to-centre, continuous
+RK_VARIANT(RK_CENTER_NONE, 5) // no spring, 5 snap positions
+```
+
+When using `RK_SliderProps` or `RK_KnobProps`, you can set `centering` and `detents` directly — the constructor packs them automatically. Use `RK_VARIANT()` only when constructing the raw `variant` byte manually.
 
 ### UI Theme
 

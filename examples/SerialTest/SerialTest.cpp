@@ -26,11 +26,17 @@ RK_SlideSwitch slideSw({.label = "Power",
                         .offText = "OFF"});
 RK_Slider sld({.label = "Level",
                .x = 100,
-               .y = 50,
+               .y = 60,
                .rotation = 45,
                .aspect = 8.0f,
-               .value = 12});
-RK_Joystick joy({.label = "Stick", .x = 160, .y = 50, .scale = 2.0f});
+               .value = 0});
+RK_Knob pan({.label = "Pan",
+             .icon = "knob",
+             .x = 170,
+             .y = 40,
+             .scale = 2.0f,
+             .centering = RK_CENTER});
+RK_Joystick joy({.label = "Stick", .x = 160, .y = 70, .scale = 2.0f});
 RK_MultipleButton mode({.label = "Multiple Button",
                         .x = 60,
                         .y = 30,
@@ -73,14 +79,23 @@ void loop() {
   bool ledActive = btn.isPressed() || sw.get() || slideSw.get();
   digitalWrite(LED_PIN, ledActive ? HIGH : LOW);
 
-  // Status LED reflects slider level
-  uint8_t level = sld.get();
-  if (level < 34) {
+  // Status LED colour reflects slider level (-100..+100)
+  int8_t level = sld.get();
+  if (level < 0) {
     statusLED.setColor(RK_RED);
-  } else if (level < 67) {
+  } else if (level == 0) {
     statusLED.setColor(RK_YELLOW);
   } else {
     statusLED.setColor(RK_GREEN);
+  }
+
+  // Pan knob: print value when it changes
+  static int8_t lastPan = 0;
+  int8_t panVal = pan.get();
+  if (panVal != lastPan) {
+    lastPan = panVal;
+    Serial.print("Pan: ");
+    Serial.println(panVal);
   }
 
   // Uptime text updates every second

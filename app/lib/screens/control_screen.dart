@@ -17,6 +17,7 @@ import '../widgets/joystick_widget.dart';
 import '../widgets/led_widget.dart';
 import '../widgets/text_widget.dart';
 import '../widgets/multiple_widget.dart';
+import '../widgets/knob_widget.dart';
 
 /// Dynamic widget rendering screen for the connected RadioKit device.
 class ControlScreen extends StatefulWidget {
@@ -334,6 +335,14 @@ class _ControlScreenState extends State<ControlScreen> {
         return MultipleWidget(
           config: config,
           value: value,
+          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
+        );
+
+      case kWidgetKnob:
+        final knobValue = state?.inputValues[config.widgetId]?.first ?? 0;
+        return KnobWidget(
+          config: config,
+          value: knobValue,
           onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
         );
 

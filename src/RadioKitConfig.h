@@ -84,10 +84,25 @@
 #define RK_TYPE_TEXT 0x06
 #define RK_TYPE_MULTIPLE 0x07
 #define RK_TYPE_SLIDE_SWITCH 0x08
+#define RK_TYPE_KNOB 0x09
 
 // Legacy aliases (kept for internal use)
 #define RK_TYPE_BUTTON RK_TYPE_PUSH_BUTTON
 #define RK_TYPE_SWITCH RK_TYPE_TOGGLE_BUTTON
+
+// ─────────────────────────────────────────────
+//  Self-centering modes (Slider / Knob variant bits [1:0])
+// ─────────────────────────────────────────────
+#define RK_CENTER_NONE  0  ///< No spring return (stays where released)
+#define RK_CENTER_LEFT  1  ///< Springs to −100 on release
+#define RK_CENTER       2  ///< Springs to 0 (centre) on release
+#define RK_CENTER_RIGHT 3  ///< Springs to +100 on release
+
+/// Pack centering mode and detent count into a single variant byte.
+/// @param centering  RK_CENTER_NONE / LEFT / CENTER / RIGHT  (bits [1:0])
+/// @param detents    0 = continuous; 1–63 = snap positions  (bits [7:2])
+#define RK_VARIANT(centering, detents) \
+    ((uint8_t)(((detents) << 2) | ((centering) & 0x03)))
 
 // ─────────────────────────────────────────────
 //  String Bitmask bits (CONF_DATA widget descriptor)

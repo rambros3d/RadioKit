@@ -2,15 +2,17 @@
 
 RK_Slider::RK_Slider(RK_SliderProps p) : props(p) {
     typeId = RK_TYPE_SLIDER;
-    _init(p.label, p.x, p.y, p.scale, p.aspect, 0, p.variant,
+    uint8_t v = RK_VARIANT(p.centering, p.detents);
+    _init(p.label, p.x, p.y, p.scale, p.aspect, 0, v,
           nullptr, nullptr, nullptr, p.rotation);
     props.value = p.value;
 }
 
 void RK_Slider::deserializeInput(const uint8_t* buf) {
-    props.value = buf[0] > 100 ? 100 : buf[0];
+    int8_t v = (int8_t)buf[0];
+    props.value = v > 100 ? 100 : (v < -100 ? -100 : v);
 }
 
 void RK_Slider::serializeInput(uint8_t* buf) const {
-    buf[0] = props.value;
+    buf[0] = (uint8_t)(int8_t)props.value; // two's complement, safe cast
 }

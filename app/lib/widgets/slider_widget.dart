@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/widget_config.dart';
+import '../models/protocol.dart';
 import '../providers/skin_provider.dart';
-import '../models/skin_manifest.dart';
-import '../theme/app_theme.dart';
 
-/// Linear slider widget (0 to 100).
+/// Linear slider widget (-100 to +100).
 ///
-/// Shows the current value as a label and sends updates on change.
-class SliderWidget extends StatelessWidget {
+/// Self-centering and detent snapping governed by the config.variant byte.
+class SliderWidget extends StatefulWidget {
   final WidgetConfig config;
   final int value;
   final ValueChanged<int> onChanged;
@@ -22,18 +21,85 @@ class SliderWidget extends StatelessWidget {
   });
 
   @override
+  State<SliderWidget> createState() => _SliderWidgetState();
+}
+
+class _SliderWidgetState extends State<SliderWidget>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _springController;
+  late Animation<double> _springAnimation;
+  VoidCallback? _springListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _springController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+  }
+
+  @override
+  void dispose() {
+    if (_springListener != null) {
+      _springAnimation.removeListener(_springListener!);
+    }
+    _springController.dispose();
+    super.dispose();
+  }
+
+  void _onChangeEnd(double _) {
+    _springController.stop();
+    final centering = variantCentering(widget.config.variant);
+    final detents   = variantDetents(widget.config.variant);
+
+    if (centering != kCenterNone) {
+      final target = centering == kCenterLeft  ? -100
+                   : centering == kCenterRight ?  100
+                   : 0;
+      _animateSpring(widget.value, target);
+    } else if (detents > 0) {
+      final snapped = snapToDetents(widget.value, detents);
+      if (snapped != widget.value) _animateSpring(widget.value, snapped);
+    }
+  }
+
+  void _animateSpring(int from, int to) {
+    if (_springListener != null) {
+      _springAnimation.removeListener(_springListener!);
+      _springListener = null;
+    }
+
+    _springAnimation = Tween<double>(
+      begin: from.toDouble(),
+      end: to.toDouble(),
+    ).animate(CurvedAnimation(
+      parent: _springController,
+      curve: Curves.elasticOut,
+    ));
+
+    _springListener = () {
+      widget.onChanged(_springAnimation.value.round().clamp(-100, 100));
+    };
+
+    _springAnimation.addListener(_springListener!);
+    _springController.forward(from: 0);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final tokens = context.watch<SkinProvider>().tokens;
+    final tokens       = context.watch<SkinProvider>().tokens;
     final surfaceColor = tokens.colors['surface'] ?? Theme.of(context).cardTheme.color;
-    final primaryColor = tokens.colors['primary'] ?? Theme.of(context).colorScheme.primary;
-    final fgColor = tokens.colors['dim'] ?? Theme.of(context).textTheme.bodyMedium?.color ?? Colors.white;
+    final primaryColor  = tokens.colors['primary'] ?? Theme.of(context).colorScheme.primary;
+    final fgColor       = tokens.colors['dim']     ?? Theme.of(context).textTheme.bodyMedium?.color ?? Colors.white;
+    final centering     = variantCentering(widget.config.variant);
 
     return Container(
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(tokens.borderRadius + 4),
         border: Border.all(
-            color: primaryColor!.withValues(alpha: 0.3),
+            color: primaryColor.withValues(alpha: 0.3),
             width: tokens.borderWidth),
       ),
       child: Padding(
@@ -41,7 +107,7 @@ class SliderWidget extends StatelessWidget {
         child: FittedBox(
           fit: BoxFit.contain,
           child: SizedBox(
-            width: 160, // Fixed internal width for slider to have spread
+            width: 160,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -51,7 +117,9 @@ class SliderWidget extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        config.label.isNotEmpty ? config.label : 'Slider',
+                        widget.config.label.isNotEmpty
+                            ? widget.config.label
+                            : 'Slider',
                         style: GoogleFonts.getFont(
                           tokens.fontFamily,
                           color: fgColor,
@@ -69,17 +137,16 @@ class SliderWidget extends StatelessWidget {
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: primaryColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(tokens.borderRadius),
+                        borderRadius:
+                            BorderRadius.circular(tokens.borderRadius),
                       ),
                       child: Text(
-                        value.toString(),
+                        '${widget.value > 0 ? '+' : ''}${widget.value}',
                         style: GoogleFonts.getFont(
                           tokens.fontFamily,
                           color: primaryColor,
                           fontSize: 13,
-                          fontWeight: tokens.fontWeight == 'bold' || tokens.fontWeight == '700' 
-                                      ? FontWeight.bold 
-                                      : (tokens.fontWeight == '900' ? FontWeight.w900 : FontWeight.bold),
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -88,41 +155,67 @@ class SliderWidget extends StatelessWidget {
                 const SizedBox(height: 2),
 
                 // Slider
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    activeTrackColor: primaryColor,
-                    thumbColor: primaryColor,
-                    trackHeight: 4,
-                    thumbShape:
-                        const RoundSliderThumbShape(enabledThumbRadius: 10),
-                    overlayShape:
-                        const RoundSliderOverlayShape(overlayRadius: 18),
-                  ),
-                  child: Slider(
-                    value: value.toDouble(),
-                    min: 0,
-                    max: 100,
-                    divisions: 100,
-                    label: value.toString(),
-                    onChanged: (v) => onChanged(v.round()),
-                  ),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Center line indicator
+                    if (centering != kCenterNone)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: Container(
+                            width: 1,
+                            height: 20,
+                            color: primaryColor.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor:   primaryColor,
+                        inactiveTrackColor: primaryColor.withValues(alpha: 0.2),
+                        thumbColor:         primaryColor,
+                        trackHeight:        4,
+                        thumbShape:
+                            const RoundSliderThumbShape(enabledThumbRadius: 10),
+                        overlayShape:
+                            const RoundSliderOverlayShape(overlayRadius: 18),
+                      ),
+                      child: Slider(
+                        value: widget.value.toDouble(),
+                        min:   -100,
+                        max:    100,
+                        divisions: 200,
+                        label: '${widget.value > 0 ? '+' : ''}${widget.value}',
+                        onChanged:   (v) => widget.onChanged(v.round()),
+                        onChangeEnd: _onChangeEnd,
+                      ),
+                    ),
+                  ],
                 ),
 
-                // Min / Max labels
+                // Min / Mid / Max labels
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Text('-100',
+                        style: GoogleFonts.getFont(
+                          tokens.fontFamily,
+                          color: fgColor.withValues(alpha: 0.5),
+                          fontSize: 9,
+                        )),
                     Text('0',
                         style: GoogleFonts.getFont(
                           tokens.fontFamily,
-                          color: fgColor.withValues(alpha: 0.5),
-                          fontSize: 10,
+                          color: fgColor.withValues(alpha: 0.35),
+                          fontSize: 9,
                         )),
-                    Text('100',
+                    Text('+100',
                         style: GoogleFonts.getFont(
                           tokens.fontFamily,
                           color: fgColor.withValues(alpha: 0.5),
-                          fontSize: 10,
+                          fontSize: 9,
                         )),
                   ],
                 ),

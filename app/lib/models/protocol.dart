@@ -20,14 +20,15 @@ const int kCmdPong     = 0x08;  // Device → App : pong
 const int kCmdVarUpdate = 0x09; // Both         : precise partial update
 
 // Widget type identifiers
-const int kWidgetButton   = 0x01;
-const int kWidgetSwitch   = 0x02;
-const int kWidgetSlider   = 0x03;
-const int kWidgetJoystick = 0x04;
-const int kWidgetLed      = 0x05;
-const int kWidgetText     = 0x06;
-const int kWidgetMultiple = 0x07;
+const int kWidgetButton      = 0x01;
+const int kWidgetSwitch      = 0x02;
+const int kWidgetSlider      = 0x03;
+const int kWidgetJoystick    = 0x04;
+const int kWidgetLed         = 0x05;
+const int kWidgetText        = 0x06;
+const int kWidgetMultiple    = 0x07;
 const int kWidgetSlideSwitch = 0x08;
+const int kWidgetKnob        = 0x09;
 
 // Widget input sizes in bytes (app → device)
 const Map<int, int> kWidgetInputSize = {
@@ -39,6 +40,7 @@ const Map<int, int> kWidgetInputSize = {
   kWidgetText:        0,
   kWidgetMultiple:    1,
   kWidgetSlideSwitch: 1,
+  kWidgetKnob:        1,
 };
 
 // Widget output sizes in bytes (device → app)
@@ -52,6 +54,7 @@ const Map<int, int> kWidgetOutputSize = {
   kWidgetText:        32,
   kWidgetMultiple:    0,
   kWidgetSlideSwitch: 0,
+  kWidgetKnob:        0,
 };
 
 // Default aspect × 10 per widget type (mirrors Arduino defaultAspect())
@@ -64,6 +67,7 @@ const Map<int, int> kWidgetDefaultAspect = {
   kWidgetText:        30,  // 3.0 (wide)
   kWidgetMultiple:    20,  // 2.0
   kWidgetSlideSwitch: 25,  // 2.5 (wide track)
+  kWidgetKnob:        10,  // 1.0 (square)
 };
 
 // Protocol version
@@ -91,6 +95,27 @@ const int kVarUpdateMaxRetries = 5;
 
 // Theme is now string-based (e.g. "default", "retro")
 
+// ── Self-centering modes (Slider / Knob variant bits [1:0]) ────────────────────
+const int kCenterNone  = 0; ///< No spring return
+const int kCenterLeft  = 1; ///< Springs to −100
+const int kCenterMid   = 2; ///< Springs to 0
+const int kCenterRight = 3; ///< Springs to +100
+
+/// Extract centering mode from variant byte (bits [1:0]).
+int variantCentering(int variant) => variant & 0x03;
+
+/// Extract detent count from variant byte (bits [7:2]).
+int variantDetents(int variant) => (variant >> 2) & 0x3F;
+
+/// Snap a signed value (-100..100) to the nearest detent position.
+/// Returns [val] unchanged when [detents] <= 1.
+int snapToDetents(int val, int detents) {
+  if (detents <= 1) return val;
+  final step = 200.0 / (detents - 1);
+  final idx = ((val + 100) / step).round();
+  return (-100 + idx * step).round().clamp(-100, 100);
+}
+
 // ── Style / variant IDs ───────────────────────────────────────────────────
 const int kStyleDefault = 0;
 const int kStylePrimary = 1;
@@ -117,6 +142,7 @@ String widgetTypeName(int typeId) {
     case kWidgetText:        return 'Text';
     case kWidgetMultiple:    return 'Multiple';
     case kWidgetSlideSwitch: return 'SlideSwitch';
+    case kWidgetKnob:        return 'Knob';
     default:                 return 'Unknown';
   }
 }
