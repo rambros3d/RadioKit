@@ -5,7 +5,7 @@ export PATH="$PATH:/home/sun/sandbox/fedora/flutter/bin"
 export CHROME_EXECUTABLE="/usr/bin/chromium-browser"
 
 # Navigate to the app directory
-cd "$(dirname "$0")/app"
+# cd "$(dirname "$0")/app"
 
 echo "Starting RadioKit Flutter app in debug mode..."
 echo "Target: http://localhost:8080"

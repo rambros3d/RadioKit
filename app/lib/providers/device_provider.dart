@@ -46,6 +46,7 @@ class DeviceProvider extends ChangeNotifier {
   DeviceInfo?              _connectedDevice;
   DeviceConnectionState    _connectionState = DeviceConnectionState.disconnected;
   String?                  _configName;
+  String?                  _description;
   List<WidgetConfig>       _widgets  = [];
   int                      _orientation = kOrientationLandscape;
   RadioWidgetState?        _widgetState;
@@ -79,6 +80,7 @@ class DeviceProvider extends ChangeNotifier {
   DeviceInfo?           get connectedDevice  => _connectedDevice;
   DeviceConnectionState get connectionState  => _connectionState;
   String?               get configName       => _configName;
+  String?               get description      => _description;
   List<WidgetConfig>    get widgets          => List.unmodifiable(_widgets);
   int                   get orientation      => _orientation;
   RadioWidgetState?     get widgetState      => _widgetState;
@@ -257,6 +259,7 @@ class DeviceProvider extends ChangeNotifier {
     }
     _log('RECEIVED CONFIG: "${(conf as ParsedConf).name}" with ${conf.widgets.length} widgets', level: ConsoleLogLevel.success);
     _configName      = conf.name;
+    _description     = conf.description;
     _widgets         = conf.widgets;
     _orientation     = conf.orientation;
     _widgetState     = RadioWidgetState.initial(conf.widgets);
@@ -493,6 +496,7 @@ class DeviceProvider extends ChangeNotifier {
     _connectedDevice = null;
     _widgets         = [];
     _widgetState     = null;
+    _description     = null;
     _errorMessage    = null;
     notifyListeners();
   }

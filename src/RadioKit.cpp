@@ -215,20 +215,24 @@ void RadioKitClass::_handleVarUpdate(const uint8_t* payload, uint16_t len) {
 uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
     uint16_t out = 0;
 
-    const char* name = config.name ? config.name : "";
-    const char* pwd  = config.password ? config.password : "";
-    const char* themeStr = config.theme ? config.theme : RK_DEFAULT;
-    uint8_t nameLen  = (uint8_t)strnlen(name, RADIOKIT_MAX_LABEL);
-    uint8_t pwdLen   = (uint8_t)strnlen(pwd,  RADIOKIT_MAX_LABEL);
+    const char* name    = config.name        ? config.name        : "";
+    const char* desc    = config.description ? config.description : "";
+    const char* pwd     = config.password    ? config.password    : "";
+    const char* themeStr = config.theme      ? config.theme       : RK_DEFAULT;
+    uint8_t nameLen  = (uint8_t)strnlen(name,     RADIOKIT_MAX_NAME);
+    uint8_t descLen  = (uint8_t)strnlen(desc,     RADIOKIT_MAX_DESC);
+    uint8_t pwdLen   = (uint8_t)strnlen(pwd,      RADIOKIT_MAX_PWD);
     uint8_t themeLen = (uint8_t)strnlen(themeStr, 64);
 
-    if (out + 6 + nameLen + pwdLen + themeLen > bufSize) return 0;
+    if (out + 8 + nameLen + descLen + pwdLen + themeLen > bufSize) return 0;
 
     buf[out++] = RK_PROTOCOL_VERSION;
     buf[out++] = config.orientation;
     buf[out++] = _widgetCount;
     buf[out++] = nameLen;
     memcpy(&buf[out], name, nameLen); out += nameLen;
+    buf[out++] = descLen;
+    memcpy(&buf[out], desc, descLen); out += descLen;
     buf[out++] = pwdLen;
     memcpy(&buf[out], pwd, pwdLen);   out += pwdLen;
     buf[out++] = themeLen;

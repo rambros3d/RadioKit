@@ -351,9 +351,6 @@ class _PairedModelsList extends StatelessWidget {
 
     return Column(
       children: devices.map((device) {
-        final displayName = device.configName?.isNotEmpty == true
-            ? device.configName!
-            : device.name;
         final connectionIcon = device.type == 'ble'
             ? Icons.bluetooth_rounded
             : Icons.usb_rounded;
@@ -378,7 +375,7 @@ class _PairedModelsList extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  displayName.toUpperCase(),
+                  (device.configName?.isNotEmpty == true ? device.configName! : device.name).toUpperCase(),
                   style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
                 ),
                 const SizedBox(width: 8),
@@ -389,12 +386,10 @@ class _PairedModelsList extends StatelessWidget {
                 ),
               ],
             ),
-            subtitle: device.description?.isNotEmpty == true
-                ? Text(device.description!)
-                : Text(
-                    'LAST SEEN: ${device.lastConnected.hour}:${device.lastConnected.minute.toString().padLeft(2, '0')}',
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
+            subtitle: Text(
+              device.description?.isNotEmpty == true ? device.description! : 'NO_DESCRIPTION_PROVIDED',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white38),
+            ),
             trailing: const Icon(Icons.chevron_right_rounded, size: 20),
             onTap: () => _handleReconnect(context, device),
           ),

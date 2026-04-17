@@ -102,17 +102,17 @@ uint16_t RadioKit_Widget::serializeStrings(uint8_t* buf) const {
     uint16_t out = 0;
     buf[out++] = mask;
 
-    auto _writeStr = [&](const char* s) {
-        uint8_t len = (uint8_t)strnlen(s, RADIOKIT_MAX_LABEL);
+    auto _writeStr = [&](const char* s, size_t maxLen) {
+        uint8_t len = (uint8_t)strnlen(s, maxLen < 255 ? maxLen : 255);
         buf[out++] = len;
         memcpy(&buf[out], s, len);
         out += len;
     };
 
-    if (mask & RK_STR_LABEL)   _writeStr(_label);
-    if (mask & RK_STR_ICON)    _writeStr(_icon);
-    if (mask & RK_STR_ONTEXT)  _writeStr(_onText);
-    if (mask & RK_STR_OFFTEXT) _writeStr(_offText);
+    if (mask & RK_STR_LABEL)   _writeStr(_label,   RADIOKIT_MAX_LABEL);
+    if (mask & RK_STR_ICON)    _writeStr(_icon,    RADIOKIT_MAX_ICON);
+    if (mask & RK_STR_ONTEXT)  _writeStr(_onText,  RADIOKIT_MAX_LABEL);
+    if (mask & RK_STR_OFFTEXT) _writeStr(_offText, RADIOKIT_MAX_LABEL);
 
     return out;
 }

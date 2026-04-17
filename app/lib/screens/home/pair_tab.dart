@@ -62,7 +62,12 @@ class _PairTabState extends State<PairTab> {
     final success = await _connect(device, deviceProvider, console);
 
     if (success) {
-      await history.saveDevice(device, 'ble', configName: deviceProvider.configName);
+      await history.saveDevice(
+        device,
+        'ble',
+        configName: deviceProvider.configName,
+        description: deviceProvider.description,
+      );
     }
   }
 
@@ -79,7 +84,14 @@ class _PairTabState extends State<PairTab> {
     deviceProvider.setTransport(serialProvider.serialService);
     final success = await _connect(device, deviceProvider, console, baudRate: baudRate);
 
-    if (success) await history.saveDevice(device, 'serial');
+    if (success) {
+      await history.saveDevice(
+        device,
+        'serial',
+        configName: deviceProvider.configName,
+        description: deviceProvider.description,
+      );
+    }
   }
 
   Future<bool> _connect(

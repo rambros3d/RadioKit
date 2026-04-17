@@ -1,5 +1,7 @@
 #!/bin/bash
-# RadioKit Fedora Build Script
+# Move to the script's directory (project root)
+cd "$(dirname "$0")"
+
 # This script applies the necessary fixes for JDK cgroup warnings that can corrupt the build.
 
 # Fix for cgroup warning corruption in jmod (Found on Fedora/Cgroup v2 systems)

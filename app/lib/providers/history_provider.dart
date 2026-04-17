@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -46,6 +47,7 @@ class PairedDevice {
 class HistoryProvider extends ChangeNotifier {
   static const _storageKey = 'radiokit_paired_models';
   List<PairedDevice> _pairedDevices = [];
+  final Completer<void> _ready = Completer<void>();
 
   HistoryProvider() {
     _loadHistory();
@@ -65,10 +67,13 @@ class HistoryProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('RadioKit: Failed to load history: $e');
+    } finally {
+      if (!_ready.isCompleted) _ready.complete();
     }
   }
 
   Future<void> saveDevice(DeviceInfo device, String type, {String? configName, String? description}) async {
+    await _ready.future; // ensure persisted list is loaded before any write
     // Check if exists
     final index = _pairedDevices.indexWhere((d) => d.id == device.id);
     final now = DateTime.now();

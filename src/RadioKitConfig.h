@@ -102,10 +102,13 @@
 //  Widget limits
 // ─────────────────────────────────────────────
 #define RADIOKIT_MAX_WIDGETS 16
-#define RADIOKIT_MAX_LABEL 32
-#define RADIOKIT_MAX_ICON 24
-#define RADIOKIT_TEXT_LEN 32
-#define RADIOKIT_MAX_ITEMS 8 ///< MultipleButton/Select item pool size
+#define RADIOKIT_MAX_LABEL   32  ///< Widget label, onText, offText max chars
+#define RADIOKIT_MAX_ICON    24  ///< Icon string max chars
+#define RADIOKIT_MAX_NAME    32  ///< Device name max chars
+#define RADIOKIT_MAX_DESC   128  ///< Device description max chars
+#define RADIOKIT_MAX_PWD     32  ///< Connection password max chars
+#define RADIOKIT_TEXT_LEN    32  ///< Text widget content max chars
+#define RADIOKIT_MAX_ITEMS    8  ///< MultipleButton/Select item pool size
 
 // ─────────────────────────────────────────────
 //  Rotation helper

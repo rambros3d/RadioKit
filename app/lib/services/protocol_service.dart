@@ -7,11 +7,13 @@ import '../models/widget_config.dart';
 /// Result of parsing a CONF_DATA payload.
 class ParsedConf {
   final String name;
+  final String description;
   final String theme;
   final int orientation;
   final List<WidgetConfig> widgets;
   const ParsedConf({
     required this.name,
+    required this.description,
     required this.theme,
     required this.orientation,
     required this.widgets,
@@ -149,6 +151,20 @@ class ProtocolService {
         allowMalformed: true);
     offset += nameLen;
 
+    // Parse description
+    if (offset >= payload.length) {
+      debugPrint('RadioKit CONF_DATA: truncated before DESC_LEN');
+      return null;
+    }
+    final descLen = payload[offset++];
+    if (offset + descLen > payload.length) {
+      debugPrint('RadioKit CONF_DATA: truncated in DESC field');
+      return null;
+    }
+    final description = utf8.decode(payload.sublist(offset, offset + descLen),
+        allowMalformed: true);
+    offset += descLen;
+
     // Skip password
     if (offset >= payload.length) {
       debugPrint('RadioKit CONF_DATA: truncated before PWD_LEN');
@@ -249,6 +265,7 @@ class ProtocolService {
     debugPrint('RadioKit CONF_DATA: parsed ${widgets.length}/$numWidgets widgets OK');
     return ParsedConf(
       name: name,
+      description: description,
       theme: theme,
       orientation: orientation,
       widgets: widgets,
