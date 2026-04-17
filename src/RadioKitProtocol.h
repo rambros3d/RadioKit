@@ -29,7 +29,7 @@
 #define RK_CMD_CONF_DATA  0x02   // Arduino → App: config payload
 #define RK_CMD_GET_VARS   0x03   // App → Arduino: request variables
 #define RK_CMD_VAR_DATA   0x04   // Arduino → App: variable values (full sync)
-#define RK_CMD_SET_INPUT  0x05   // App → Arduino: set input values
+#define RK_CMD_SET_INPUT  0x05   // Device → App: force sync physical input override
 #define RK_CMD_ACK        0x06   // Both: acknowledge SET_INPUT or VAR_UPDATE
 #define RK_CMD_PING       0x07   // App → Arduino: keep-alive ping
 #define RK_CMD_PONG       0x08   // Arduino → App: pong

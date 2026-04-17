@@ -237,6 +237,7 @@ class DeviceProvider extends ChangeNotifier {
     switch (packet.cmd) {
       case kCmdConfData:  _handleConfData(packet.payload);  break;
       case kCmdVarData:   _handleVarData(packet.payload);   break;
+      case kCmdSetInput:  _handleSetInput(packet.payload);  break;
       case kCmdVarUpdate: _handleVarUpdate(packet.payload); break;
       case kCmdAck:       _handleAck(packet.payload);       break;
       case kCmdPong:      break;
@@ -279,6 +280,33 @@ class DeviceProvider extends ChangeNotifier {
     if (next != null) { _widgetState = next; notifyListeners(); }
   }
 
+  void _handleSetInput(List<int> payload) {
+    final result = ProtocolService.parseVarUpdate(payload);
+    if (result == null) return;
+    final (widgetId, seq, values) = result;
+
+    final current = _widgetState;
+    if (current == null) return;
+
+    final widget = _widgets.firstWhere(
+      (w) => w.widgetId == widgetId,
+      orElse: () => WidgetConfig(
+          typeId: 0, widgetId: widgetId, x: 0, y: 0, scale: 0, aspect: 0),
+    );
+
+    RadioWidgetState next = current;
+    // 0x05 SET_INPUT forces a jump for an Input widget
+    if (!widget.hasOutput) {
+      next = current.copyWithInput(widgetId, values);
+      _log('RX <- SET_INPUT (wid:$widgetId, seq:$seq, override:$values)');
+    }
+
+    _widgetState = next;
+    notifyListeners();
+
+    _transport.writePacket(ProtocolService.buildAck(seq)).catchError((_){});
+  }
+
   void _handleVarUpdate(List<int> payload) {
     final result = ProtocolService.parseVarUpdate(payload);
     if (result == null) return;
@@ -293,7 +321,9 @@ class DeviceProvider extends ChangeNotifier {
           typeId: 0, widgetId: widgetId, x: 0, y: 0, scale: 0, aspect: 0),
     );
 
-    RadioWidgetState next;
+    // 0x09 VAR_UPDATE handles Outputs. Inputs sent over 0x09 are echoes/bounces
+    // and must be strictly ignored to prevent UI overwrite jitter.
+    RadioWidgetState next = current;
     if (widget.hasOutput) {
       if (widget.typeId == kWidgetLed && values.length >= 5) {
         // v3: [STATE, R, G, B, OPACITY]
@@ -308,11 +338,16 @@ class DeviceProvider extends ChangeNotifier {
             widgetId, values.isNotEmpty ? values[0] : 0);
       }
     } else {
-      next = current.copyWithInput(widgetId, values);
+      // It's an input bounce. Discard it.
+      _log('RX <- VAR_UPDATE (IGNORED BOUNCE for Input wid:$widgetId)');
     }
 
     _widgetState = next;
     notifyListeners();
+
+    if (widget.hasOutput) {
+        _log('RX <- VAR_UPDATE (wid:$widgetId, seq:$seq)');
+    }
 
     _transport.writePacket(ProtocolService.buildAck(seq)).catchError((_) {});
   }
@@ -422,10 +457,20 @@ class DeviceProvider extends ChangeNotifier {
         return '→ X:$x Y:$y';
       case kWidgetMultiple:
         final items = w.multipleItems;
-        if (v < items.length) {
-          return '→ "${items[v].label}" (idx:$v)';
+        if (w.variant == 1) {
+          // Bitmask variant
+          final selected = <String>[];
+          for (int i = 0; i < items.length; i++) {
+            if ((v & (1 << i)) != 0) selected.add(items[i].label);
+          }
+          return '→ [${selected.join(', ')}] (mask:0x${v.toRadixString(16)})';
+        } else {
+          // Index variant
+          if (v < items.length) {
+            return '→ "${items[v].label}" (idx:$v)';
+          }
+          return '→ index $v';
         }
-        return '→ option $v';
       default:
         return '→ $values';
     }

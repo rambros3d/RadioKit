@@ -66,6 +66,13 @@ public:
     // ── Main loop ────────────────────────────────────────────
     void update();
 
+    // ── Manual Sync ──────────────────────────────────────────
+    /**
+     * Enqueues a reliable VAR_UPDATE broadcast for the specified widget.
+     * Useful when a widget's state is modified programmatically in the firmware.
+     */
+    void pushUpdate(uint8_t widgetId);
+
     // ── Status ───────────────────────────────────────────────
     bool    isConnected() const;
     uint8_t widgetCount() const { return _widgetCount; }
@@ -78,12 +85,15 @@ private:
     uint8_t            _widgetCount;
     RadioKitTransport* _transport;
 
-    // VAR_UPDATE reliability
-    bool    _pendingVarUpdate;
+    // VAR_UPDATE / SET_INPUT reliability
+    uint32_t _pendingUpdatesMask;
     uint8_t _varUpdateSeq;
     uint8_t _varUpdateId;
     uint8_t _varUpdateRetries;
     uint32_t _varUpdateSentAt;
+    
+    // Shadow state to track implicit input changes by firmware
+    uint8_t _shadowInput[RADIOKIT_MAX_WIDGETS][4];
 
     uint8_t _txBuf[RK_MAX_PACKET_SIZE];
 
@@ -94,6 +104,7 @@ private:
     void _handleSetInput(const uint8_t* payload, uint16_t len);
     void _handlePing();
     void _handleAck(const uint8_t* payload, uint16_t len);
+    void _handleVarUpdate(const uint8_t* payload, uint16_t len);
 
     uint16_t _buildConfPayload(uint8_t* buf, uint16_t bufSize);
     uint16_t _buildVarPayload(uint8_t* buf, uint16_t bufSize);

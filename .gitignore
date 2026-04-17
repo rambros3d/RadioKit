@@ -25,6 +25,7 @@ build/
 .dummy
 compile_commands.json
 build_log.txt
+.clangd
 
 # Flutter
 app/.dart_tool/

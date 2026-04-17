@@ -37,6 +37,10 @@ RK_PushButton::RK_PushButton(RK_ButtonProps p) {
 }
 
 bool RK_PushButton::isPressed() {
+    return props.state;
+}
+
+bool RK_PushButton::clicked() {
     if (_pendingPress) { _pendingPress = false; return true; }
     return false;
 }

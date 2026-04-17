@@ -36,12 +36,11 @@ Minimum packet size: **6 bytes** (no payload).
 | `0x01` | `GET_CONF`   | App → Arduino | Request configuration descriptor      |
 | `0x02` | `CONF_DATA`  | Arduino → App | Configuration descriptor response     |
 | `0x03` | `GET_VARS`   | App → Arduino | Request current variable state        |
-| `0x04` | `VAR_DATA`   | Arduino → App | Variable state response (Full Sync)   |
-| `0x05` | `SET_INPUT`  | App → Arduino | Push input widget values              |
-| `0x06` | `ACK`        | Both          | Acknowledge SET_INPUT or VAR_UPDATE   |
+| `0x04` | `VAR_DATA`   | Arduino → App | Variable state response (Outputs Only)|
+| `0x06` | `ACK`        | Both          | Acknowledge VAR_UPDATE                |
 | `0x07` | `PING`       | App → Arduino | Connectivity check                    |
 | `0x08` | `PONG`       | Arduino → App | Ping response                         |
-| `0x09` | `VAR_UPDATE` | Arduino → App | Reliable push of a single widget state |
+| `0x09` | `VAR_UPDATE` | Both          | Reliable push of a single widget state|
 
 
 ---
@@ -107,7 +106,7 @@ Bits indicate which optional strings are included. Each active bit adds a `[LEN]
 
 ### VAR_DATA (Full Sync)
 
-Contains the current state of all active widgets in ID order.
+Contains the current state of all active **Output** widgets (e.g. LEDs, Text) in ID order. Input widgets are explicitly excluded from this payload.
 
 ```
 [DATA_W0][DATA_W1][DATA_W2]...
@@ -115,28 +114,27 @@ Contains the current state of all active widgets in ID order.
 
 ### VAR_UPDATE (Reliable Push)
 
-Pushes a change for a single widget. Requires an `ACK` response from the App.
+Pushes a change for a single Input or Output widget. Sent by the App to mutate an input, or proactively broadcast by the Device when an input changes. Requires an `ACK` response from the receiver.
 
 ```
-[SEQ][ID][DATA...]
+[ID][SEQ][DATA...]
 ```
-
 
 | Field  | Type      | Description                              |
 | ------ | --------- | ---------------------------------------- |
-| `SEQ`  | `uint8_t` | Rolling sequence number.                 |
 | `ID`   | `uint8_t` | The widget index.                        |
+| `SEQ`  | `uint8_t` | Rolling sequence number.                 |
 | `DATA` | `N bytes` | Runtime data (type-specific). See below. |
 
 
 #### Reliability Logic
-- The Arduino maintains a **1-slot pending queue**.
+- The Arduino maintains a **32-slot pending bitmask** to queue multiple reliable broadcasts efficiently.
 - Retransmission timeout: **200 ms**.
-- **Fail-Soft Escalation**: If retransmission fails repeatedly (5 attempts), the Arduino must send a full **`VAR_DATA`** (Full Sync) packet to resynchronize the entire system.
+- **Fail-Soft Escalation**: If retransmission fails repeatedly (5 attempts), the Arduino drops the packet.
 
 ### ACK (Confirmation)
 
-Used to confirm receipt of `0x05 (SET_INPUT)` or `0x09 (VAR_UPDATE)`.
+Used to confirm receipt of `0x09 (VAR_UPDATE)`.
 
 ```
 [SEQ]

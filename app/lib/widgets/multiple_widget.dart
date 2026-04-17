@@ -103,19 +103,13 @@ class MultipleWidget extends StatelessWidget {
       Color activeCol, bool horizontal) {
     final List<Widget> children = [];
     
-    // Simple heuristic: if it's "MultipleSelect" it likely uses bitmasking.
-    // Since we don't have a protocol flag yet, we'll implement a toggle behavior
-    // that works for both single and multi-select.
-    
+    final bool isBitmask = config.variant == 1;
+
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
-      
-      // Check if active: bit i is set OR (if single byte) value == i
-      // We'll support both. If value > items.length, it's definitely a bitmask.
-      // If value < items.length, it could be either.
-      final bool isBitSet = (value & (1 << i)) != 0;
-      final bool isIndexMatch = (value == i);
-      final isActive = isBitSet || isIndexMatch;
+      final bool isActive = isBitmask 
+          ? (value & (1 << i)) != 0 
+          : (value == i);
 
       if (i > 0) {
         children.add(horizontal
@@ -127,15 +121,15 @@ class MultipleWidget extends StatelessWidget {
         Expanded(
           child: GestureDetector(
             onTap: () {
-              // Toggle logic for multi-select support
-              if (isActive && isBitSet) {
-                onChanged(value & ~(1 << i)); // Deselect bit
-              } else if (!isActive) {
-                // If it was a single selector, this would normally be value = i.
-                // But let's assume bitmasking for 0x07 for now to be flexible.
-                onChanged(value | (1 << i)); // Select bit
+              if (isBitmask) {
+                // Multi-select: Toggle the bit
+                final newValue = isActive 
+                    ? (value & ~(1 << i)) 
+                    : (value | (1 << i));
+                onChanged(newValue);
               } else {
-                onChanged(i); // Fallback to index
+                // Single-select: Set the index
+                if (!isActive) onChanged(i);
               }
             },
             child: AnimatedContainer(

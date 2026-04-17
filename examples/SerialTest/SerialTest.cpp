@@ -31,12 +31,12 @@ RK_Slider sld({.label = "Level",
                .aspect = 8.0f,
                .value = 12});
 RK_Joystick joy({.label = "Stick", .x = 160, .y = 50, .scale = 2.0f});
-RK_MultipleButton mode({.label = "Mode",
+RK_MultipleButton mode({.label = "Multiple Button",
                         .x = 60,
                         .y = 30,
                         .items = {{.label = "Auto", .icon = "cpu"},
                                   {.label = "Man", .icon = "hand"}}});
-RK_MultipleSelect opts({.label = "Config",
+RK_MultipleSelect opts({.label = "Multiple Select",
                         .x = 60,
                         .y = 90,
                         .items = {{.label = "Log", .icon = "file-text"},
@@ -69,20 +69,9 @@ void loop() {
     lastHeartbeat = millis();
   }
 
-  // Push button: blink LED on press
-  if (btn.isPressed()) {
-    digitalWrite(LED_PIN, HIGH);
-    delay(80);
-  } else {
-    digitalWrite(LED_PIN, LOW);
-  }
-
-  // Toggle switch: hold LED on
-  if (sw.get() || slideSw.get()) {
-    digitalWrite(LED_PIN, HIGH);
-  } else {
-    digitalWrite(LED_PIN, LOW);
-  }
+  // LED control: Button or switches can turn on the LED
+  bool ledActive = btn.isPressed() || sw.get() || slideSw.get();
+  digitalWrite(LED_PIN, ledActive ? HIGH : LOW);
 
   // Status LED reflects slider level
   uint8_t level = sld.get();

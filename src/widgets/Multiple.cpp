@@ -58,10 +58,12 @@ void RadioKit_Multiple::setIcon(const char* val) {
 }
 
 RK_MultipleButton::RK_MultipleButton(RK_MultipleProps p) {
+    p.variant = 0; // Index-based (Radio)
     _initFromProps(p, RK_TYPE_MULTIPLE);
 }
 
 RK_MultipleSelect::RK_MultipleSelect(RK_MultipleProps p) {
+    p.variant = 1; // Bitmask-based (Checkboxes)
     _initFromProps(p, RK_TYPE_MULTIPLE);
 }
 

@@ -53,6 +53,7 @@ class RK_PushButton : public RadioKit_Button {
 public:
     RK_PushButton(RK_ButtonProps p);
     bool isPressed();
+    bool clicked();
 };
 
 // ── ToggleButton ────────────────────────────────────────────────────────────

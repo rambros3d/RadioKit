@@ -262,24 +262,8 @@ class ProtocolService {
     int offset = 0;
     var state  = current;
 
-    final inputWidgets = widgets.where((w) => w.hasInput).toList()
-      ..sort((a, b) => a.widgetId.compareTo(b.widgetId));
     final outputWidgets = widgets.where((w) => w.hasOutput).toList()
       ..sort((a, b) => a.widgetId.compareTo(b.widgetId));
-
-    for (final widget in inputWidgets) {
-      if (widget.typeId == kWidgetJoystick) {
-        if (offset + 2 > payload.length) break;
-        final x = _signed(payload[offset]);
-        final y = _signed(payload[offset + 1]);
-        state = state.copyWithInput(widget.widgetId, [x, y]);
-        offset += 2;
-      } else {
-        if (offset + 1 > payload.length) break;
-        state = state.copyWithInput(widget.widgetId, [payload[offset]]);
-        offset += 1;
-      }
-    }
 
     for (final widget in outputWidgets) {
       if (widget.typeId == kWidgetText) {
