@@ -1,5 +1,5 @@
 {
-  "name": "default",
+  "name": "standard",
   "version": "2.0.0",
   "author": "RadioKit",
   "description": "Clean, functional default skin",
@@ -46,10 +46,10 @@
         "off": "button_push/bg.svg"
       }
     },
-    "switch": {
+    "toggle_switch": {
       "states": {
-        "on": "switch/on.svg",
-        "off": "switch/off.svg"
+        "on": "toggle_switch/on.svg",
+        "off": "toggle_switch/off.svg"
       }
     },
     "slider": {

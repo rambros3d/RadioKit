@@ -31,30 +31,38 @@ dependencies:
   shared_preferences: ^2.5.5
   google_fonts: ^8.0.2
   lucide_icons_flutter: ^3.1.12
-  archive: ^3.6.1
   path_provider: ^2.1.3
   file_picker: ^8.0.0+1
   # Multi-mode Rendering
   flutter_svg: ^2.0.10+1
+  archive: ^4.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  build_runner: ^2.4.14
+  flutter_gen_runner: ^5.10.0
 
 flutter:
   uses-material-design: true
   assets:
-    - resources/skins/default/
-    - resources/skins/default/global/
-    - resources/skins/default/button_push/
-    - resources/skins/default/button_toggle/
-    - resources/skins/default/switch/
-    - resources/skins/default/slider/
-    - resources/skins/default/joystick/
-    - resources/skins/default/knob/
-    - resources/skins/default/led/
-    - resources/skins/default/multiple_button/
-    - resources/skins/default/multiple_select/
-    - resources/skins/default/display/
-    - resources/skins/default/sounds/
+    - resources/skins/standard/
+    - resources/skins/standard/global/
+    - resources/skins/standard/button_push/
+    - resources/skins/standard/button_toggle/
+    - resources/skins/standard/toggle_switch/
+    - resources/skins/standard/slider/
+    - resources/skins/standard/joystick/
+    - resources/skins/standard/knob/
+    - resources/skins/standard/led/
+    - resources/skins/standard/multiple_button/
+    - resources/skins/standard/multiple_select/
+    - resources/skins/standard/display/
+    - resources/skins/standard/sounds/
+    - resources/skins/debug/
+    - resources/skins/neon/
+
+flutter_gen:
+  output: lib/gen/
+  line_length: 80

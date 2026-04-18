@@ -25,7 +25,7 @@ class SlideSwitchWidget extends StatelessWidget {
     return GestureDetector(
       onTap: () => onChanged(active ? 0 : 1),
       child: DynamicSkinRenderer(
-        widgetFolder: 'switch',
+        widgetFolder: 'toggle_switch',
         state: RKSkinState(
           isOn: active,
           styleIndex: config.style,

@@ -22,11 +22,11 @@ class SkinManager extends ChangeNotifier {
   String? _localSkinsPath;
 
   SkinManifest? _currentManifest;
-  String _activeSkinName = 'default';
+  String _activeSkinName = 'standard';
   bool _isLocal = false; // Whether current skin is from local storage
 
   static const String _prefsKey = 'active_skin';
-  static const List<String> _builtInSkins = ['default', 'neon', 'debug'];
+  static const List<String> _builtInSkins = ['standard', 'neon', 'debug'];
 
   final Map<String, BehaviorConfig> _configCache = {};
   final Map<String, SkinManifest> _manifestCache = {};
@@ -51,10 +51,10 @@ class SkinManager extends ChangeNotifier {
     }
     
     // Restore previously active skin, or fall back to 'default'
-    String skinName = 'default';
+    String skinName = 'standard';
     try {
       final prefs = await SharedPreferences.getInstance();
-      skinName = prefs.getString(_prefsKey) ?? 'default';
+      skinName = prefs.getString(_prefsKey) ?? 'standard';
     } catch (_) {}
     await applySkin(skinName);
   }
@@ -102,7 +102,7 @@ class SkinManager extends ChangeNotifier {
       _persistSkinChoice(skinName);
     } catch (e) {
       debugPrint('SkinManager: Skin $skinName not found. Reverting to default.');
-      if (skinName != 'default') await applySkin('default');
+      if (skinName != 'standard') await applySkin('standard');
     }
     notifyListeners();
   }
@@ -154,8 +154,8 @@ class SkinManager extends ChangeNotifier {
     if (await _assetExists(assetPath)) return assetPath;
 
     // Global 'Default' Fallback
-    if (_activeSkinName != 'default') {
-      final defPath = 'resources/skins/default/$widgetFolder/$assetName';
+    if (_activeSkinName != 'standard') {
+      final defPath = 'resources/skins/standard/$widgetFolder/$assetName';
       if (await _assetExists(defPath)) return defPath;
     }
 
