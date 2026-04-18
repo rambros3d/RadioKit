@@ -1,0 +1,9 @@
+{
+  "behaviors": {
+    "selection_mode": "multiple",
+    "animation": {
+      "type": "fade_check",
+      "duration_ms": 150
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "animations": {
+    "toggle": {
+      "duration_ms": 250,
+      "curve": "easeInOutBack"
+    }
+  },
+  "haptics": {
+    "on_toggle": "medium"
+  },
+  "audio": {
+    "toggle_on": "switch_on.mp3",
+    "toggle_off": "switch_off.mp3",
+    "volume": 0.4
+  }
+}

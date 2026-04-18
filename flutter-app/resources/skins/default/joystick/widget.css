@@ -1,0 +1,99 @@
+:root {
+  --primary: #ffffff;
+  --led-color: #007AFF;
+  --rk-x: 0;
+  --rk-y: 0;
+}
+
+.joystick {
+  background: radial-gradient(at 75% 75%, #eeeeee 0%, #cccccc 100%);
+  box-shadow: 0 -5px 5px rgba(255, 255, 255, 0.1),
+    0 5px 5px rgba(255, 255, 255, 0.05),
+    inset 0 5px 5px rgba(0, 0, 0, 0.02),
+    inset 0 -5px 5px rgba(255, 255, 255, 0.05);
+  position: relative;
+  height: 200px;
+  width: 200px;
+  border-radius: 50%;
+  margin: auto;
+  overflow: visible;
+}
+
+.joystick__ball {
+  background: radial-gradient(at 25% 25%, #f5f5f5 0%, #d8d8d8 100%);
+  position: absolute;
+  height: 70%;
+  width: 70%;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  box-shadow: inset -5px -10px 40px rgba(0, 0, 0, 0.05), 
+              inset 0px 0px 10px rgba(0, 0, 0, 0.3), 
+              inset 0px 0px 5px rgba(0, 0, 0, 0.5), 
+              0px 0px 10px rgba(0, 0, 0, 0.3);
+}
+
+.joystick__stick {
+  background: radial-gradient(at 50% 75%, #ffffff 0%, #dddddd 100%);
+  box-shadow: inset 5px 5px 10px rgba(255, 255, 255, 0.3),
+    inset -5px -5px 10px rgba(0, 0, 0, 0.15),
+    0 2px 10px -5px rgba(0, 0, 0, 0.7),
+    0 4px 20px -10px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  z-index: 2;
+  height: 60%;
+  width: 60%;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  
+  /* Dynamic Positioning using RadioKit State Variables */
+  /* Mapping -100..100 to about -40px..40px movement */
+  transform: translate(
+    calc(-50% + (var(--rk-x) * 0.4px)), 
+    calc(-50% + (var(--rk-y) * 0.4px))
+  ) rotateX(calc(var(--rk-y) * -0.1deg)) rotateY(calc(var(--rk-x) * 0.1deg));
+  
+  transition: 50ms linear; /* Fast response for hardware control */
+}
+
+/* Joystick Handle details */
+.joystick__stick::before {
+  content: '';
+  background: #fff;
+  position: absolute;
+  top: 15%;
+  left: 48%;
+  width: 4%;
+  height: 4%;
+  border-radius: 50%;
+  opacity: 0.3;
+  box-shadow: 0 0 5px #fff;
+}
+
+/* LED Ring Styling */
+.led {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform-origin: 0px 90px;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+/* Pre-calculate some LED positions (Simple simplified version of 16 LEDs) */
+.led-1  { transform: translate(-50%, -50%) rotate(0deg); }
+.led-2  { transform: translate(-50%, -50%) rotate(22.5deg); }
+.led-3  { transform: translate(-50%, -50%) rotate(45deg); }
+.led-4  { transform: translate(-50%, -50%) rotate(67.5deg); }
+/* ... and so on ... */
+
+/* Highlight LEDs based on direction (State Driven) */
+.joystick[data-dir="up"] .led-1 { background: var(--led-color); box-shadow: 0 0 8px var(--led-color); }
+.joystick[data-dir="right"] .led-5 { background: var(--led-color); box-shadow: 0 0 8px var(--led-color); }

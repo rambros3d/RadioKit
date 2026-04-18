@@ -1,15 +1,14 @@
 # RadioKit Documentation
 
-**Control your Arduino from a smartphone — no server, no code generation, just BLE.**
+**Control your Arduino from a smartphone app**
 
-RadioKit is an open-source alternative to RemoteXY. It allows you to build sophisticated mobile interfaces for your Arduino projects using a simple C++ API.
+RadioKit is an open-source alternative to RemoteXY. It allows you to build Amazing UI for your Arduino projects using a simple C++ API.
 
 ## Features
 
-- **No Code Generation**: Your Arduino defines the UI dynamically.
-- **Pure BLE**: Works offline, no internet or accounts required.
-- **Cross-Platform**: Client app runs on Android, iOS, and Web (Chrome).
-- **Lightweight**: Optimized for ESP32 and small microcontrollers.
+- **Pure Arduino**: Define your UI in Arduino code.
+- **Multiple Transports**: BLE and Serial. More coming soon.
+- **Cross-Platform**: Client app runs on Android, and Web (Chromium based). Possibly ios too.
 
 ---
 

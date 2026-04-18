@@ -1,0 +1,11 @@
+{
+  "animations": {
+    "transition": {
+      "duration_ms": 300,
+      "curve": "easeOutQuart"
+    }
+  },
+  "haptics": {
+    "on_selection": "light"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "physics": {
+    "damping": 0.8,
+    "stiffness": 150.0,
+    "mass": 1.0,
+    "detents": "soft"
+  },
+  "animations": {
+    "on_change": {
+      "duration_ms": 50,
+      "curve": "linear"
+    }
+  },
+  "haptics": {
+    "on_change": "selection"
+  }
+}

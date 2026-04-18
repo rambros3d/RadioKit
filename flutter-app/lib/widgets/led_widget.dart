@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/widget_config.dart';
+import '../theme/skin/renderers/dynamic_skin_renderer.dart';
+import '../theme/skin/renderers/skin_renderer.dart';
 
 /// LED widget — displays an RGB colour set by the device.
-///
-/// v3 wire format: [STATE(1), R(1), G(1), B(1), OPACITY(1)]
-/// STATE != 0 means the LED is on (device-side flag).
+/// Fully skinned using v1.6 Mixed-Mode engine.
 class LedWidget extends StatelessWidget {
   final WidgetConfig config;
 
-  /// Expected: List<int> [state, r, g, b, opacity]
+  /// Expected: List<int> [state, r, g, b, opacity] or palette index
   final dynamic value;
 
   const LedWidget({
@@ -17,7 +17,6 @@ class LedWidget extends StatelessWidget {
     required this.value,
   });
 
-  // v3: index 0 = STATE, 1 = R, 2 = G, 3 = B, 4 = OPACITY
   bool get _isOn {
     if (value is List<int>) {
       final v = value as List<int>;
@@ -35,67 +34,24 @@ class LedWidget extends StatelessWidget {
       final opacity = v.length > 4 ? v[4] : 255;
       return Color.fromARGB(opacity, r, g, b);
     }
-    // Legacy palette index fallback
+    // Static fallback palette for legacy non-RGB payloads
     switch (value as int) {
       case 1:  return Colors.red;
       case 2:  return Colors.green;
       case 3:  return Colors.blue;
       case 4:  return Colors.yellow;
-      default: return Colors.grey;
+      default: return Colors.transparent;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final col = _color;
-    final on  = _isOn;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: on ? col : col.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                  boxShadow: on
-                      ? [
-                          BoxShadow(
-                            color: col.withValues(alpha: 0.7),
-                            blurRadius: 18,
-                            spreadRadius: 4,
-                          ),
-                        ]
-                      : null,
-                ),
-              ),
-              if (config.label.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  config.label,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ],
-          ),
-        ),
+    return DynamicSkinRenderer(
+      widgetFolder: 'led',
+      state: RKSkinState(
+        isOn: _isOn,
+        colorOverride: _color,
+        styleIndex: config.style,
       ),
     );
   }

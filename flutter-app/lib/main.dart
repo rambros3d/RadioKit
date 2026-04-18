@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app.dart';
-import 'services/skin_manager.dart';
+import 'theme/skin/skin_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize dynamic skins
+  // Initialize dynamic skins v1.6
   final skinManager = SkinManager();
   await skinManager.init();
 

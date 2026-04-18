@@ -7,6 +7,7 @@ import '../models/protocol.dart';
 import '../services/transport_service.dart';
 import '../services/protocol_service.dart';
 import '../services/debug_transport.dart';
+import '../services/demo_transport.dart';
 
 import '../providers/console_provider.dart';
 import '../providers/skin_provider.dart';
@@ -136,6 +137,50 @@ class DeviceProvider extends ChangeNotifier {
     if (_connectionState == DeviceConnectionState.disconnected) return;
 
     await _requestConfig();
+  }
+
+  Future<void> loadDemo(String demoId) async {
+    _connectionState = DeviceConnectionState.connecting;
+    _connectedDevice = DeviceInfo(id: 'demo_$demoId', name: demoId.replaceAll('_', ' '), rssi: -50);
+    _errorMessage = null;
+    notifyListeners();
+    
+    setTransport(DemoTransport());
+    await _transport.connect(_connectedDevice!.id);
+
+    _configName = demoId;
+    _description = 'Interactive Demo Mode';
+    
+    // Setup dummy widgets for demo
+    if (demoId == 'WIDGETS_DEMO') {
+      _widgets = [
+        const WidgetConfig(typeId: kWidgetButton, widgetId: 1, x: 20, y: 60, scale: 20, aspect: 10, label: 'Press', icon: 'wifi', strMask: kStrMaskLabel | kStrMaskIcon),
+        const WidgetConfig(typeId: kWidgetButton, widgetId: 2, x: 20, y: 80, scale: 20, aspect: 10, variant: 1, label: 'LED', strMask: kStrMaskLabel), // Toggle
+        const WidgetConfig(typeId: kWidgetSlideSwitch, widgetId: 3, x: 20, y: 40, scale: 10, aspect: 25, label: 'Power', icon: 'power', onText: 'ON', offText: 'OFF', strMask: kStrMaskLabel | kStrMaskIcon | kStrMaskOnText | kStrMaskOffText),
+        const WidgetConfig(typeId: kWidgetSlider, widgetId: 4, x: 100, y: 60, scale: 10, aspect: 80, rotation: 45, label: 'Level', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetKnob, widgetId: 5, x: 170, y: 40, scale: 20, aspect: 10, variant: 2, label: 'Pan', icon: 'knob', strMask: kStrMaskLabel | kStrMaskIcon),
+        const WidgetConfig(typeId: kWidgetJoystick, widgetId: 6, x: 160, y: 70, scale: 20, aspect: 10, label: 'Stick', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetMultiple, widgetId: 7, x: 60, y: 30, scale: 10, aspect: 20, variant: 0, label: 'Multiple Button', content: 'Auto:cpu|Man:hand', strMask: kStrMaskLabel | kStrMaskContent),
+        const WidgetConfig(typeId: kWidgetMultiple, widgetId: 8, x: 60, y: 90, scale: 10, aspect: 20, variant: 1, label: 'Multiple Select', content: 'Log:file-text|Mute:volume-x', strMask: kStrMaskLabel | kStrMaskContent),
+        const WidgetConfig(typeId: kWidgetLed, widgetId: 9, x: 20, y: 20, scale: 14, aspect: 10, label: 'Status', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetText, widgetId: 10, x: 20, y: 10, scale: 10, aspect: 30, label: 'Uptime', strMask: kStrMaskLabel),
+      ];
+      _orientation = kOrientationLandscape;
+    } else {
+      _widgets = [];
+      _orientation = kOrientationPortrait;
+    }
+    
+    _widgetState = RadioWidgetState.initial(_widgets);
+    
+    // Simulate LED active
+    _widgetState = _widgetState?.copyWithOutput(8, [1, 255, 100, 0, 255]);
+    _widgetState = _widgetState?.copyWithOutput(9, 'Hello World!');
+
+    _connectionState = DeviceConnectionState.connected;
+    
+    _startPolling();
+    notifyListeners();
   }
 
   Future<void> _requestConfig() async {

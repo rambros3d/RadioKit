@@ -28,7 +28,7 @@ void setup() {
     RadioKit.config.name = "My Device";
     
     // 1. Using a local/built-in skin name
-    RadioKit.config.theme = "retro"; 
+    RadioKit.config.theme = "default"; 
     
     // 2. OR Using a GitHub URL for a custom skin (Planned)
     // - RadioKit.config.theme = "https://github.com/RadioKit/radiokit-skins-cyberpunk";
@@ -56,61 +56,150 @@ A Skin Pack is a ZIP archive containing a manifest and visual assets.
 ```text
 (skin-pack-name)/
 ├── manifest.json        # Core styling and metadata
-├── global/              # App-wide assets
+├── global/              # App-wide assets (backgrounds, overlays)
+├── sounds/              # Shared audio assets (wav, mp3, ogg)
 │   └── background.jpg   # Main controller backdrop
-├── button/              # Push and Toggle buttons
+├── button_push/         # Momentary push buttons
 │   ├── bg.svg
-│   └── active.svg
-├── switch/              # Switch and SlideSwitch components
+│   ├── active.svg
+│   └── config.json      # Scale/Press animations
+├── button_toggle/       # Toggle switches and buttons
 │   ├── on.svg
-│   └── off.svg
+│   ├── off.svg
+│   └── config.json      # Color fade, distinct on/off haptics
+├── switch/              # SlideSwitch components
+│   ├── track.svg
+│   ├── thumb.svg
+│   └── config.json      # Slide physics
 ├── slider/              # Sliders and Knobs
 │   ├── track.svg
-│   └── thumb.svg
+│   ├── thumb.svg
+│   └── config.json      # Detent snapping, spring return
 ├── joystick/            # Joystick components
 │   ├── base.svg
-│   └── stick.svg
+│   ├── stick.svg
+│   └── config.json      # Friction and deadzones
 ├── led/                 # LED components
 │   ├── base.svg
-│   └── glow.png
-└── multiple/            # MultipleButton/Select components
+│   ├── glow.png
+│   └── config.json      # Pulse speed, glow intensity
+├── multiple_button/     # Single-selection (Radio) group
+│   ├── bg.svg
+│   ├── item.svg
+│   └── config.json      # Slide indicator transitions
+└── multiple_select/     # Multi-selection (Bitmask) group
     ├── bg.svg
-    └── item.svg
+    ├── item.svg
+    └── config.json      # Independent fade/check transitions
 ```
 
 ### `manifest.json` Schema (v1.5)
-The manifest defines **Design Tokens**. New in v1.5 is the `styles` map, which allows per-style overrides of global colors.
+
+The v1.5 manifest introduces **Semantic Theming**. This allows the UI to stay consistent even when switching between "Neon" and "Retro" skins.
 
 ```json
 {
-  "name": "Industrial Retro",
+  "name": "Neon Midnight",
   "version": "1.5.0",
   "author": "RadioKit Team",
   "tokens": {
     "colors": {
-      "primary": "#FF8C00",
-      "background": "#1A1A1A",
-      "surface": "#2C2C2E"
+      "primary": "#39FF14",    // Brand/Action color
+      "onPrimary": "#000000",  // Text on top of primary
+      "background": "#000000", // Main app canvas
+      "surface": "#111111",    // Widget containers
+      "onSurface": "#FFFFFF",  // Default text
+      "outline": "#333333"     // Borders and dividers
     },
     "effects": {
-      "glassOpacity": 0.3,
-      "glassBlur": 15.0
-    },
-    "styles": {
-       "0": { "primary": "#FF8C00" }, // RK_PRIMARY
-       "4": { "danger": "#FF4B4B", "glow": true } // RK_DANGER
+      "glassOpacity": 0.2,     // 0.0 to 1.0 (requires background.jpg)
+      "glassBlur": 20.0,       // Backdrop blur sigma
+      "glowIntensity": 0.8     // Bloom intensity for active widgets
     },
     "typography": {
-      "fontFamily": "Inter",
-      "fontWeight": "900"
+      "fontFamily": "VT323",   // Loaded via coollabs fonts
+      "fontWeight": "400",
+      "letterSpacing": 1.2
     },
     "shapes": {
-        "borderRadius": 12,
-        "borderWidth": 1.5
+      "borderRadius": 0.0,     // 0 for sharp, >20 for pill
+      "borderWidth": 2.0
+    },
+    "styles": {
+      "0": { "primary": "#39FF14", "glow": true },  // RK_PRIMARY
+      "1": { "primary": "#555555", "glow": false }, // RK_DIM
+      "2": { "primary": "#39FF14", "glow": true },  // RK_SUCCESS
+      "3": { "primary": "#FFEA00", "glow": true },  // RK_WARNING
+      "4": { "primary": "#FF073A", "glow": true }   // RK_DANGER
     }
   }
 }
 ```
+
+#### Key v1.5 Concepts:
+
+- **Style Overrides**: The `styles` map allows the firmware's `setStyle(index)` command to trigger specific color and effect sets defined in the skin.
+- **Glassmorphism**: If `glassOpacity` is set, widgets will render with a semi-transparent blurred background, provided a `global/background.jpg` is present.
+- **Coollabs Fonts**: All `fontFamily` names are automatically resolved against the privacy-friendly coollabs fonts repository.
+
+### Advanced Widget Configurations (`config.json`)
+
+Each widget folder can contain a `config.json` to fine-tune its interactive feel. Below is the comprehensive schema for v1.5.
+
+```json
+{
+  "animations": {
+    "press": {
+      "duration_ms": 100,
+      "curve": "easeOutCubic",
+      "scale": 0.95,
+      "opacity": 1.0
+    },
+    "release": {
+      "duration_ms": 400,
+      "curve": "elasticOut",
+      "scale": 1.0
+    },
+    "hover": {
+      "duration_ms": 200,
+      "curve": "linear",
+      "glow_boost": 0.2
+    }
+  },
+  "physics": {
+    "damping": 0.7,      // For sliders and joysticks (0.0 - 1.0)
+    "stiffness": 100.0,   // Spring stiffness for return-to-center
+    "mass": 1.0,         // Inertia for scrolling/sliding
+    "detents": "soft"    // "none", "soft", or "hard" snapping
+  },
+  "haptics": {
+    "on_press": "medium",
+    "on_release": "light",
+    "on_change": "selection"
+  },
+  "audio": {
+    "press_sample": "click.mp3",
+    "release_sample": "clack.mp3",
+    "volume": 0.5
+  }
+}
+```
+
+### Mixed-Mode Discovery (v1.6)
+
+RadioKit Skins are **Hybrid**. You can mix and match rendering technologies within a single `.rkskin` pack. The app chooses the renderer for each widget based on the files present in its directory.
+
+| File Present | Renderer Used | Ideal For... |
+| :--- | :--- | :--- |
+| `widget.html` | **HTML/CSS (Native)** | Text-rich labels, complex lists, data tables. |
+| `bg.svg` / `thumb.svg` | **Native (Skia/Impeller)** | Joysticks, Sliders, mechanical buttons (Best performance). |
+| `config.json` | **Behavioral** | Defines haptics and physics regardless of the visual renderer. |
+
+#### Resolver Logic:
+The skin engine follows this priority when building a widget:
+1.  **HTML Override**: If `widget.html` exists in the widget folder, use the HTML engine.
+2.  **Asset Mapping**: If SVGs/PNGs exist, use the native vector renderer.
+3.  **Default Fallback**: If the folder is empty or missing, fall back to the **Default Skin**.
 
 ---
 

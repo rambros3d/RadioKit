@@ -1,0 +1,9 @@
+{
+  "behaviors": {
+    "haptics": { "on": "heavy", "off": "light" },
+    "animation": {
+      "type": "color_fade",
+      "duration_ms": 200
+    }
+  }
+}

@@ -445,16 +445,19 @@ class _InteractiveDemoSection extends StatelessWidget {
       children: [
         _DemoModelTile(
           icon: Icons.widgets_rounded,
+          demoId: 'WIDGETS_DEMO',
           title: 'WIDGETS_DEMO',
           subtitle: 'Explore all available widget types',
         ),
         _DemoModelTile(
           icon: Icons.sports_esports_rounded,
+          demoId: 'RC_CONTROLLER',
           title: 'RC_CONTROLLER',
           subtitle: 'Simulated remote control interface',
         ),
         _DemoModelTile(
           icon: Icons.dashboard_rounded,
+          demoId: 'IOT_DASHBOARD',
           title: 'IOT_DASHBOARD',
           subtitle: 'IoT monitoring and control panel',
         ),
@@ -465,11 +468,13 @@ class _InteractiveDemoSection extends StatelessWidget {
 
 class _DemoModelTile extends StatelessWidget {
   final IconData icon;
+  final String demoId;
   final String title;
   final String subtitle;
 
   const _DemoModelTile({
     required this.icon,
+    required this.demoId,
     required this.title,
     required this.subtitle,
   });
@@ -512,7 +517,13 @@ class _DemoModelTile extends StatelessWidget {
           style: Theme.of(context).textTheme.labelSmall,
         ),
         trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-        onTap: () => context.go('/control'),
+        onTap: () async {
+          final dp = context.read<DeviceProvider>();
+          await dp.loadDemo(demoId);
+          if (context.mounted) {
+            context.go('/control');
+          }
+        },
       ),
     );
   }

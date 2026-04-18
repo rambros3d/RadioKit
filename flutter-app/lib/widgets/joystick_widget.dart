@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/widget_config.dart';
-import '../theme/app_theme.dart';
+import '../theme/skin/renderers/dynamic_skin_renderer.dart';
+import '../theme/skin/renderers/skin_renderer.dart';
 
-/// 2-axis joystick widget with a draggable thumb.
-///
-/// Returns x, y each in the range -100 to +100.
-/// Springs back to center when the finger is released.
+/// 2-axis joystick widget with support for v1.6 Mixed-Mode skins.
+/// Handles pan interaction in Flutter and delegates rendering to the Skin Engine.
 class JoystickWidget extends StatefulWidget {
   final WidgetConfig config;
   final int x;
@@ -26,13 +25,14 @@ class JoystickWidget extends StatefulWidget {
 
 class _JoystickWidgetState extends State<JoystickWidget>
     with SingleTickerProviderStateMixin {
-  /// Thumb position in normalised -1..1 space
+  
+  // Normalised -1..1 space
   double _nx = 0;
   double _ny = 0;
 
   late final AnimationController _springController;
   late Animation<Offset> _springAnimation;
-  VoidCallback? _springListener; // kept so we can remove it before re-adding
+  VoidCallback? _springListener;
 
   @override
   void initState() {
@@ -41,6 +41,9 @@ class _JoystickWidgetState extends State<JoystickWidget>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
+    // Initialize with current values from hardware
+    _nx = (widget.x / 100).clamp(-1.0, 1.0);
+    _ny = (widget.y / 100).clamp(-1.0, 1.0);
   }
 
   @override
@@ -52,19 +55,16 @@ class _JoystickWidgetState extends State<JoystickWidget>
     super.dispose();
   }
 
-  void _onPanStart(DragStartDetails _) {
+  void _onPanUpdate(DragUpdateDetails details) {
     _springController.stop();
-  }
-
-  void _onPanUpdate(DragUpdateDetails details, double trackRadius) {
     final RenderBox box = context.findRenderObject() as RenderBox;
     final localPos = box.globalToLocal(details.globalPosition);
     final center = Offset(box.size.width / 2, box.size.height / 2);
 
     final delta = localPos - center;
+    final trackRadius = box.size.width / 2;
     final dist = delta.distance;
 
-    // Clamp to track circle
     Offset clamped = delta;
     if (dist > trackRadius) {
       clamped = delta * (trackRadius / dist);
@@ -75,16 +75,12 @@ class _JoystickWidgetState extends State<JoystickWidget>
       _ny = (clamped.dy / trackRadius).clamp(-1.0, 1.0);
     });
 
-    final ix = (_nx * 100).round().clamp(-100, 100);
-    final iy = (_ny * 100).round().clamp(-100, 100);
-    widget.onChanged(ix, iy);
+    widget.onChanged((_nx * 100).round(), (_ny * 100).round());
   }
 
   void _onPanEnd(DragEndDetails _) {
-    // Remove previous listener to prevent accumulation across drag cycles.
     if (_springListener != null) {
       _springAnimation.removeListener(_springListener!);
-      _springListener = null;
     }
 
     _springAnimation = Tween<Offset>(
@@ -99,9 +95,7 @@ class _JoystickWidgetState extends State<JoystickWidget>
         _nx = _springAnimation.value.dx;
         _ny = _springAnimation.value.dy;
       });
-      final ix = (_nx * 100).round().clamp(-100, 100);
-      final iy = (_ny * 100).round().clamp(-100, 100);
-      widget.onChanged(ix, iy);
+      widget.onChanged((_nx * 100).round(), (_ny * 100).round());
     };
 
     _springAnimation.addListener(_springListener!);
@@ -112,148 +106,31 @@ class _JoystickWidgetState extends State<JoystickWidget>
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return FittedBox(
-          fit: BoxFit.contain,
-          child: Container(
-            width: 100, // Fixed internal dimension
-            height: 100,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              shape: BoxShape.circle,
-              border:
-                  Border.all(color: Theme.of(context).dividerColor, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Track circle
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: Theme.of(context)
-                            .dividerColor
-                            .withValues(alpha: 0.5),
-                        width: 1),
-                  ),
-                ),
+        // Enforce square aspect ratio for joystick
+        final side = constraints.maxWidth < constraints.maxHeight 
+            ? constraints.maxWidth 
+            : constraints.maxHeight;
 
-                // Crosshair lines
-                const _Crosshair(size: 80),
-
-                // Label
-                if (config.label.isNotEmpty)
-                  Positioned(
-                    bottom: 6,
-                    child: Text(
-                      config.label,
-                      style: TextStyle(
-                        color: Theme.of(context).disabledColor,
-                        fontSize: 10,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ),
-
-                // Thumb
-                Transform.translate(
-                  offset: Offset(_nx * 40, _ny * 40),
-                  child: GestureDetector(
-                    onPanStart: _onPanStart,
-                    onPanUpdate: (d) => _onPanUpdate(d, 40),
-                    onPanEnd: _onPanEnd,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            AppColors.brandOrange,
-                            AppColors.brandOrange.withValues(alpha: 0.7),
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+        return Center(
+          child: SizedBox(
+            width: side,
+            height: side,
+            child: GestureDetector(
+              onPanUpdate: _onPanUpdate,
+              onPanEnd: _onPanEnd,
+              child: DynamicSkinRenderer(
+                widgetFolder: 'joystick',
+                state: RKSkinState(
+                  isPressed: true, // While panning, treat as interactive
+                  valueX: _nx,
+                  valueY: _ny,
+                  styleIndex: widget.config.style,
                 ),
-
-                // Drag capture overlay
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onPanStart: _onPanStart,
-                    onPanUpdate: (d) => _onPanUpdate(d, 40),
-                    onPanEnd: _onPanEnd,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );
       },
     );
   }
-
-  WidgetConfig get config => widget.config;
-}
-
-class _Crosshair extends StatelessWidget {
-  final double size;
-
-  const _Crosshair({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: _CrosshairPainter(
-        color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
-      ),
-    );
-  }
-}
-
-class _CrosshairPainter extends CustomPainter {
-  final Color color;
-
-  _CrosshairPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.0;
-
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-
-    // Horizontal line
-    canvas.drawLine(Offset(0, cy), Offset(size.width, cy), paint);
-    // Vertical line
-    canvas.drawLine(Offset(cx, 0), Offset(cx, size.height), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _CrosshairPainter oldDelegate) =>
-      oldDelegate.color != color;
 }

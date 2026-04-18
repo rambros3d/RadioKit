@@ -1,0 +1,12 @@
+{
+  "animations": {
+    "pulse": {
+      "duration_ms": 1000,
+      "curve": "easeInOutSine"
+    }
+  },
+  "effects": {
+    "max_glow_intensity": 1.0,
+    "bloom_radius": 15.0
+  }
+}

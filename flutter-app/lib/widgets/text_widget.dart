@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/widget_config.dart';
 import '../models/protocol.dart';
-import 'button_widget.dart' show parseIconFromName;
+import '../utils/icon_utils.dart';
 
 /// Displays a read-only text value sent by the device.
 /// If [config.icon] is set (kStrMaskIcon), an icon is shown alongside the text.

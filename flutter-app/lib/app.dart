@@ -11,7 +11,7 @@ import 'providers/history_provider.dart';
 import 'providers/console_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/skin_provider.dart';
-import 'services/skin_manager.dart';
+import 'theme/skin/skin_manager.dart';
 import 'router.dart';
 
 class RadioKitApp extends StatefulWidget {
@@ -37,7 +37,7 @@ class _RadioKitAppState extends State<RadioKitApp> {
   void initState() {
     super.initState();
 
-    _skinProvider = SkinProvider(widget.skinManager);
+    _skinProvider = SkinProvider();
     _bleProvider = BleProvider();
     _serialProvider = SerialProvider();
     _debugProvider = DebugProvider();
