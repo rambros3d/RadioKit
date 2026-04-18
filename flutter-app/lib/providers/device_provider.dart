@@ -175,7 +175,7 @@ class DeviceProvider extends ChangeNotifier {
     
     // Simulate LED active
     _widgetState = _widgetState?.copyWithOutput(8, [1, 255, 100, 0, 255]);
-    _widgetState = _widgetState?.copyWithOutput(9, 'Hello World!');
+    _widgetState = _widgetState?.copyWithOutput(10, 'Hello World!');
 
     _connectionState = DeviceConnectionState.connected;
     

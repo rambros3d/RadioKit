@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
 
@@ -23,6 +24,9 @@ class SkinManager extends ChangeNotifier {
   SkinManifest? _currentManifest;
   String _activeSkinName = 'default';
   bool _isLocal = false; // Whether current skin is from local storage
+
+  static const String _prefsKey = 'active_skin';
+  static const List<String> _builtInSkins = ['default', 'neon', 'debug'];
 
   final Map<String, BehaviorConfig> _configCache = {};
   final Map<String, SkinManifest> _manifestCache = {};
@@ -46,8 +50,13 @@ class SkinManager extends ChangeNotifier {
       }
     }
     
-    // Default to the built-in 'default' skin
-    await applySkin('default');
+    // Restore previously active skin, or fall back to 'default'
+    String skinName = 'default';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      skinName = prefs.getString(_prefsKey) ?? 'default';
+    } catch (_) {}
+    await applySkin(skinName);
   }
 
   Future<void> _loadLocalManifests() async {
@@ -70,7 +79,7 @@ class SkinManager extends ChangeNotifier {
     }
   }
 
-  /// Switches the active skin.
+  /// Switches the active skin and persists the choice.
   Future<void> applySkin(String skinName) async {
     _configCache.clear();
     _activeSkinName = skinName;
@@ -79,6 +88,7 @@ class SkinManager extends ChangeNotifier {
     if (_manifestCache.containsKey(skinName)) {
       _currentManifest = _manifestCache[skinName];
       _isLocal = true;
+      _persistSkinChoice(skinName);
       notifyListeners();
       return;
     }
@@ -89,6 +99,7 @@ class SkinManager extends ChangeNotifier {
       final json = await rootBundle.loadString(path);
       _currentManifest = SkinManifest.fromJson(jsonDecode(json));
       _isLocal = false;
+      _persistSkinChoice(skinName);
     } catch (e) {
       debugPrint('SkinManager: Skin $skinName not found. Reverting to default.');
       if (skinName != 'default') await applySkin('default');
@@ -96,7 +107,41 @@ class SkinManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Resolves an asset path or file for a widget.
+  void _persistSkinChoice(String name) {
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString(_prefsKey, name);
+    }).catchError((_) {});
+  }
+
+  /// Resolves an asset for a widget using manifest-driven lookup.
+  Future<String?> resolveWidgetAsset(
+    String widgetFolder,
+    String stateOrLayerKey,
+  ) async {
+    final decl = _currentManifest?.widgets[widgetFolder];
+    if (decl != null) {
+      final manifestPath = decl.states[stateOrLayerKey] ??
+          decl.layers[stateOrLayerKey];
+      if (manifestPath != null) {
+        final resolved = await _resolveManifestPath(manifestPath);
+        if (resolved != null) return resolved;
+      }
+    }
+    return null;
+  }
+
+  /// Resolves a path declared in the manifest (relative to skin root).
+  Future<String?> _resolveManifestPath(String relativePath) async {
+    if (_isLocal && _localSkinsPath != null) {
+      final localPath = p.join(_localSkinsPath!, _activeSkinName, relativePath);
+      if (await File(localPath).exists()) return localPath;
+    }
+    final assetPath = 'resources/skins/$_activeSkinName/$relativePath';
+    if (await _assetExists(assetPath)) return assetPath;
+    return null;
+  }
+
+  /// Resolves an asset path or file for a widget (convention-based).
   /// Returns a 'String' that is either an asset path or a local file path.
   Future<String?> resolveAsset(String widgetFolder, String assetName) async {
     if (_isLocal && _localSkinsPath != null) {
@@ -143,6 +188,43 @@ class SkinManager extends ChangeNotifier {
     }
     
     return BehaviorConfig.empty();
+  }
+
+  /// Returns the widget-specific options from the manifest.
+  WidgetSkinDecl? getWidgetDecl(String widgetFolder) {
+    return _currentManifest?.widgets[widgetFolder];
+  }
+
+  /// Lists all available skin names (built-in + imported).
+  List<String> listAvailableSkins() {
+    final names = <String>{..._builtInSkins};
+    names.addAll(_manifestCache.keys);
+    return names.toList();
+  }
+
+  /// Returns the manifest for a named skin (for the browser UI).
+  Future<SkinManifest?> getManifest(String skinName) async {
+    if (_manifestCache.containsKey(skinName)) {
+      return _manifestCache[skinName];
+    }
+    try {
+      final path = 'resources/skins/$skinName/manifest.json';
+      final json = await rootBundle.loadString(path);
+      return SkinManifest.fromJson(jsonDecode(json));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Resolves the preview image path for a skin (or null).
+  Future<String?> getPreviewPath(String skinName) async {
+    if (_localSkinsPath != null) {
+      final localPath = p.join(_localSkinsPath!, skinName, 'preview.png');
+      if (await File(localPath).exists()) return localPath;
+    }
+    final assetPath = 'resources/skins/$skinName/preview.png';
+    if (await _assetExists(assetPath)) return assetPath;
+    return null;
   }
 
   Future<bool> _assetExists(String path) async {

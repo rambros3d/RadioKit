@@ -116,13 +116,32 @@ class _KnobWidgetState extends State<KnobWidget>
         onPanEnd:    _onPanEnd,
         child: AspectRatio(
           aspectRatio: 1.0,
-          child: DynamicSkinRenderer(
-            widgetFolder: 'knob',
-            state: RKSkinState(
-              isPressed: _isDragging,
-              value: normalizedValue,
-              styleIndex: widget.config.style,
-            ),
+          child: Stack(
+            children: [
+              // Layer 1: Base (Stationary)
+              DynamicSkinRenderer(
+                widgetFolder: 'knob',
+                layer: 'base',
+                state: RKSkinState(
+                  isPressed: _isDragging,
+                  styleIndex: widget.config.style,
+                ),
+              ),
+              // Layer 2: Indicator (Rotatable)
+              Transform.rotate(
+                // Rotate based on -100..100 value
+                // Standard knob swept angle is ~270 degrees
+                angle: (normalizedValue * 270 - 135) * (3.14159 / 180),
+                child: DynamicSkinRenderer(
+                  widgetFolder: 'knob',
+                  layer: 'indicator',
+                  state: RKSkinState(
+                    isPressed: _isDragging,
+                    styleIndex: widget.config.style,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

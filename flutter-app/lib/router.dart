@@ -7,6 +7,7 @@ import 'screens/home/pair_tab.dart';
 import 'screens/home/system_tab.dart';
 import 'screens/control_screen.dart';
 import 'screens/debug_screen.dart';
+import 'screens/skin_browser_screen.dart';
 import 'screens/home_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -89,6 +90,10 @@ GoRouter createRouter(ConnectionNotifier connectionNotifier) {
       GoRoute(
         path: '/debug',
         builder: (context, state) => const DebugScreen(),
+      ),
+      GoRoute(
+        path: '/skins',
+        builder: (context, state) => const SkinBrowserScreen(),
       ),
     ],
   );

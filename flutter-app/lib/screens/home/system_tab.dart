@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/history_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/skin_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/logo_icon.dart';
 
@@ -62,7 +64,11 @@ class SystemTab extends StatelessWidget {
           _buildApplicationCard(context, themeProvider),
           
           const SizedBox(height: 32),
-          _buildSectionTag(context, '02. HARDWARE_METRICS'),
+          _buildSectionTag(context, '02. SKIN_PACKS'),
+          _buildSkinPacksCard(context),
+
+          const SizedBox(height: 32),
+          _buildSectionTag(context, '03. HARDWARE_METRICS'),
           _buildAboutCard(context),
           
           const SizedBox(height: 48),
@@ -92,6 +98,47 @@ class SystemTab extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSkinPacksCard(BuildContext context) {
+    final skinProvider = context.watch<SkinProvider>();
+    return Card(
+      color: Colors.white.withValues(alpha: 0.05),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.push('/skins'),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.brandOrange.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.palette_outlined, color: AppColors.brandOrange, size: 20),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SettingLabel(label: 'ACTIVE_SKIN', value: ''),
+                    Text(
+                      skinProvider.skinName.toUpperCase(),
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Colors.white24),
+            ],
+          ),
+        ),
       ),
     );
   }

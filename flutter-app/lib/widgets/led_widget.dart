@@ -18,6 +18,9 @@ class LedWidget extends StatelessWidget {
   });
 
   bool get _isOn {
+    if (value is String) {
+      return (value as String).isNotEmpty;
+    }
     if (value is List<int>) {
       final v = value as List<int>;
       return v.isNotEmpty && v[0] != 0;
@@ -26,6 +29,9 @@ class LedWidget extends StatelessWidget {
   }
 
   Color get _color {
+    if (value is String) {
+      return Colors.transparent;
+    }
     if (value is List<int>) {
       final v       = value as List<int>;
       final r       = v.length > 1 ? v[1] : 0;

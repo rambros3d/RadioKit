@@ -1,7 +1,8 @@
 {
   "name": "default",
-  "version": "1.5.0",
+  "version": "2.0.0",
   "author": "RadioKit",
+  "description": "Clean, functional default skin",
   "tokens": {
     "colors": {
       "primary": "#007AFF",
@@ -31,5 +32,71 @@
       "3": { "primary": "#FF9500", "glow": false },
       "4": { "primary": "#FF3B30", "glow": false }
     }
+  },
+  "widgets": {
+    "button_push": {
+      "states": {
+        "idle": "button_push/bg.svg",
+        "pressed": "button_push/active.svg"
+      }
+    },
+    "button_toggle": {
+      "states": {
+        "on": "button_push/active.svg",
+        "off": "button_push/bg.svg"
+      }
+    },
+    "switch": {
+      "states": {
+        "on": "switch/on.svg",
+        "off": "switch/off.svg"
+      }
+    },
+    "slider": {
+      "layers": {
+        "track": "slider/track.svg",
+        "thumb": "slider/thumb.svg"
+      }
+    },
+    "joystick": {
+      "layers": {
+        "base": "joystick/base.svg",
+        "stick": "joystick/stick.svg"
+      }
+    },
+    "knob": {
+      "layers": {
+        "base": "knob/base.svg",
+        "indicator": "knob/indicator.svg"
+      }
+    },
+    "led": {
+      "states": {
+        "base": "led/base.svg",
+        "on": "led/base.svg"
+      }
+    },
+    "multiple_button": {
+      "states": {
+        "idle": "multiple_button/item.svg",
+        "active": "multiple_button/item.svg"
+      }
+    },
+    "multiple_select": {
+      "states": {
+        "idle": "multiple_select/item.svg",
+        "active": "multiple_select/item.svg"
+      }
+    },
+    "display": {
+      "states": {
+        "background": "display/bg.svg"
+      }
+    }
+  },
+  "colors": {
+    "accent": "#FF8C00",
+    "background": "#1A1A1A",
+    "grid": "#2A2A2A"
   }
 }

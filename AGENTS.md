@@ -34,3 +34,8 @@ When working on tasks that require understanding external libraries or codebases
 
 > [!TIP]
 > Always prefer DeepWiki MCP over assumptions or general knowledge when working with these codebases.
+
+## 3. No need for Backward compatibility
+
+- **Rule**: Only work on the current request, its okay if it breaks backward compatibility. We can break the API whenever needed.
+- **Rule**: We dont need to support old versions of the library. We can drop support for old versions whenever needed.

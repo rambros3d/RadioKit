@@ -6,11 +6,13 @@ import '../behavior_config.dart';
 abstract class SkinRenderer extends StatelessWidget {
   final String widgetFolder;
   final RKSkinState state;
+  final String? layer;
 
   const SkinRenderer({
     super.key,
     required this.widgetFolder,
     required this.state,
+    this.layer,
   });
 }
 

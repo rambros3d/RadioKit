@@ -3,8 +3,8 @@ import '../models/widget_config.dart';
 import '../theme/skin/renderers/dynamic_skin_renderer.dart';
 import '../theme/skin/renderers/skin_renderer.dart';
 
-/// 2-axis joystick widget with support for v1.6 Mixed-Mode skins.
-/// Handles pan interaction in Flutter and delegates rendering to the Skin Engine.
+/// 2-axis joystick widget with support for premium multi-layer skins.
+/// Handles pan interaction in Flutter and stacks Base + Stick layers.
 class JoystickWidget extends StatefulWidget {
   final WidgetConfig config;
   final int x;
@@ -118,14 +118,33 @@ class _JoystickWidgetState extends State<JoystickWidget>
             child: GestureDetector(
               onPanUpdate: _onPanUpdate,
               onPanEnd: _onPanEnd,
-              child: DynamicSkinRenderer(
-                widgetFolder: 'joystick',
-                state: RKSkinState(
-                  isPressed: true, // While panning, treat as interactive
-                  valueX: _nx,
-                  valueY: _ny,
-                  styleIndex: widget.config.style,
-                ),
+              behavior: HitTestBehavior.opaque,
+              child: Stack(
+                children: [
+                  // Layer 1: Base (Stationary)
+                  DynamicSkinRenderer(
+                    widgetFolder: 'joystick',
+                    layer: 'base',
+                    state: RKSkinState(
+                      styleIndex: widget.config.style,
+                    ),
+                  ),
+                  // Layer 2: Stick (Moving)
+                  // Offset by half side to move from center
+                  Center(
+                    child: Transform.translate(
+                      offset: Offset(_nx * side * 0.35, _ny * side * 0.35),
+                      child: DynamicSkinRenderer(
+                        widgetFolder: 'joystick',
+                        layer: 'stick',
+                        state: RKSkinState(
+                          isPressed: true,
+                          styleIndex: widget.config.style,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

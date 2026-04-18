@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../models/widget_config.dart';
 import '../models/protocol.dart';
 import '../theme/skin/renderers/dynamic_skin_renderer.dart';
@@ -54,8 +55,9 @@ class _SliderWidgetState extends State<SliderWidget>
     final RenderBox box = context.findRenderObject() as RenderBox;
     final localPos = box.globalToLocal(details.globalPosition);
     
-    // Calculate 0..1 based on horizontal width
-    final percent = (localPos.dx / box.size.width).clamp(0.0, 1.0);
+    // Calculate 0..1 based on vertical height
+    // Assume top is 100, bottom is -100
+    final percent = (1.0 - (localPos.dy / box.size.height)).clamp(0.0, 1.0);
     // Convert to -100..100
     final val = ((percent * 200) - 100).round();
     widget.onChanged(val);
@@ -104,22 +106,48 @@ class _SliderWidgetState extends State<SliderWidget>
     // Normalize -100..100 to 0..1 for the renderer
     final normalizedValue = (widget.value + 100) / 200.0;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return GestureDetector(
-          onPanUpdate: _onDragUpdate,
-          onPanEnd:    _onDragEnd,
-          behavior: HitTestBehavior.opaque,
-          child: DynamicSkinRenderer(
-            widgetFolder: 'slider',
-            state: RKSkinState(
-              isPressed: _isDragging,
-              value: normalizedValue,
-              styleIndex: widget.config.style,
+    return AspectRatio(
+      aspectRatio: 55 / 132, // Match the premium asset ratio
+      child: GestureDetector(
+        onPanUpdate: _onDragUpdate,
+        onPanEnd:    _onDragEnd,
+        behavior: HitTestBehavior.opaque,
+        child: Stack(
+          children: [
+            // Layer 1: Track (Stationary)
+            DynamicSkinRenderer(
+              widgetFolder: 'slider',
+              layer: 'track',
+              state: RKSkinState(
+                isPressed: _isDragging,
+                styleIndex: widget.config.style,
+              ),
             ),
-          ),
-        );
-      },
+            // Layer 2: Thumb (Moving)
+            // We translate the thumb vertically. 
+            // The thumb asset is full track height (132), so we offset it.
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final totalHeight = constraints.maxHeight;
+                // Move from center-bottom to center-top
+                final offset = (0.5 - normalizedValue) * totalHeight;
+                
+                return Transform.translate(
+                  offset: Offset(0, offset),
+                  child: DynamicSkinRenderer(
+                    widgetFolder: 'slider',
+                    layer: 'thumb',
+                    state: RKSkinState(
+                      isPressed: _isDragging,
+                      styleIndex: widget.config.style,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
