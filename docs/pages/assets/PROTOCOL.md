@@ -2,8 +2,7 @@
 
 ## Overview
 
-RadioKit uses a compact binary protocol over BLE or USB Serial.  
-All multi-byte integers are **little-endian**.
+RadioKit uses a compact binary protocol which is transport agnostic(works for BLE and Serial).
 
 ---
 

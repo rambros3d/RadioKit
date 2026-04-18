@@ -1,15 +1,13 @@
-# RadioKit Library - Functions Reference
+# RadioKit Library - Widgets Reference
 
-> This document reflects the **v2.0 Object-Oriented API** using **Tailored Initializers**.
+> This document covers widget composition, class references, and constants.
 
 ---
 
 ## Table of Contents
 
-1. [Setup & Sketch Structure](#setup--sketch-structure)
-2. [RadioKit (Main Object)](#2-radiokit-main-object)
-3. [Widget Composition (Specific Props)](#3-widget-composition-specific-props)
-4. [Widget Class Reference](#4-widget-class-reference)
+1. [Widget Composition (Specific Props)](#1-widget-composition-specific-props)
+2. [Widget Class Reference](#2-widget-class-reference)
   - [Push & Toggle Buttons](#push--toggle-buttons)
   - [SlideSwitch](#slideswitch)
   - [Slider](#slider)
@@ -18,79 +16,11 @@
   - [MultipleButton / MultipleSelect](#multiplebutton--multipleselect)
   - [LED](#led)
   - [Text](#text)
-5. [Constants & Enums](#5-constants--enums)
+3. [Constants & Enums](#3-constants--enums)
 
 ---
 
-## 1. Setup & Sketch Structure
-
-Every RadioKit sketch follows a simple three-part pattern. 
-
-```cpp
-#include <RadioKit.h>
-
-// ── 1. Widget declarations (global scope) ────────────────────────────────
-RK_PushButton fireBtn({ .label="Fire", .x=20, .y=50, .scale=1.5, .icon="flame" });
-
-// ── 2. setup() ───────────────────────────────────────────────────────────
-void setup() {
-    RadioKit.config.name = "GP7 Locomotive";
-    RadioKit.config.password = "1234";
-    RadioKit.config.theme = "retro"; // Controller skin name or GitHub URL
-    RadioKit.begin();
-    RadioKit.startBLE("Train_01");
-}
-
-// ── 3. loop() ────────────────────────────────────────────────────────────
-void loop() {
-    RadioKit.update();
-}
-```
-
----
-
-## 2. RadioKit (Main Object)
-
-### `begin()`
-
-Commits and synchronizes configuration. Must be called in `setup()`.
-
-```cpp
-void begin();
-```
-
-### `config` (Object)
-
-Global settings object.
-
-#### User Configurable
-
-
-| Field             | Type          | Description                                                     |
-| ----------------- | ------------- | --------------------------------------------------------------- |
-| `**name**`        | `const char*` | Model or Device name. Sent to app on connection.                |
-| `**password**`    | `const char*` | Optional connection password (leave empty for none).            |
-| `**description**` | `const char*` | Short overview of the device's function.                        |
-| `**version**`     | `const char*` | User-defined firmware version string (e.g. `"1.0.4"`).          |
-| `**theme**`       | `const char*` | Controller skin identifier. Supports built-in names or GitHub URLs. See [UI Skins](file:///home/sun/Apps/RadioKit/docs/UI_SKINS.md). |
-| `**type**`        | `const char*` | Category of device (e.g. `"truck"`, `"robot"`, `"locomotive"`). |
-| `**orientation**` | `uint8_t`     | `RK_LANDSCAPE` (Default) or `RK_PORTRAIT`.                      |
-| `**width**`       | `uint8_t`     | Canvas width (0-250).                                           |
-| `**height**`      | `uint8_t`     | Canvas height (0-250).                                          |
-
-
-#### Read-Only (Set by Library)
-
-
-| Field              | Type          | Description                                        |
-| ------------------ | ------------- | -------------------------------------------------- |
-| `**architecture**` | `uint8_t`     | Detected hardware platform (e.g. `RK_ARCH_ESP32`). |
-| `**libversion**`   | `const char*` | Current RadioKit library version string.           |
-
-
----
-
-## 3. Widget Composition (Specific Props)
+## 1. Widget Composition (Specific Props)
 
 In v2.0, each widget uses its own **Tailored Struct** to minimize RAM waste. Every widget provides the same core fields (`label`, `x`, `y`), but only allocates memory for features it actually uses.
 
@@ -141,7 +71,7 @@ RK_Slider speed({ .label="Speed", .value=50 });
 
 ---
 
-## 4. Widget Class Reference
+## 2. Widget Class Reference
 
 ### Push & Toggle Buttons
 
@@ -530,7 +460,7 @@ RK_Text status({
 
 ---
 
-## 5. Constants & Enums
+## 3. Constants & Enums
 
 ### Architecture (`architecture`)
 
@@ -570,7 +500,7 @@ When using `RK_SliderProps` or `RK_KnobProps`, you can set `centering` and `dete
 
 ### UI Theme
 
-RadioKit uses string-based identifiers for UI skins. For a full list of built-in skins and details on custom skin packs, refer to **[UI Skins Documentation](file:///home/sun/Apps/RadioKit/docs/UI_SKINS.md)**.
+RadioKit uses string-based identifiers for UI skins. For a full list of built-in skins and details on custom skin packs, refer to **[UI Skins Documentation](UI_SKINS.md)**.
 
 ### Widget Styles
 
