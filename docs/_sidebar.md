@@ -1,13 +1,14 @@
 - **Getting Started**
-- **Getting Started**
   - [Overview](README.md)
-  - [Hardware Layout](pages/assets/UI_LAYOUT.md)
-  - [Protocol Spec](pages/assets/PROTOCOL.md)
+  - [UI Layout](widgets/ui_layout.md)
+  - [Protocol Spec](tehnical/protocol.md)
 
 - **Development**
-  - [Library Setup](pages/assets/SETUP.md)
-  - [Widgets Reference](pages/assets/WIDGETS.md)
-  - [UI Skins & Themes](pages/assets/UI_SKINS.md)
+  - [Library Setup](getting-started/setup.md)
+  - [Widgets Reference](widgets/widgets.md)
+
+- **Custom Skins**
+  - [UI Skins & Themes](customization/ui_skin.md)
 
 - **External Links**
   - [GitHub Repository](https://github.com/rambros3d/RadioKit)

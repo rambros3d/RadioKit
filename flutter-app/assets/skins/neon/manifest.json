@@ -1,0 +1,35 @@
+{
+  "name": "neon",
+  "version": "1.5.0",
+  "author": "RadioKit",
+  "tokens": {
+    "colors": {
+      "primary": "#39FF14",
+      "onPrimary": "#000000",
+      "background": "#000000",
+      "surface": "#111111",
+      "onSurface": "#FFFFFF",
+      "outline": "#333333"
+    },
+    "effects": {
+      "glassOpacity": 0.0,
+      "glassBlur": 0.0,
+      "glowIntensity": 1.0
+    },
+    "typography": {
+      "fontFamily": "VT323",
+      "fontWeight": "400"
+    },
+    "shapes": {
+      "borderRadius": 0.0,
+      "borderWidth": 2.0
+    },
+    "styles": {
+      "0": { "primary": "#39FF14", "glow": true }, 
+      "1": { "primary": "#555555", "glow": false },
+      "2": { "primary": "#39FF14", "glow": true }, 
+      "3": { "primary": "#FFEA00", "glow": true },
+      "4": { "primary": "#FF073A", "glow": true }
+    }
+  }
+}

@@ -6,6 +6,8 @@ This document describes the coordinate system, scaling model, and visual theme e
 
 ## 1. Coordinate System
 
+RadioKit uses a virtual coordinate system which is independent of the actual screen size of the device. The default canvas size is 200x100 for landscape and 100x200 for portrait.
+
 ```
 (0, RK_HEIGHT) ┌──────────────────────────┐ (RK_WIDTH, RK_HEIGHT)
                │                          │
@@ -21,9 +23,9 @@ This document describes the coordinate system, scaling model, and visual theme e
 
 ---
 
-## 2. Layout Model — Scale & Aspect
+## 2. Layout Model
 
-RadioKit uses a **Default Size + Scale + Aspect** model. 
+RadioKit uses a **Default Size + Scale + Aspect** model. Each widget has a default size, which can be scaled and have its aspect ratio changed. Using a scale factor of 1.0 and an aspect ratio of 1.0 will result in the default size and aspect ratio of the widget. Likewise, n aspect ratio of 0.5 will result in a widget that is twice as tall and half as wide as the default size and aspect ratio.
 
 ```
 height = default_height × scale
@@ -45,7 +47,7 @@ Layout settings are managed through the global `RadioKit.config` object in `setu
 ```cpp
 void setup() {
     RadioKit.config.name = "B-52 Stratofort";
-    RadioKit.config.password = "1234"; // Optional security
+    RadioKit.config.password = "1234"; // Optional security password to prevent accidental connections
     RadioKit.config.theme = "futuristic"; // Controller skin
     RadioKit.config.orientation = RK_LANDSCAPE;
     
@@ -63,7 +65,7 @@ void setup() {
 
 ## 4. Skins & Icons
 
-RadioKit delegates complex rendering to the mobile application. This "Lean" approach allows for premium visuals without taxing the Arduino's RAM.
+RadioKit delegates complex rendering to the mobile application. So Arduino only needs to send the widget data and the mobile app will render the widget.
 
 ### Controller UI Skins
 
