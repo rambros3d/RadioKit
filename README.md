@@ -5,7 +5,7 @@
 RadioKit is an open-source alternative to RemoteXY. It consists of:
 
 1. **Arduino Library** — Define your UI in code, the library handles BLE communication
-2. **Flutter App** (`/app`) — Connects to your Arduino, renders the UI, and sends controls back
+2. **Flutter App** (`/flutter-app`) — Connects to your Arduino, renders the UI, and sends controls back
 
 No internet required. No account. No web editor. Your Arduino defines the interface in code, and the app renders it automatically.
 
@@ -15,7 +15,7 @@ No internet required. No account. No web editor. Your Arduino defines the interf
 
 ### Arduino Side
 
-Install the library (copy `src/`, `examples/`, `library.properties`, `keywords.txt` into your Arduino libraries folder, or use the Library Manager when available).
+Install the library (copy `arduino-library/src/`, `arduino-library/examples/`, `arduino-library/library.properties`, `arduino-library/keywords.txt` into your Arduino libraries folder).
 
 ```cpp
 #include <RadioKit.h>
@@ -51,10 +51,10 @@ void loop() {
 
 ### App Side
 
-Open the `/app` folder in your IDE and build with Flutter:
+Open the `/flutter-app` folder in your IDE and build with Flutter:
 
 ```bash
-cd app
+cd flutter-app
 flutter pub get
 flutter run
 ```
@@ -66,7 +66,7 @@ The app scans for nearby RadioKit BLE devices, connects, downloads the UI layout
 Run the app in your browser to test without installing anything:
 
 ```bash
-cd app
+cd flutter-app
 flutter pub get
 flutter run -d chrome
 ```
@@ -109,19 +109,18 @@ The app runs on **Android**, **iOS**, and **Web** (Chrome/Edge — no install re
 
 ```
 /
-├── src/               # Arduino library source files
-├── examples/          # Arduino example sketches
-│   ├── BasicSwitch/   # Toggle switch → LED
-│   ├── SliderServo/   # Slider → servo control
-│   └── JoystickMotor/ # Joystick → dual motor + LED
-├── app/               # Flutter companion app
-│   ├── lib/           # Dart source (models, services, providers, screens, widgets)
-│   ├── android/       # Android platform config (BLE permissions)
-│   ├── ios/           # iOS platform config (Info.plist, Podfile)
-│   └── test/          # Unit tests (CRC, protocol parsing)
-├── PROTOCOL.md        # Binary protocol specification
-├── library.properties # Arduino Library Manager metadata
-├── keywords.txt       # Arduino IDE syntax highlighting
+├── arduino-library/   # C++ source and examples
+│   ├── src/           # Library source
+│   ├── examples/      # Arduino examples
+│   ├── library.properties
+│   └── keywords.txt
+├── flutter-app/       # Flutter companion app
+│   ├── lib/           # Dart source
+│   ├── android/       # Android config
+│   ├── ios/           # iOS config
+│   └── assets/        # UI skins and assets
+├── docs/              # Detailed documentation
+├── PROTOCOL.md        # Binary protocol spec
 └── LICENSE            # MIT
 ```
 
