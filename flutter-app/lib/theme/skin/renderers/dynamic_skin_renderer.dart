@@ -5,7 +5,6 @@ import 'debug_skin_renderer.dart';
 import '../skin_manager.dart';
 
 /// The high-level entry point for rendering a skinned widget.
-/// It wraps NativeSkinRenderer now that HTML is deprecated.
 class DynamicSkinRenderer extends SkinRenderer {
   const DynamicSkinRenderer({
     super.key,

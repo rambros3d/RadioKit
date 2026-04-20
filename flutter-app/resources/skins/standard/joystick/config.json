@@ -1,0 +1,12 @@
+{
+  "layers": {
+    "base": "base.svg",
+    "stick": "stick.svg"
+  },
+  "physics": {
+    "damping": 0.5,
+    "stiffness": 100.0,
+    "mass": 1.0,
+    "deadzone": 0.1
+  }
+}

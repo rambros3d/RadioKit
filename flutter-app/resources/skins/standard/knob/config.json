@@ -1,0 +1,17 @@
+{
+  "layers": {
+    "base": "base.svg",
+    "indicator": "indicator.svg"
+  },
+  "physics": {
+    "damping": 0.5,
+    "stiffness": 100.0,
+    "mass": 1.0
+  },
+  "animations": {
+    "spring": {
+      "duration_ms": 250,
+      "curve": "elasticOut"
+    }
+  }
+}

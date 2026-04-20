@@ -113,19 +113,20 @@ class SkinManager extends ChangeNotifier {
     }).catchError((_) {});
   }
 
-  /// Resolves an asset for a widget using manifest-driven lookup.
+  /// Resolves an asset for a widget using its decentralized config.json.
   Future<String?> resolveWidgetAsset(
     String widgetFolder,
     String stateOrLayerKey,
   ) async {
-    final decl = _currentManifest?.widgets[widgetFolder];
-    if (decl != null) {
-      final manifestPath = decl.states[stateOrLayerKey] ??
-          decl.layers[stateOrLayerKey];
-      if (manifestPath != null) {
-        final resolved = await _resolveManifestPath(manifestPath);
-        if (resolved != null) return resolved;
-      }
+    final config = await getWidgetConfig(widgetFolder);
+    final relativePath = config.states[stateOrLayerKey] ??
+                        config.layers[stateOrLayerKey];
+
+    if (relativePath != null) {
+      // Logic: If the path is just a file name (e.g. "base.svg"),
+      // we prepend the widget folder to make it relative to the skin root.
+      final fullRelativePath = p.join(widgetFolder, relativePath);
+      return _resolveManifestPath(fullRelativePath);
     }
     return null;
   }
@@ -142,7 +143,6 @@ class SkinManager extends ChangeNotifier {
   }
 
   /// Resolves an asset path or file for a widget (convention-based).
-  /// Returns a 'String' that is either an asset path or a local file path.
   Future<String?> resolveAsset(String widgetFolder, String assetName) async {
     if (_isLocal && _localSkinsPath != null) {
       final localPath = p.join(_localSkinsPath!, _activeSkinName, widgetFolder, assetName);
@@ -153,7 +153,7 @@ class SkinManager extends ChangeNotifier {
     final assetPath = 'resources/skins/$_activeSkinName/$widgetFolder/$assetName';
     if (await _assetExists(assetPath)) return assetPath;
 
-    // Global 'Default' Fallback
+    // Global 'Standard' Fallback
     if (_activeSkinName != 'standard') {
       final defPath = 'resources/skins/standard/$widgetFolder/$assetName';
       if (await _assetExists(defPath)) return defPath;
@@ -162,13 +162,12 @@ class SkinManager extends ChangeNotifier {
     return null;
   }
 
-  /// Specialized helper for text-based assets (HTML/CSS/JSON)
+  /// Loads a string from an asset or local file.
   Future<String?> loadString(String widgetFolder, String fileName) async {
     final path = await resolveAsset(widgetFolder, fileName);
     if (path == null) return null;
 
     final bool assumedAsset = !path.startsWith('/') && !path.contains(':'); 
-    // On native, local paths are absolute. Assets are relative.
 
     if (assumedAsset) {
       return rootBundle.loadString(path);
@@ -177,22 +176,22 @@ class SkinManager extends ChangeNotifier {
     }
   }
 
+  /// Fetches the BehaviorConfig (asset mapping + physics) for a widget.
   Future<BehaviorConfig> getWidgetConfig(String widgetFolder) async {
     if (_configCache.containsKey(widgetFolder)) return _configCache[widgetFolder]!;
 
     final jsonStr = await loadString(widgetFolder, 'config.json');
     if (jsonStr != null) {
-      final config = BehaviorConfig.fromJson(jsonDecode(jsonStr));
-      _configCache[widgetFolder] = config;
-      return config;
+      try {
+        final config = BehaviorConfig.fromJson(jsonDecode(jsonStr));
+        _configCache[widgetFolder] = config;
+        return config;
+      } catch (e) {
+        debugPrint('SkinManager: Error parsing config.json for $widgetFolder: $e');
+      }
     }
     
     return BehaviorConfig.empty();
-  }
-
-  /// Returns the widget-specific options from the manifest.
-  WidgetSkinDecl? getWidgetDecl(String widgetFolder) {
-    return _currentManifest?.widgets[widgetFolder];
   }
 
   /// Lists all available skin names (built-in + imported).

@@ -1,0 +1,6 @@
+{
+  "states": {
+    "idle": "item.svg",
+    "active": "item.svg"
+  }
+}

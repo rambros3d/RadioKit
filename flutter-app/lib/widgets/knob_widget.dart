@@ -3,6 +3,8 @@ import '../models/widget_config.dart';
 import '../models/protocol.dart';
 import '../theme/skin/renderers/dynamic_skin_renderer.dart';
 import '../theme/skin/renderers/skin_renderer.dart';
+import '../theme/skin/behavior_config.dart';
+import '../theme/skin/skin_manager.dart';
 
 /// Rotary knob widget (-100 to +100) using v1.6 skin engine.
 /// Maintains vertical-drag interaction and physics while delegating rendering.
@@ -33,14 +35,28 @@ class _KnobWidgetState extends State<KnobWidget>
   VoidCallback? _springListener;
 
   bool _isDragging = false;
+  BehaviorConfig _behavior = BehaviorConfig.empty();
 
   @override
   void initState() {
     super.initState();
-    _springController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
+    _springController = AnimationController(vsync: this);
+    _loadBehavior();
+  }
+
+  Future<void> _loadBehavior() async {
+    final config = await SkinManager().getWidgetConfig('knob');
+    if (mounted) {
+      setState(() {
+        _behavior = config;
+        final springAnim = _behavior.animations['spring'];
+        if (springAnim != null) {
+          _springController.duration = Duration(milliseconds: springAnim.durationMs);
+        } else {
+          _springController.duration = const Duration(milliseconds: 250);
+        }
+      });
+    }
   }
 
   @override
@@ -88,12 +104,14 @@ class _KnobWidgetState extends State<KnobWidget>
       _springListener = null;
     }
 
+    final curve = _behavior.animations['spring']?.curve ?? Curves.elasticOut;
+
     _springAnimation = Tween<double>(
       begin: from.toDouble(),
       end: to.toDouble(),
     ).animate(CurvedAnimation(
       parent: _springController,
-      curve: Curves.elasticOut,
+      curve: curve,
     ));
 
     _springListener = () {

@@ -1,0 +1,10 @@
+{
+  "states": {
+    "base": "base.svg",
+    "on": "base.svg"
+  },
+  "options": {
+    "glow_layer": "glow.png",
+    "glow_intensity": 1.0
+  }
+}

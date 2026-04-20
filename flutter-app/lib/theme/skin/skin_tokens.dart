@@ -52,44 +52,6 @@ class SkinTokens {
   }
 }
 
-/// Per-widget skin declaration from manifest.json "widgets" map.
-///
-/// Each key in the map corresponds to a specific widget folder name:
-/// `button_push`, `button_toggle`, `switch`, `slider`, `joystick`,
-/// `knob`, `led`, `multiple_button`, `multiple_select`, `display`.
-class WidgetSkinDecl {
-  /// State-based assets: e.g. {"idle": "button_push/bg.svg", "pressed": "button_push/active.svg"}
-  final Map<String, String> states;
-
-  /// Layer-based assets: e.g. {"base": "joystick/base.svg", "knob": "joystick/stick.svg"}
-  final Map<String, String> layers;
-
-  /// Widget-specific options: label color, knob_size_ratio, text font, etc.
-  final Map<String, dynamic> options;
-
-  const WidgetSkinDecl({
-    this.states = const {},
-    this.layers = const {},
-    this.options = const {},
-  });
-
-  factory WidgetSkinDecl.fromJson(Map<String, dynamic> json) {
-    return WidgetSkinDecl(
-      states: (json['states'] as Map<String, dynamic>?)
-              ?.cast<String, String>() ??
-          const {},
-      layers: (json['layers'] as Map<String, dynamic>?)
-              ?.cast<String, String>() ??
-          const {},
-      options: json['options'] as Map<String, dynamic>? ??
-          // Collect any top-level keys that aren't states/layers as options
-          Map<String, dynamic>.from(json)
-            ..remove('states')
-            ..remove('layers'),
-    );
-  }
-}
-
 /// The root Manifest object.
 class SkinManifest {
   final String name;
@@ -98,9 +60,6 @@ class SkinManifest {
   final String? description;
   final String? preview;
   final SkinTokens tokens;
-
-  /// Per-widget skin declarations keyed by widget folder name.
-  final Map<String, WidgetSkinDecl> widgets;
 
   /// App-wide color overrides (accent, background, grid).
   final Map<String, Color> colors;
@@ -112,19 +71,10 @@ class SkinManifest {
     this.description,
     this.preview,
     required this.tokens,
-    this.widgets = const {},
     this.colors = const {},
   });
 
   factory SkinManifest.fromJson(Map<String, dynamic> json) {
-    // Parse widget declarations (v2 manifests)
-    final widgetsMap = <String, WidgetSkinDecl>{};
-    if (json['widgets'] is Map<String, dynamic>) {
-      (json['widgets'] as Map<String, dynamic>).forEach((key, value) {
-        widgetsMap[key] = WidgetSkinDecl.fromJson(value as Map<String, dynamic>);
-      });
-    }
-
     // Parse app-wide colors (v2 manifests)
     final colorsMap = <String, Color>{};
     if (json['colors'] is Map<String, dynamic>) {
@@ -142,7 +92,6 @@ class SkinManifest {
       description: json['description'],
       preview: json['preview'],
       tokens: SkinTokens.fromJson(json['tokens']),
-      widgets: widgetsMap,
       colors: colorsMap,
     );
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/widget_config.dart';
 import '../theme/skin/renderers/dynamic_skin_renderer.dart';
 import '../theme/skin/renderers/skin_renderer.dart';
+import '../theme/skin/behavior_config.dart';
+import '../theme/skin/skin_manager.dart';
 
 /// 2-axis joystick widget with support for premium multi-layer skins.
 /// Handles pan interaction in Flutter and stacks Base + Stick layers.
@@ -33,17 +35,31 @@ class _JoystickWidgetState extends State<JoystickWidget>
   late final AnimationController _springController;
   late Animation<Offset> _springAnimation;
   VoidCallback? _springListener;
+  BehaviorConfig _behavior = BehaviorConfig.empty();
 
   @override
   void initState() {
     super.initState();
-    _springController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
+    _springController = AnimationController(vsync: this);
+    _loadBehavior();
     // Initialize with current values from hardware
     _nx = (widget.x / 100).clamp(-1.0, 1.0);
     _ny = (widget.y / 100).clamp(-1.0, 1.0);
+  }
+
+  Future<void> _loadBehavior() async {
+    final config = await SkinManager().getWidgetConfig('joystick');
+    if (mounted) {
+      setState(() {
+        _behavior = config;
+        final springAnim = _behavior.animations['spring'];
+        if (springAnim != null) {
+          _springController.duration = Duration(milliseconds: springAnim.durationMs);
+        } else {
+          _springController.duration = const Duration(milliseconds: 200);
+        }
+      });
+    }
   }
 
   @override
@@ -83,11 +99,13 @@ class _JoystickWidgetState extends State<JoystickWidget>
       _springAnimation.removeListener(_springListener!);
     }
 
+    final curve = _behavior.animations['spring']?.curve ?? Curves.elasticOut;
+
     _springAnimation = Tween<Offset>(
       begin: Offset(_nx, _ny),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _springController, curve: Curves.elasticOut),
+      CurvedAnimation(parent: _springController, curve: curve),
     );
 
     _springListener = () {

@@ -69,29 +69,39 @@ class PhysicsSpec {
   }
 }
 
-/// Root config object for a widget variant
+/// Root config object for a widget variant.
+/// Now handles both Asset Mapping (states/layers) and Behavioral Logic (physics/animations).
 class BehaviorConfig {
+  final Map<String, String> states;
+  final Map<String, String> layers;
   final Map<String, AnimationSpec> animations;
   final PhysicsSpec physics;
   final Map<String, String> haptics;
   final Map<String, dynamic> audio;
   final Map<String, dynamic> effects;
+  final Map<String, dynamic> options;
 
   BehaviorConfig({
+    this.states = const {},
+    this.layers = const {},
     required this.animations,
     required this.physics,
     required this.haptics,
     required this.audio,
     required this.effects,
+    this.options = const {},
   });
 
   factory BehaviorConfig.empty() => BehaviorConfig(
-    animations: {},
-    physics: PhysicsSpec(),
-    haptics: {},
-    audio: {},
-    effects: {},
-  );
+        states: {},
+        layers: {},
+        animations: {},
+        physics: PhysicsSpec(),
+        haptics: {},
+        audio: {},
+        effects: {},
+        options: {},
+      );
 
   factory BehaviorConfig.fromJson(Map<String, dynamic> json) {
     final anims = <String, AnimationSpec>{};
@@ -102,11 +112,14 @@ class BehaviorConfig {
     }
 
     return BehaviorConfig(
+      states: (json['states'] as Map<String, dynamic>?)?.cast<String, String>() ?? {},
+      layers: (json['layers'] as Map<String, dynamic>?)?.cast<String, String>() ?? {},
       animations: anims,
       physics: PhysicsSpec.fromJson(json['physics'] ?? {}),
       haptics: (json['haptics'] ?? {}).cast<String, String>(),
       audio: json['audio'] ?? {},
       effects: json['effects'] ?? {},
+      options: (json['options'] as Map<String, dynamic>?) ?? {},
     );
   }
 }

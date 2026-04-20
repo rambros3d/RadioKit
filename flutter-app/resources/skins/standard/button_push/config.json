@@ -1,0 +1,10 @@
+{
+  "states": {
+    "idle": "bg.svg",
+    "pressed": "active.svg"
+  },
+  "physics": {
+    "damping": 0.5,
+    "stiffness": 100.0
+  }
+}

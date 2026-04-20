@@ -153,14 +153,8 @@ class $ResourcesSkinsStandardJoystickGen {
   /// File path: resources/skins/standard/joystick/stick.svg
   String get stick => 'resources/skins/standard/joystick/stick.svg';
 
-  /// File path: resources/skins/standard/joystick/widget.css
-  String get widgetCss => 'resources/skins/standard/joystick/widget.css';
-
-  /// File path: resources/skins/standard/joystick/widget.html
-  String get widgetHtml => 'resources/skins/standard/joystick/widget.html';
-
   /// List of all assets
-  List<String> get values => [base, stick, widgetCss, widgetHtml];
+  List<String> get values => [base, stick];
 }
 
 class $ResourcesSkinsStandardKnobGen {
@@ -248,14 +242,8 @@ class $ResourcesSkinsStandardToggleSwitchGen {
   /// File path: resources/skins/standard/toggle_switch/on.svg
   String get on => 'resources/skins/standard/toggle_switch/on.svg';
 
-  /// File path: resources/skins/standard/toggle_switch/widget.css
-  String get widgetCss => 'resources/skins/standard/toggle_switch/widget.css';
-
-  /// File path: resources/skins/standard/toggle_switch/widget.html
-  String get widgetHtml => 'resources/skins/standard/toggle_switch/widget.html';
-
   /// List of all assets
-  List<String> get values => [off, on, widgetCss, widgetHtml];
+  List<String> get values => [off, on];
 }
 
 class Assets {
