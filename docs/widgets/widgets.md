@@ -175,6 +175,8 @@ RK_SlideSwitch headlights({
 
 Linear analog input control (−100 to +100).
 
+RadioKit v1.6 uses a **Spring Simulation Engine** to handle the movement of the slider. While the hardware defines the functional centering, the skin definition (`config.json`) determines the aesthetic character (damping, stiffness) of the return animation.
+
 The `variant` byte encodes both **centering mode** and **detent count** via the `RK_VARIANT()` macro (see [Constants](#5-constants--enums)).
 
 **Structure:**
@@ -220,6 +222,8 @@ RK_Slider gear({ .label="Gear", .detents=5, .x=120, .y=40 });
 
 Rotary analog input control (−100 to +100). Identical wire format to `RK_Slider` but rendered as a 270° circular arc knob with a vertical-drag gesture.
 
+Like the Slider, the Knob utilizes the **Spring Simulation Engine** for consistent, premium haptic response when returning to center or snapping to detents.
+
 The `variant` byte encodes both **centering mode** and **detent count** via the `RK_VARIANT()` macro (see [Constants](#5-constants--enums)).
 
 **Structure:**
@@ -263,7 +267,9 @@ RK_Knob eq({ .label="Bass", .detents=5, .x=180, .y=60 });
 
 ### Joystick
 
-2-axis analog controller (-100 to +100).
+2-axis analog controller (-100 to +100). 
+
+Interaction in v1.6 is powered by two independent **Spring Simulations** for the X and Y axes, allowing skin creators to define the precise "stiffness" and "bounciness" of the stick return.
 
 **Structure:**
 

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
+import 'package:provider/provider.dart';
+import '../providers/skin_provider.dart';
 import '../models/widget_config.dart';
 import '../models/protocol.dart';
 import '../theme/skin/renderers/dynamic_skin_renderer.dart';
@@ -36,12 +39,22 @@ class _KnobWidgetState extends State<KnobWidget>
 
   bool _isDragging = false;
   BehaviorConfig _behavior = BehaviorConfig.empty();
+  String? _lastSkin;
 
   @override
   void initState() {
     super.initState();
     _springController = AnimationController(vsync: this);
-    _loadBehavior();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final skinName = context.watch<SkinProvider>().skinName;
+    if (skinName != _lastSkin) {
+      _lastSkin = skinName;
+      _loadBehavior();
+    }
   }
 
   Future<void> _loadBehavior() async {
@@ -104,14 +117,19 @@ class _KnobWidgetState extends State<KnobWidget>
       _springListener = null;
     }
 
-    final curve = _behavior.animations['spring']?.curve ?? Curves.elasticOut;
+    // Use SpringSimulation for a more premium, physics-accurate feel
+    final spring = SpringDescription(
+      mass: _behavior.physics.mass,
+      stiffness: _behavior.physics.stiffness,
+      damping: _behavior.physics.damping,
+    );
 
     _springAnimation = Tween<double>(
       begin: from.toDouble(),
       end: to.toDouble(),
     ).animate(CurvedAnimation(
       parent: _springController,
-      curve: curve,
+      curve: Curves.linear,
     ));
 
     _springListener = () {

@@ -8,7 +8,10 @@ RadioKit is an open-source alternative to RemoteXY. It allows you to build Amazi
 
 - **Pure Arduino**: Define your UI in Arduino code.
 - **Multiple Transports**: BLE and Serial. More coming soon.
-- **Cross-Platform**: Client app runs on Android, and Web (Chromium based). Possibly ios too.
+- **Pure Native V1.6 Engine**: Extremely smooth SVG-based rendering with zero HTML overhead.
+- **Haptic Physics**: High-fidelity spring simulations for sliders and joysticks.
+- **Theme Gallery**: Explore and apply skins in real-time within the app.
+- **Cross-Platform**: Client app runs on Android, and Web (Chromium based).
 
 ---
 

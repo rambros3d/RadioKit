@@ -60,7 +60,7 @@ class PhysicsSpec {
 
   factory PhysicsSpec.fromJson(Map<String, dynamic> json) {
     return PhysicsSpec(
-      damping: json['damping']?.toDouble() ?? 0.5,
+      damping: (json['damping'] ?? json['damping_ratio'])?.toDouble() ?? 0.5,
       stiffness: json['stiffness']?.toDouble() ?? 100.0,
       mass: json['mass']?.toDouble() ?? 1.0,
       deadzone: json['deadzone']?.toDouble() ?? 0.05,

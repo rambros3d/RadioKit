@@ -111,6 +111,11 @@ class _ControlScreenState extends State<ControlScreen> {
                 ),
                 onPressed: _disconnect,
               ),
+              IconButton(
+                icon: const Icon(Icons.palette_outlined),
+                tooltip: 'Theme Gallery',
+                onPressed: () => context.push('/skins'),
+              ),
             ],
           ),
           body: _buildBody(deviceProvider),

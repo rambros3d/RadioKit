@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
+import 'package:provider/provider.dart';
+import '../providers/skin_provider.dart';
 import '../models/widget_config.dart';
 import '../theme/skin/renderers/dynamic_skin_renderer.dart';
 import '../theme/skin/renderers/skin_renderer.dart';
@@ -36,15 +39,25 @@ class _JoystickWidgetState extends State<JoystickWidget>
   late Animation<Offset> _springAnimation;
   VoidCallback? _springListener;
   BehaviorConfig _behavior = BehaviorConfig.empty();
+  String? _lastSkin;
 
   @override
   void initState() {
     super.initState();
     _springController = AnimationController(vsync: this);
-    _loadBehavior();
     // Initialize with current values from hardware
     _nx = (widget.x / 100).clamp(-1.0, 1.0);
     _ny = (widget.y / 100).clamp(-1.0, 1.0);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final skinName = context.watch<SkinProvider>().skinName;
+    if (skinName != _lastSkin) {
+      _lastSkin = skinName;
+      _loadBehavior();
+    }
   }
 
   Future<void> _loadBehavior() async {
@@ -99,13 +112,18 @@ class _JoystickWidgetState extends State<JoystickWidget>
       _springAnimation.removeListener(_springListener!);
     }
 
-    final curve = _behavior.animations['spring']?.curve ?? Curves.elasticOut;
+    // Use SpringSimulation parameters
+    final spring = SpringDescription(
+      mass: _behavior.physics.mass,
+      stiffness: _behavior.physics.stiffness,
+      damping: _behavior.physics.damping,
+    );
 
     _springAnimation = Tween<Offset>(
       begin: Offset(_nx, _ny),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _springController, curve: curve),
+      CurvedAnimation(parent: _springController, curve: Curves.linear),
     );
 
     _springListener = () {

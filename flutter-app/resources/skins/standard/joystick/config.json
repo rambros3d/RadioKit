@@ -8,5 +8,11 @@
     "stiffness": 100.0,
     "mass": 1.0,
     "deadzone": 0.1
+  },
+  "animations": {
+    "spring": {
+      "duration_ms": 200,
+      "curve": "elasticOut"
+    }
   }
 }
