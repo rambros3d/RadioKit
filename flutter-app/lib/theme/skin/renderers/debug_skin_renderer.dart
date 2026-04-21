@@ -2,9 +2,11 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'skin_renderer.dart';
 import '../skin_manager.dart';
+import '../../../models/protocol.dart';
+import '../../../utils/icon_utils.dart';
 
-/// A skin renderer that uses native Flutter widgets to visualize 
-/// widget state and metadata without requiring external assets.
+/// A skin renderer that displays a descriptive "placeholder" for development and debugging.
+/// It visualizes the state and boundaries of the widget without requiring any asset files.
 class DebugSkinRenderer extends SkinRenderer {
   const DebugSkinRenderer({
     super.key,
@@ -15,8 +17,7 @@ class DebugSkinRenderer extends SkinRenderer {
 
   @override
   Widget build(BuildContext context) {
-    final manager = SkinManager();
-    final manifest = manager.current;
+    final manifest = SkinManager().current;
     if (manifest == null) return const SizedBox.shrink();
 
     final style = manifest.tokens.styles[state.styleIndex] ?? 
@@ -24,311 +25,308 @@ class DebugSkinRenderer extends SkinRenderer {
     
     final accentColor = state.colorOverride ?? style.primary;
     final textColor = manifest.tokens.colors['onSurface'] ?? Colors.black;
-    final outlineColor = manifest.tokens.colors['outline'] ?? Colors.grey;
 
     final isBaseLayer = layer == null || layer == 'base' || layer == 'track';
     final displayTitle = state.label.isNotEmpty ? state.label : widgetFolder.toUpperCase();
     final isBinary = widgetFolder.contains('button') || widgetFolder.contains('switch') || widgetFolder == 'led';
 
-    final s = state.scale;
-    double? w;
-    double? h;
-    
-    // Set typical "virtual" sizes for debug visualization
-    switch (widgetFolder) {
-      case 'button_push':
-      case 'button_toggle':
-        w = 8.0 * s; h = 8.0 * s; break;
-      case 'led':
-        w = 4.0 * s; h = 4.0 * s; break;
-      case 'toggle_switch':
-        w = 12.0 * s; h = 6.0 * s; break;
-      case 'slider':
-        w = 3.0 * s; h = 18.0 * s; break;
-      case 'knob':
-        w = 10.0 * s; h = 10.0 * s; break;
-      case 'joystick':
-        w = 22.0 * s; h = 22.0 * s; break;
-      case 'multiple_button':
-      case 'multiple_select':
-        if (layer == 'item') { w = 8.0 * s; h = 8.0 * s; }
-        break;
-    }
-
-    return Center(
-      child: Container(
-        width: w,
-        height: h,
-        decoration: isBaseLayer ? BoxDecoration(
-          border: Border.all(color: outlineColor.withValues(alpha: 0.3), width: 1),
-          color: (manifest.tokens.colors['surface'] ?? Colors.white).withValues(alpha: 0.1),
-        ) : null,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            _buildVisual(accentColor, s),
-            
-            if (isBaseLayer)
-              Positioned(
-                top: 2,
-                left: 4,
-                child: _debugText(displayTitle, textColor.withValues(alpha: 0.6), size: 7, bold: true),
-              ),
-  
-            if (isBaseLayer)
-              Positioned(
-                bottom: 2,
-                right: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (state.isOn && isBinary) _debugText('ON', Colors.green, size: 8, bold: true),
-                    if (state.isPressed) _debugText('PRESSED', Colors.orange, size: 8, bold: true),
-                    if (!isBinary) _debugText('VAL: ${state.value.toStringAsFixed(2)}', textColor, size: 8),
-                  ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          decoration: isBaseLayer ? BoxDecoration(
+            border: Border.all(color: textColor.withValues(alpha: 0.1), width: 1),
+            color: (manifest.tokens.colors['surface'] ?? Colors.white).withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(4 * state.scale),
+          ) : null,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // 1. The Visual Representation
+              _buildVisual(accentColor, constraints),
+              
+              // 2. Debug Info Overlays (only on base layers)
+              if (isBaseLayer) ...[
+                // Top-Left: Widget Title
+                Positioned(
+                  top: -1.5 * state.scale,
+                  left: 0,
+                  child: _debugText(displayTitle, textColor.withValues(alpha: 0.4), size: 1.0 * state.scale, bold: true),
                 ),
-              ),
-          ],
-        ),
-      ),
+    
+                // Top-Right: Values (VAL / X:Y / Mask / RGB)
+                if (widgetFolder != 'display')
+                  Positioned(
+                    top: -1.5 * state.scale,
+                    right: 0,
+                    child: () {
+                      final isContinuous = widgetFolder == 'slider' || widgetFolder == 'knob';
+                      final isJoystick   = widgetFolder == 'joystick';
+                      final isMulti      = widgetFolder.contains('multiple');
+                      final isLed        = widgetFolder == 'led';
+    
+                      String label = 'VAL: ';
+                      String val = '';
+    
+                      if (isJoystick) {
+                        label = '';
+                        val = 'X:${(state.valueX * 100).round()} Y:${(state.valueY * 100).round()}';
+                      } else if (isLed) {
+                        label = '';
+                        final c = state.colorOverride ?? Colors.black;
+                        val = 'R:${c.r.toInt()} G:${c.g.toInt()} B:${c.b.toInt()}';
+                      } else if (isContinuous) {
+                        val = (state.value * 200 - 100).round().toString();
+                      } else if (widgetFolder == 'multiple_select') {
+                        // Binary bitmask for toggles, padded to bitCount
+                        val = state.value.toInt().toRadixString(2).toUpperCase().padLeft(state.bitCount, '0');
+                      } else if (isMulti) {
+                        // Decimal for radio buttons (multiple_button)
+                        val = state.value.toInt().toString();
+                      } else {
+                        // Binary or other
+                        val = state.value.toInt().toString();
+                      }
+                      
+                      return _debugText('$label$val', textColor, size: 1.0 * state.scale, bold: true);
+                    }(),
+                  ),
+    
+                // Bottom-Left: Widget Type (SLIDER, KNOB, etc)
+                Positioned(
+                  bottom: -1.5 * state.scale,
+                  left: 0,
+                  child: _debugText(widgetFolder.toUpperCase(), textColor.withValues(alpha: 0.6), size: 1.0 * state.scale),
+                ),
+    
+                // Bottom-Right: Position (POS: x,y)
+                Positioned(
+                  bottom: -1.5 * state.scale,
+                  right: 0,
+                  child: _debugText('POS: (${state.x.round()},${state.y.round()})', textColor.withValues(alpha: 0.6), size: 1.0 * state.scale),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildVisual(Color color, double s) {
+  Widget _buildVisual(Color color, BoxConstraints constraints) {
+    final s = state.scale;
+    final w = constraints.maxWidth;
+    final h = constraints.maxHeight;
+
     switch (widgetFolder) {
       case 'knob':
+        // If it's the indicator layer, it's already rotated by KnobWidget
+        // We draw a fixed indicator line pointing North (relative to the rotated container)
+        if (layer == 'indicator') {
+          return Center(
+            child: CustomPaint(
+              size: Size(w, h),
+              painter: _KnobPainter(value: 0.5, color: color, isIndicator: true, staticIndicator: true),
+            ),
+          );
+        }
         return Center(
           child: CustomPaint(
-            size: Size(10.0 * s, 10.0 * s),
-            painter: _KnobPainter(value: state.value, color: color, isIndicator: layer == 'indicator'),
+            size: Size(math.min(w, h), math.min(w, h)),
+            painter: _KnobPainter(value: state.value, color: color, isIndicator: false),
           ),
         );
+
       case 'slider':
-        final isHorizontal = false; // We use a fixed vertical style for debug slider
+        final isHorizontal = w > h;
         if (layer == 'track') {
           return Center(
             child: Container(
-              width: 2.0 * s,
-              height: 16.0 * s,
+              width: isHorizontal ? w : w * 0.6,
+              height: isHorizontal ? h * 0.6 : h,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(1 * s),
+                color: color.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(math.min(w, h) / 2),
+                border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
               ),
             ),
           );
         } else {
+          // Thumb - should be a nicely sized handle
+          final thumbSize = math.min(w, h) * 0.9;
           return Center(
             child: Container(
-              width: 3.0 * s, height: 3.0 * s,
+              width: thumbSize, height: thumbSize,
               decoration: BoxDecoration(
-                color: color, borderRadius: BorderRadius.circular(0.5 * s),
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2, offset: const Offset(0, 1))],
+                color: color, 
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 4 * s, offset: const Offset(0, 2))],
               ),
             ),
           );
         }
+
       case 'led':
-        final size = 6.0 * s;
         return Center(
           child: Container(
-            width: size, height: size,
+            width: math.min(w, h) * 0.7, height: math.min(w, h) * 0.7,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [Colors.white.withValues(alpha: 0.8), color, color.withValues(alpha: 0.5)],
-                stops: const [0.0, 0.4, 1.0],
-              ),
-              boxShadow: state.isOn ? [BoxShadow(color: color, blurRadius: size/2, spreadRadius: size/4)] : null,
+              color: state.isOn ? color : color.withValues(alpha: 0.2),
+              boxShadow: state.isOn ? [BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 10 * s, spreadRadius: 2 * s)] : [],
+              border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
+            ),
+          ),
+        );
+
+      case 'joystick':
+        if (layer == 'base') {
+          return Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: color.withValues(alpha: 0.2), width: 2),
+              color: color.withValues(alpha: 0.05),
             ),
             child: Center(
               child: Container(
-                width: size * 0.2, height: size * 0.2,
-                transform: Matrix4.translationValues(-size*0.15, -size*0.15, 0),
-                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.4)),
+                width: 2 * s, height: 2 * s,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: color.withValues(alpha: 0.1)),
               ),
             ),
-          ),
-        );
-      case 'button_push':
-      case 'button_toggle':
-        final isDown = state.isPressed || (widgetFolder == 'button_toggle' && state.isOn);
-        final size = 8.0 * s;
-        return Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 100),
-            width: size, height: size,
-            margin: EdgeInsets.all(isDown ? 0.5 * s : 0.2 * s),
-            decoration: BoxDecoration(
-              color: isDown ? color.withValues(alpha: 0.4) : color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(1 * s),
-              border: Border.all(color: color, width: 2),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (state.icon.isNotEmpty)
-                  Icon(_getIconData(state.icon), color: color, size: 3.0 * s),
-                if (state.label.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: _debugText(state.label, color, size: 1.5 * s, bold: true),
-                  ),
-              ],
-            ),
-          ),
-        );
-      case 'toggle_switch':
-        final w = 12.0 * s;
-        final h = 6.0 * s;
-        return Center(
-          child: Container(
-            width: w, height: h,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(h / 2),
-              border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
-              color: state.isOn ? color.withValues(alpha: 0.2) : Colors.black12,
-            ),
-            child: AnimatedAlign(
-              duration: const Duration(milliseconds: 200),
-              alignment: state.isOn ? Alignment.centerRight : Alignment.centerLeft,
-              child: Container(
-                width: h * 0.8, height: h * 0.8,
-                margin: EdgeInsets.symmetric(horizontal: h * 0.1),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle, color: color,
-                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2, offset: const Offset(0, 1))],
-                ),
-                child: Center(
-                  child: Icon(
-                    _getIconData(state.icon),
-                    color: Colors.white,
-                    size: h * 0.5,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      case 'multiple_button':
-      case 'multiple_select':
-        if (layer == 'item') {
-          final size = 7.0 * s;
+          );
+        } else {
+          // Stick - usually around 30-40% of the base size
+          final stickSize = math.min(w, h) * 0.4;
           return Center(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 100),
-              width: size, height: size,
+            child: Container(
+              width: stickSize, height: stickSize,
               decoration: BoxDecoration(
-                color: state.isOn 
-                    ? color.withValues(alpha: 0.25) 
-                    : color.withValues(alpha: 0.05),
-                border: Border.all(color: color.withValues(alpha: 0.15), width: 0.5),
-                borderRadius: BorderRadius.circular(1 * s),
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [Colors.white70, color],
+                  stops: const [0.1, 1.0],
+                ),
+                boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 4 * s, offset: const Offset(0, 2))],
               ),
-              padding: const EdgeInsets.all(2),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            ),
+          );
+        }
+
+      case 'toggle_switch':
+      case 'slide_switch':
+        final isTrack = layer == null || layer == 'base' || layer == 'track';
+        final isThumb = layer == 'thumb';
+        
+        if (isTrack && layer != null) {
+          return Center(
+            child: Container(
+              width: w, height: h,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(h / 2),
+                color: color.withValues(alpha: 0.1),
+                border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
+              ),
+            ),
+          );
+        } else if (isThumb) {
+          final thumbSize = h * 0.8;
+          return Center(
+            child: Container(
+              width: thumbSize, height: thumbSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: state.isOn ? color : Colors.grey.shade400,
+                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2 * s)],
+              ),
+            ),
+          );
+        } else {
+          // Self-contained toggle switch (layer == null)
+          final thumbSize = h * 0.7;
+          return Center(
+            child: Container(
+              width: w, height: h,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(h / 2),
+                color: color.withValues(alpha: 0.05),
+                border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
+              ),
+              child: Stack(
                 children: [
-                  Icon(
-                    _getIconData(state.icon, fallback: Icons.apps_rounded), 
-                    color: state.isOn ? color : color.withValues(alpha: 0.5), 
-                    size: 3.0 * s
-                  ),
-                  if (state.label.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 1),
-                      child: _debugText(
-                        state.label, 
-                        (state.isOn ? color : color).withValues(alpha: 0.8), 
-                        size: 1.2 * s, 
-                        bold: true,
+                  AnimatedAlign(
+                    duration: const Duration(milliseconds: 150),
+                    alignment: state.isOn ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.all(h * 0.1),
+                      child: Container(
+                        width: thumbSize, height: thumbSize,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: state.isOn ? color : Colors.grey.shade400,
+                          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2 * s)],
+                        ),
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
           );
         }
-        return const SizedBox.expand();
-      case 'joystick':
-        final size = 20.0 * s;
-        final stickSize = size * 0.3;
-        
+
+      case 'display':
         return Center(
-          child: SizedBox(
-            width: size, height: size,
-            child: Stack(
-              children: [
-                Center(child: Container(width: double.infinity, height: 1.5, color: color.withValues(alpha: 0.15))),
-                Center(child: Container(width: 1.5, height: double.infinity, color: color.withValues(alpha: 0.15))),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: color.withValues(alpha: 0.1)),
-                    gradient: RadialGradient(colors: [color.withValues(alpha: 0.05), Colors.transparent]),
-                  ),
+          child: Container(
+            width: w, height: h,
+            padding: EdgeInsets.symmetric(horizontal: 4 * s),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(2 * s),
+              border: Border.all(color: color, width: 2),
+            ),
+            child: Center(
+              child: Text(
+                state.content.isNotEmpty ? state.content : 'NO DATA',
+                style: TextStyle(
+                  color: color,
+                  fontFamily: 'monospace',
+                  fontSize: math.min(w * 0.15, h * 0.6),
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
-                Align(
-                  alignment: Alignment(state.valueX, state.valueY),
-                  child: Container(
-                    width: stickSize, height: stickSize,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [color.withValues(alpha: 0.4), color],
-                        center: const Alignment(-0.3, -0.3),
-                      ),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black54, blurRadius: 4, offset: const Offset(0, 2)),
-                      ],
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: stickSize * 0.3, height: stickSize * 0.3,
-                        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.4)),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         );
+
+      case 'multiple_button':
+      case 'multiple_select':
       default:
-        return const SizedBox.expand();
-    }
-  }
-
-
-  IconData _getIconData(String name, {IconData fallback = Icons.help_outline}) {
-    switch (name.toLowerCase()) {
-      case 'zap':        return Icons.bolt_rounded;
-      case 'power':      return Icons.power_settings_new_rounded;
-      case 'sliders':    return Icons.tune_rounded;
-      case 'wifi':       return Icons.wifi_rounded;
-      case 'bluetooth':  return Icons.bluetooth_rounded;
-      case 'map-pin':    return Icons.place_rounded;
-      case 'cpu':        return Icons.memory_rounded;
-      case 'mouse':      return Icons.mouse_rounded;
-      case 'refresh':    
-      case 'rotate-cw':  return Icons.refresh_rounded;
-      case 'thermometer':return Icons.thermostat_rounded;
-      case 'droplet':    return Icons.water_drop_rounded;
-      case 'leaf':       return Icons.eco_rounded;
-      case 'wind':       return Icons.air_rounded;
-      case 'skull':      return Icons.dangerous_rounded;
-      case 'grid':       return Icons.grid_view_rounded;
-      case 'settings':   return Icons.settings_rounded;
-      case 'home':       return Icons.home_rounded;
-      case 'user':       return Icons.person_rounded;
-      case 'bell':       return Icons.notifications_rounded;
-      default:           return fallback;
+        // Generic box/button or Multiple Item
+        final isBase = layer == 'base' || layer == 'track';
+        final iconData = !isBase ? parseIconFromName(state.icon) : null;
+        final isPressed = state.isPressed || (state.isOn && layer == 'item');
+        
+        return Container(
+          width: w, height: h,
+          decoration: BoxDecoration(
+            color: isPressed ? color.withValues(alpha: 0.4) : color.withValues(alpha: 0.1),
+            border: Border.all(color: isPressed ? color : color.withValues(alpha: 0.5), width: isPressed ? 2 : 1),
+            borderRadius: BorderRadius.circular(4 * s),
+          ),
+          child: iconData != null 
+            ? Center(child: Icon(iconData, size: math.min(w, h) * 0.5, color: isPressed ? Colors.white : color)) 
+            : (state.label.isNotEmpty && layer == 'item' 
+                ? Center(child: _debugText(state.label, isPressed ? Colors.white : color, size: 1.2 * s, bold: true))
+                : null),
+        );
     }
   }
 
   Widget _debugText(String text, Color color, {double size = 10, bool bold = false}) {
     return Text(
       text,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
       style: TextStyle(
         color: color,
         fontSize: size,
@@ -343,48 +341,38 @@ class _KnobPainter extends CustomPainter {
   final double value;
   final Color color;
   final bool isIndicator;
+  final bool staticIndicator;
 
-  _KnobPainter({required this.value, required this.color, this.isIndicator = false});
+  _KnobPainter({
+    required this.value, 
+    required this.color, 
+    required this.isIndicator, 
+    this.staticIndicator = false,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2 * 0.8;
-
     final paint = Paint()
-      ..color = color.withValues(alpha: 0.15)
+      ..color = color.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2;
+
+    // Draw background circle
     if (!isIndicator) {
-      // Background graduations
-      for (int i = 0; i <= 10; i++) {
-        final angle = 0.75 * math.pi + (i / 10.0) * 1.5 * math.pi;
-        final p1 = center + Offset(math.cos(angle) * (radius * 1.1), math.sin(angle) * (radius * 1.1));
-        final p2 = center + Offset(math.cos(angle) * (radius * 1.2), math.sin(angle) * (radius * 1.2));
-        canvas.drawLine(p1, p2, paint);
-      }
-      
-      // Main circle
-      paint.color = color.withValues(alpha: 0.1);
-      paint.style = PaintingStyle.fill;
-      canvas.drawCircle(center, radius, paint);
-      
-      paint.color = color.withValues(alpha: 0.3);
-      paint.style = PaintingStyle.stroke;
-      paint.strokeWidth = 1.5;
       canvas.drawCircle(center, radius, paint);
     }
 
-    // Value active arc
-    paint.style = PaintingStyle.stroke;
     paint.color = color;
     paint.strokeCap = StrokeCap.round;
-    paint.strokeWidth = 4;
-    const startAngle = 0.75 * math.pi;
-    final sweepAngle = value * 1.5 * math.pi;
 
     if (!isIndicator) {
+      // Draw value arc
+      paint.strokeWidth = 4;
+      const startAngle = 0.75 * math.pi;
+      final sweepAngle = value * 1.5 * math.pi;
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         startAngle,
@@ -394,8 +382,9 @@ class _KnobPainter extends CustomPainter {
       );
     } else {
       // Indicator line
-      final angle = startAngle + sweepAngle;
-      final lineStart = center + Offset(math.cos(angle) * (radius * 0.4), math.sin(angle) * (radius * 0.4));
+      // If staticIndicator is true, we draw it pointing up because the container is rotated
+      final angle = staticIndicator ? -0.5 * math.pi : (0.75 * math.pi + value * 1.5 * math.pi);
+      final lineStart = center + Offset(math.cos(angle) * (radius * 0.3), math.sin(angle) * (radius * 0.3));
       final lineEnd = center + Offset(math.cos(angle) * radius, math.sin(angle) * radius);
       canvas.drawLine(lineStart, lineEnd, paint..strokeWidth = 3);
       

@@ -65,6 +65,9 @@ class _ButtonWidgetState extends State<ButtonWidget> {
         state: RKSkinState(
           isPressed: _isToggle ? (widget.value != 0) : _localPressed,
           isOn: widget.value != 0,
+          value: widget.value.toDouble(),
+          x: widget.config.x,
+          y: widget.config.y,
           styleIndex: widget.config.style,
           isEnabled: true,
           label: widget.config.label,

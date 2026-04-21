@@ -185,6 +185,8 @@ class _SliderWidgetState extends State<SliderWidget>
                 isPressed: _isDragging,
                 styleIndex: widget.config.style,
                 value: normalizedValue, 
+                x: widget.config.x,
+                y: widget.config.y,
                 label: widget.config.label,
                 icon: widget.config.icon,
                 scale: widget.scale,
@@ -197,9 +199,12 @@ class _SliderWidgetState extends State<SliderWidget>
             return renderer;
           }
 
+          final thumbSize = _isHorizontal ? constraints.maxHeight : constraints.maxWidth;
+          final travel = _isHorizontal ? constraints.maxWidth : constraints.maxHeight;
+
           final thumbOffset = _isHorizontal 
-              ? Offset((normalizedValue - 0.5) * constraints.maxWidth, 0)
-              : Offset(0, (0.5 - normalizedValue) * constraints.maxHeight);
+              ? Offset((normalizedValue - 0.5) * (travel - thumbSize), 0)
+              : Offset(0, (0.5 - normalizedValue) * (travel - thumbSize));
 
           return Stack(
             children: [

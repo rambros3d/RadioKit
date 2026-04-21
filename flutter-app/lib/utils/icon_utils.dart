@@ -3,8 +3,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Maps a string identifier (e.g. "play", "settings") to a Lucide icon.
 /// Used by widgets like TextWidget and MultipleWidget to display icons.
-IconData parseIconFromName(String name) {
+IconData? parseIconFromName(String name) {
   final clean = name.toLowerCase().trim();
+  if (clean.isEmpty) return null;
   switch (clean) {
     case 'settings': return LucideIcons.settings;
     case 'play':     return LucideIcons.play;

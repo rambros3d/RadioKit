@@ -58,6 +58,8 @@ class LedWidget extends StatelessWidget {
         isOn: _isOn,
         colorOverride: _color,
         styleIndex: config.style,
+        x: config.x,
+        y: config.y,
         label: config.label,
         icon: config.icon,
         scale: scale,

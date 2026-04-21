@@ -30,6 +30,9 @@ class SlideSwitchWidget extends StatelessWidget {
         widgetFolder: 'toggle_switch',
         state: RKSkinState(
           isOn: active,
+          value: value.toDouble(),
+          x: config.x,
+          y: config.y,
           styleIndex: config.style,
           label: config.label,
           icon: config.icon,

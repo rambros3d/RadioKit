@@ -220,9 +220,10 @@ class _ControlScreenState extends State<ControlScreen> {
               border: Border.all(color: Theme.of(context).dividerColor, width: 1),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0), // Margin for debug labels
               child: Stack(
+                clipBehavior: Clip.none,
                 children: [
                   ListenableBuilder(
                     listenable: SkinManager(),

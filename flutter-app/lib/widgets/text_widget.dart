@@ -33,6 +33,10 @@ class TextWidget extends StatelessWidget {
             widgetFolder: 'display',
             state: RKSkinState(
               styleIndex: config.style,
+              label: config.label,
+              content: text,
+              x: config.x,
+              y: config.y,
               scale: scale,
             ),
           ),

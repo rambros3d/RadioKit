@@ -90,9 +90,11 @@ class _KnobWidgetState extends State<KnobWidget>
     final dx = localPosition.dx - center.dx;
     final dy = localPosition.dy - center.dy;
 
+    // 0. Distance check to prevent erratic jumps near the pivot center
+    final distance = math.sqrt(dx * dx + dy * dy);
+    if (distance < size.width * 0.2) return;
+
     // 2. Calculate angle where North (top) is 0 radians
-    // atan2 range is -PI to PI
-    // We add PI/2 to make North = 0.
     double angle = math.atan2(dy, dx) + math.pi / 2;
 
     // 3. Normalize angle to (-PI..PI) range
@@ -102,25 +104,16 @@ class _KnobWidgetState extends State<KnobWidget>
     // 4. Convert to degrees for easier limit handling
     double degrees = angle * 180 / math.pi;
 
-    // 5. Knob constraints: -100 is at -135deg, +100 is at +135deg.
-    // Total sweep: 270 degrees.
-    // The "Gap" is the bottom 90 degrees (from 135 to 225/ -135).
-    
-    // Hard wall / Gap protection:
-    // If the user drags into the bottom gap, we clamp to the nearest limit
-    // to prevent "jumping" from -100 to 100.
-    if (degrees > 135) {
-      if (degrees < 160) {
-        degrees = 135; // Near right limit
-      } else {
-        // We are on the left side of the gap
-        degrees = -135; // Near left limit
-      }
-    } else if (degrees < -135) {
-      if (degrees > -160) {
-        degrees = -135;
-      } else {
+    // 5. Dead zone protection (Hard Wall):
+    // The active sweep is -135 to 135 (270 degrees total).
+    // The bottom 90 degrees (135 to 225 / -135) is the dead zone.
+    // We clamp to the CLOSEST limit based on the CURRENT value to prevent 
+    // "jumping" across the gap from -100 to 100.
+    if (degrees > 135 || degrees < -135) {
+      if (widget.value >= 0) {
         degrees = 135;
+      } else {
+        degrees = -135;
       }
     }
 
@@ -206,6 +199,8 @@ class _KnobWidgetState extends State<KnobWidget>
                       isPressed: _isDragging,
                       styleIndex: widget.config.style,
                       value: normalizedValue,
+                      x: widget.config.x,
+                      y: widget.config.y,
                       label: widget.config.label,
                       icon: widget.config.icon,
                       scale: widget.scale,
@@ -224,6 +219,9 @@ class _KnobWidgetState extends State<KnobWidget>
                       isPressed: _isDragging,
                       styleIndex: widget.config.style,
                       label: widget.config.label,
+                      value: normalizedValue,
+                      x: widget.config.x,
+                      y: widget.config.y,
                       icon: widget.config.icon,
                       scale: widget.scale,
                     ),

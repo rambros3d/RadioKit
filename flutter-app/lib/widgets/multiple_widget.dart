@@ -78,6 +78,10 @@ class MultipleWidget extends StatelessWidget {
               styleIndex: config.style,
               isOn: value != 0,
               label: config.label,
+              value: value.toDouble(), // Pass raw index or bitmask
+              x: config.x,
+              y: config.y,
+              bitCount: config.multipleItems.length,
               icon: config.icon,
               scale: scale,
             ),
