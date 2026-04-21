@@ -3,8 +3,8 @@
   "version": "1.5.0",
   "author": "RadioKit",
   "renderer": "native",
-    "gridStyle": "none",
-    "gridSpacing": 50,
+  "gridStyle": "none",
+  "gridSpacing": 50,
   "tokens": {
     "colors": {
       "primary": "#39FF14",

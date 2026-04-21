@@ -4,7 +4,6 @@
       "type": "joystick",
       "props": {
         "size": 150,
-          "travel": 0.5,
         "base": {
           "type": "box",
           "props": {
@@ -45,5 +44,6 @@
         }
       }
     }
-  ]
+  ],
+  "stick": { "travel": 0.5 }
 }

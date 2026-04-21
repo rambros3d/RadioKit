@@ -30,262 +30,273 @@ class DebugSkinRenderer extends SkinRenderer {
     final displayTitle = state.label.isNotEmpty ? state.label : widgetFolder.toUpperCase();
     final isBinary = widgetFolder.contains('button') || widgetFolder.contains('switch') || widgetFolder == 'led';
 
-    return Container(
-      decoration: isBaseLayer ? BoxDecoration(
-        border: Border.all(color: outlineColor.withValues(alpha: 0.3), width: 1),
-        color: (manifest.tokens.colors['surface'] ?? Colors.white).withValues(alpha: 0.1),
-      ) : null,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          _buildVisual(accentColor),
-          
-          if (isBaseLayer)
-            Positioned(
-              top: 2,
-              left: 4,
-              child: _debugText(displayTitle, textColor.withValues(alpha: 0.6), size: 7, bold: true),
-            ),
+    final s = state.scale;
+    double? w;
+    double? h;
+    
+    // Set typical "virtual" sizes for debug visualization
+    switch (widgetFolder) {
+      case 'button_push':
+      case 'button_toggle':
+        w = 8.0 * s; h = 8.0 * s; break;
+      case 'led':
+        w = 4.0 * s; h = 4.0 * s; break;
+      case 'toggle_switch':
+        w = 12.0 * s; h = 6.0 * s; break;
+      case 'slider':
+        w = 3.0 * s; h = 18.0 * s; break;
+      case 'knob':
+        w = 10.0 * s; h = 10.0 * s; break;
+      case 'joystick':
+        w = 22.0 * s; h = 22.0 * s; break;
+      case 'multiple_button':
+      case 'multiple_select':
+        if (layer == 'item') { w = 8.0 * s; h = 8.0 * s; }
+        break;
+    }
 
-          if (isBaseLayer)
-            Positioned(
-              bottom: 2,
-              right: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (state.isOn && isBinary) _debugText('ON', Colors.green, size: 8, bold: true),
-                  if (state.isPressed) _debugText('PRESSED', Colors.orange, size: 8, bold: true),
-                  if (!isBinary) _debugText('VAL: ${state.value.toStringAsFixed(2)}', textColor, size: 8),
-                ],
+    return Center(
+      child: Container(
+        width: w,
+        height: h,
+        decoration: isBaseLayer ? BoxDecoration(
+          border: Border.all(color: outlineColor.withValues(alpha: 0.3), width: 1),
+          color: (manifest.tokens.colors['surface'] ?? Colors.white).withValues(alpha: 0.1),
+        ) : null,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            _buildVisual(accentColor, s),
+            
+            if (isBaseLayer)
+              Positioned(
+                top: 2,
+                left: 4,
+                child: _debugText(displayTitle, textColor.withValues(alpha: 0.6), size: 7, bold: true),
               ),
-            ),
-        ],
+  
+            if (isBaseLayer)
+              Positioned(
+                bottom: 2,
+                right: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (state.isOn && isBinary) _debugText('ON', Colors.green, size: 8, bold: true),
+                    if (state.isPressed) _debugText('PRESSED', Colors.orange, size: 8, bold: true),
+                    if (!isBinary) _debugText('VAL: ${state.value.toStringAsFixed(2)}', textColor, size: 8),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildVisual(Color color) {
+  Widget _buildVisual(Color color, double s) {
     switch (widgetFolder) {
       case 'knob':
         return Center(
           child: CustomPaint(
-            size: const Size(double.infinity, double.infinity),
+            size: Size(10.0 * s, 10.0 * s),
             painter: _KnobPainter(value: state.value, color: color, isIndicator: layer == 'indicator'),
           ),
         );
       case 'slider':
-        return LayoutBuilder(builder: (context, constraints) {
-          final isHorizontal = constraints.maxWidth >= constraints.maxHeight;
-          if (layer == 'track') {
-            return Center(
-              child: Container(
-                width: isHorizontal ? double.infinity : 2,
-                height: isHorizontal ? 2 : double.infinity,
-                margin: EdgeInsets.symmetric(horizontal: isHorizontal ? 4 : 0, vertical: isHorizontal ? 0 : 4),
-                color: color.withValues(alpha: 0.3),
-              ),
-            );
-          } else {
-            return Center(
-              child: Container(
-                width: 14, height: 14,
-                decoration: BoxDecoration(
-                  color: color, borderRadius: BorderRadius.circular(2),
-                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2, offset: const Offset(0, 1))],
-                ),
-              ),
-            );
-          }
-        });
-      case 'led':
-        return Center(
-          child: LayoutBuilder(builder: (context, constraints) {
-            final size = math.min(constraints.maxWidth, constraints.maxHeight) * 0.8;
-            return Container(
-              width: size, height: size,
+        final isHorizontal = false; // We use a fixed vertical style for debug slider
+        if (layer == 'track') {
+          return Center(
+            child: Container(
+              width: 2.0 * s,
+              height: 16.0 * s,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [Colors.white.withValues(alpha: 0.8), color, color.withValues(alpha: 0.5)],
-                  stops: const [0.0, 0.4, 1.0],
-                ),
-                boxShadow: state.isOn ? [BoxShadow(color: color, blurRadius: size/2, spreadRadius: size/4)] : null,
+                color: color.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(1 * s),
               ),
-              child: Center(
-                child: Container(
-                  width: size * 0.2, height: size * 0.2,
-                  transform: Matrix4.translationValues(-size*0.15, -size*0.15, 0),
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.4)),
-                ),
+            ),
+          );
+        } else {
+          return Center(
+            child: Container(
+              width: 3.0 * s, height: 3.0 * s,
+              decoration: BoxDecoration(
+                color: color, borderRadius: BorderRadius.circular(0.5 * s),
+                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2, offset: const Offset(0, 1))],
               ),
-            );
-          }),
+            ),
+          );
+        }
+      case 'led':
+        final size = 6.0 * s;
+        return Center(
+          child: Container(
+            width: size, height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [Colors.white.withValues(alpha: 0.8), color, color.withValues(alpha: 0.5)],
+                stops: const [0.0, 0.4, 1.0],
+              ),
+              boxShadow: state.isOn ? [BoxShadow(color: color, blurRadius: size/2, spreadRadius: size/4)] : null,
+            ),
+            child: Center(
+              child: Container(
+                width: size * 0.2, height: size * 0.2,
+                transform: Matrix4.translationValues(-size*0.15, -size*0.15, 0),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.4)),
+              ),
+            ),
+          ),
         );
       case 'button_push':
       case 'button_toggle':
         final isDown = state.isPressed || (widgetFolder == 'button_toggle' && state.isOn);
+        final size = 8.0 * s;
         return Center(
-          child: AspectRatio(
-            aspectRatio: 1.0,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 100),
-              width: double.infinity, height: double.infinity,
-              margin: EdgeInsets.all(isDown ? 4 : 2),
-              decoration: BoxDecoration(
-                color: isDown ? color.withValues(alpha: 0.4) : color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: color, width: 2),
-              ),
-              child: LayoutBuilder(builder: (context, constraints) {
-                final iconSize = math.min(constraints.maxWidth, constraints.maxHeight) * 0.4;
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (state.icon.isNotEmpty)
-                      Icon(_getIconData(state.icon), color: color, size: iconSize.clamp(8, 24)),
-                    if (state.label.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: _debugText(state.label, color, size: (iconSize * 0.6).clamp(6, 12), bold: true),
-                      ),
-                  ],
-                );
-              }),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 100),
+            width: size, height: size,
+            margin: EdgeInsets.all(isDown ? 0.5 * s : 0.2 * s),
+            decoration: BoxDecoration(
+              color: isDown ? color.withValues(alpha: 0.4) : color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(1 * s),
+              border: Border.all(color: color, width: 2),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (state.icon.isNotEmpty)
+                  Icon(_getIconData(state.icon), color: color, size: 3.0 * s),
+                if (state.label.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: _debugText(state.label, color, size: 1.5 * s, bold: true),
+                  ),
+              ],
             ),
           ),
         );
       case 'toggle_switch':
+        final w = 12.0 * s;
+        final h = 6.0 * s;
         return Center(
-          child: LayoutBuilder(builder: (context, constraints) {
-            final w = constraints.maxWidth * 0.8;
-            final h = w / 2;
-            return Container(
-              width: w, height: h,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(h / 2),
-                border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
-                color: state.isOn ? color.withValues(alpha: 0.2) : Colors.black12,
-              ),
-              child: AnimatedAlign(
-                duration: const Duration(milliseconds: 200),
-                alignment: state.isOn ? Alignment.centerRight : Alignment.centerLeft,
-                child: Container(
-                  width: h * 0.8, height: h * 0.8,
-                  margin: EdgeInsets.symmetric(horizontal: h * 0.1),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle, color: color,
-                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2, offset: const Offset(0, 1))],
-                  ),
-                  child: Center(
-                    child: Icon(
-                      _getIconData(state.icon),
-                      color: Colors.white,
-                      size: h * 0.5,
-                    ),
+          child: Container(
+            width: w, height: h,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(h / 2),
+              border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
+              color: state.isOn ? color.withValues(alpha: 0.2) : Colors.black12,
+            ),
+            child: AnimatedAlign(
+              duration: const Duration(milliseconds: 200),
+              alignment: state.isOn ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(
+                width: h * 0.8, height: h * 0.8,
+                margin: EdgeInsets.symmetric(horizontal: h * 0.1),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle, color: color,
+                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2, offset: const Offset(0, 1))],
+                ),
+                child: Center(
+                  child: Icon(
+                    _getIconData(state.icon),
+                    color: Colors.white,
+                    size: h * 0.5,
                   ),
                 ),
               ),
-            );
-          }),
+            ),
+          ),
         );
       case 'multiple_button':
       case 'multiple_select':
         if (layer == 'item') {
+          final size = 7.0 * s;
           return Center(
-            child: AspectRatio(
-              aspectRatio: 1.0,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 100),
-                decoration: BoxDecoration(
-                  color: state.isOn 
-                      ? color.withValues(alpha: 0.25) 
-                      : color.withValues(alpha: 0.05),
-                  border: Border.all(color: color.withValues(alpha: 0.15), width: 0.5),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                padding: const EdgeInsets.all(2),
-                child: LayoutBuilder(builder: (context, constraints) {
-                  final iconSize = math.min(constraints.maxWidth, constraints.maxHeight) * 0.5;
-                  final contentColor = state.isOn ? color : color.withValues(alpha: 0.5);
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        _getIconData(state.icon, fallback: Icons.apps_rounded), 
-                        color: contentColor, 
-                        size: iconSize.clamp(8, 24)
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 100),
+              width: size, height: size,
+              decoration: BoxDecoration(
+                color: state.isOn 
+                    ? color.withValues(alpha: 0.25) 
+                    : color.withValues(alpha: 0.05),
+                border: Border.all(color: color.withValues(alpha: 0.15), width: 0.5),
+                borderRadius: BorderRadius.circular(1 * s),
+              ),
+              padding: const EdgeInsets.all(2),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    _getIconData(state.icon, fallback: Icons.apps_rounded), 
+                    color: state.isOn ? color : color.withValues(alpha: 0.5), 
+                    size: 3.0 * s
+                  ),
+                  if (state.label.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 1),
+                      child: _debugText(
+                        state.label, 
+                        (state.isOn ? color : color).withValues(alpha: 0.8), 
+                        size: 1.2 * s, 
+                        bold: true,
                       ),
-                      if (state.label.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 1),
-                          child: _debugText(
-                            state.label, 
-                            contentColor.withValues(alpha: 0.8), 
-                            size: (iconSize * 0.5).clamp(5, 10), 
-                            bold: true,
-                          ),
-                        ),
-                    ],
-                  );
-                }),
+                    ),
+                ],
               ),
             ),
           );
         }
         return const SizedBox.expand();
       case 'joystick':
-        return LayoutBuilder(builder: (context, constraints) {
-          final size = math.min(constraints.maxWidth, constraints.maxHeight) * 0.9;
-          final stickSize = size * 0.3;
-          
-          return Center(
-            child: AspectRatio(
-              aspectRatio: 1.0,
-              child: SizedBox(
-                width: size, height: size,
-                child: Stack(
-                  children: [
-                    Center(child: Container(width: double.infinity, height: 1.5, color: color.withValues(alpha: 0.15))),
-                    Center(child: Container(width: 1.5, height: double.infinity, color: color.withValues(alpha: 0.15))),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: color.withValues(alpha: 0.1)),
-                        gradient: RadialGradient(colors: [color.withValues(alpha: 0.05), Colors.transparent]),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment(state.valueX, state.valueY),
-                      child: Container(
-                        width: stickSize, height: stickSize,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [color.withValues(alpha: 0.4), color],
-                            center: const Alignment(-0.3, -0.3),
-                          ),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black54, blurRadius: 4, offset: const Offset(0, 2)),
-                          ],
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: stickSize * 0.3, height: stickSize * 0.3,
-                            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.4)),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+        final size = 20.0 * s;
+        final stickSize = size * 0.3;
+        
+        return Center(
+          child: SizedBox(
+            width: size, height: size,
+            child: Stack(
+              children: [
+                Center(child: Container(width: double.infinity, height: 1.5, color: color.withValues(alpha: 0.15))),
+                Center(child: Container(width: 1.5, height: double.infinity, color: color.withValues(alpha: 0.15))),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: color.withValues(alpha: 0.1)),
+                    gradient: RadialGradient(colors: [color.withValues(alpha: 0.05), Colors.transparent]),
+                  ),
                 ),
-              ),
+                Align(
+                  alignment: Alignment(state.valueX, state.valueY),
+                  child: Container(
+                    width: stickSize, height: stickSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [color.withValues(alpha: 0.4), color],
+                        center: const Alignment(-0.3, -0.3),
+                      ),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black54, blurRadius: 4, offset: const Offset(0, 2)),
+                      ],
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: stickSize * 0.3, height: stickSize * 0.3,
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.4)),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          );
-        });
+          ),
+        );
       default:
         return const SizedBox.expand();
     }
   }
+
 
   IconData _getIconData(String name, {IconData fallback = Icons.help_outline}) {
     switch (name.toLowerCase()) {

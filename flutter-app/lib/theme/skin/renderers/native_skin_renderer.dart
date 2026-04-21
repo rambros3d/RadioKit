@@ -7,6 +7,7 @@ import 'skin_renderer.dart';
 import '../skin_manager.dart';
 import '../skin_tokens.dart';
 import '../behavior_config.dart' as cfg;
+import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'svg_loader.dart';
 
 /// Renderer for Native/Primitive skins (e.g. Neon).
@@ -178,9 +179,9 @@ class NativeSkinRenderer extends SkinRenderer {
   }
 
   Widget _renderBox(Map<String, dynamic> props, SkinManifest manifest) {
-    final double width = _resolveDim(props['width'], manifest, 20.0);
+    final double width = _resolveDim(props['width'], manifest, 8.0);
     final double height = _resolveDim(props['height'], manifest, 8.0);
-    final double radius = _resolveDim(props['borderRadius'], manifest, 1.6);
+    final double radius = _resolveDim(props['borderRadius'], manifest, 1.0);
     final Color color = _resolveColor(props['color'], manifest, Colors.transparent);
     
     Gradient? gradient;
@@ -294,8 +295,15 @@ class NativeSkinRenderer extends SkinRenderer {
     final active = state.isOn;
     final trackLayer = spec.children?.firstWhere((l) => l.props['role'] == 'track');
     final thumbLayer = spec.children?.firstWhere((l) => l.props['role'] == 'thumb');
-    final trackWidth = _resolveDim(trackLayer?.props['width'], manifest, 60.0);
-    final thumbWidth = _resolveDim(thumbLayer?.props['width'], manifest, 26.0);
+    final trackWidth = _resolveDim(trackLayer?.props['width'], manifest, 12.0);
+    final thumbWidth = _resolveDim(thumbLayer?.props['width'], manifest, 6.0);
+    if (manifest.name == 'neon') {
+      return AnimatedToggleSwitch<bool>.rolling(
+        current: active,
+        values: const [true, false],
+        onChanged: (_) {},
+      );
+    }
 
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 300),
@@ -308,7 +316,7 @@ class NativeSkinRenderer extends SkinRenderer {
             if (trackLayer != null) _buildLayer(context, trackLayer, manifest, config),
             if (thumbLayer != null)
               Positioned(
-                left: value * (trackWidth - thumbWidth - 4.0) + 2.0,
+                left: value * (trackWidth - thumbWidth - 0.5 * state.scale) + 0.25 * state.scale,
                 child: _buildLayer(context, thumbLayer, manifest, config),
               ),
           ],
@@ -322,7 +330,7 @@ class NativeSkinRenderer extends SkinRenderer {
     final otherLayers = spec.children?.where((l) => l.props['role'] != 'thumb').toList() ?? [];
 
     return LayoutBuilder(builder: (context, constraints) {
-      final thumbSize = thumbLayer != null ? _resolveDim(thumbLayer.props['width'], manifest, 6.0) : 6.0;
+      final thumbSize = _resolveDim(thumbLayer?.props['width'], manifest, 4.0);
       return Stack(
         alignment: Alignment.centerLeft,
         children: [
@@ -344,18 +352,19 @@ class NativeSkinRenderer extends SkinRenderer {
     final baseLayer = baseLayerJson != null ? cfg.RenderingLayer.fromJson(baseLayerJson) : null;
     final stickLayer = stickLayerJson != null ? cfg.RenderingLayer.fromJson(stickLayerJson) : null;
 
-    final double size = _resolveDim(props['size'], manifest, 150.0);
+    final double size = _resolveDim(props['size'], manifest, 20.0);
 
     return SizedBox(
       width: size,
       height: size,
       child: Joystick(
+        key: const ValueKey('native_joystick'),
         listener: (details) {
           // Send joystick data to device provider
           state.onJoystickChanged?.call(details.x, details.y);
         },
-        base: baseLayer != null ? _buildLayer(context, baseLayer, manifest, config) : null,
-        stick: stickLayer != null ? _buildLayer(context, stickLayer, manifest, config) : const JoystickStick(),
+        base: baseLayer != null ? IgnorePointer(child: _buildLayer(context, baseLayer, manifest, config)) : null,
+        stick: stickLayer != null ? IgnorePointer(child: _buildLayer(context, stickLayer, manifest, config)) : const JoystickStick(),
       ),
     );
   }
@@ -371,7 +380,7 @@ class NativeSkinRenderer extends SkinRenderer {
 
   Widget _renderRepeater(BuildContext context, Map<String, dynamic> props, SkinManifest manifest, cfg.BehaviorConfig config) {
     final int count = props['count'] ?? 1;
-    final double radius = _resolveDim(props['radius'], manifest, 40.0);
+    final double radius = _resolveDim(props['radius'], manifest, 15.0);
     final double startAngle = _resolveDouble(props['startAngle'], manifest, 0.0);
     final childLayerJson = props['child'] as Map<String, dynamic>?;
     if (childLayerJson == null || count <= 0) return const SizedBox.shrink();
@@ -392,7 +401,10 @@ class NativeSkinRenderer extends SkinRenderer {
   // --- Helpers ---
 
   T _resolve<T>(dynamic val, SkinManifest manifest, T fallback, {bool isDimension = false}) {
-    if (val == null) return fallback;
+    if (val == null) {
+      if (isDimension && fallback is num) return (fallback.toDouble() * state.scale) as T;
+      return fallback;
+    }
     if (val is! String) {
       if (T == double && val is num) return (isDimension ? val.toDouble() * state.scale : val.toDouble()) as T;
       return val is T ? val : fallback;
@@ -424,7 +436,17 @@ class NativeSkinRenderer extends SkinRenderer {
       if (key == 'value') return state.value.toString() as T;
     }
 
-    if (s.startsWith('#')) return (s == '#accent' ? _getAccentColor(manifest) : (manifest.tokens.colors[s.substring(1)] ?? _parseColor(s))) as T;
+    if (s.startsWith('#')) {
+      final token = s.substring(1);
+      if (token == 'accent') return _getAccentColor(manifest) as T;
+      final tokenColor = manifest.tokens.colors[token];
+      if (tokenColor != null) return tokenColor as T;
+      // If token lookup fails, try to parse it as hex if it looks like one, else return fallback
+      if (s.length == 4 || s.length == 7 || s.length == 9) {
+        return _parseColor(s) as T;
+      }
+      return fallback as T;
+    }
     if (s.startsWith('@')) return (manifest.tokens.effects[s.substring(1)] ?? manifest.tokens.shapes[s.substring(1)] ?? fallback) as T;
     if (T == double) {
       final d = double.tryParse(s) ?? 0.0;
@@ -467,8 +489,14 @@ class NativeSkinRenderer extends SkinRenderer {
 
   Color _parseColor(String? hex) {
     if (hex == null || !hex.startsWith('#')) return Colors.transparent;
-    final h = hex.replaceFirst('#', '');
-    return Color(int.parse(h.length == 6 ? 'FF$h' : h, radix: 16));
+    try {
+      final h = hex.replaceFirst('#', '');
+      // If it's a token name (like #toggleTrack) that failed lookup, it won't be valid hex
+      if (h.length != 3 && h.length != 6 && h.length != 8) return Colors.transparent;
+      return Color(int.parse(h.length == 6 ? 'FF$h' : (h.length == 3 ? 'FF${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}' : h), radix: 16));
+    } catch (_) {
+      return Colors.transparent;
+    }
   }
 
   IconData _getIconData(String name) {

@@ -200,64 +200,58 @@ class _ControlScreenState extends State<ControlScreen> {
 
   Widget _buildCanvas(DeviceProvider deviceProvider) {
     final orientation = deviceProvider.orientation;
+    final (canvasVW, canvasVH) = _canvasDimensions(orientation);
+    
+    // Fixed internal scale of 8.0 ensures consistent 1:1 proportions
+    const double internalScale = 8.0;
+    final double physicalW = canvasVW * internalScale;
+    final double physicalH = canvasVH * internalScale;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final (canvasVW, canvasVH) = _canvasDimensions(orientation);
-        final aspectRatio = canvasVW / canvasVH;
-
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: AspectRatio(
-              aspectRatio: aspectRatio,
-              child: LayoutBuilder(
-                builder: (context, box) {
-                  // Unified scale ensures 1:1 physical aspect ratio for virtual units
-                  final scale = box.maxWidth / canvasVW;
-
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      border: Border.all(color: Theme.of(context).dividerColor, width: 1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: Stack(
-                        children: [
-                          ListenableBuilder(
-                            listenable: SkinManager(),
-                            builder: (context, _) {
-                              final skin = SkinManager().current;
-                              final gridColor = skin?.colors['grid'] ?? Theme.of(context).dividerColor.withValues(alpha: 0.3);
-                              
-                              return CustomPaint(
-                                size: Size.infinite,
-                                painter: _GridPainter(
-                                  color: gridColor,
-                                  style: skin?.gridStyle ?? GridStyle.lines,
-                                  spacing: 10.0, // Fixed 10-unit grid for v3
-                                  scaleX: scale,
-                                  scaleY: scale,
-                                ),
-                              );
-                            },
-                          ),
-                          ...deviceProvider.widgets.map((config) {
-                            return _buildPositionedWidget(
-                                config, scale, canvasVH, deviceProvider);
-                          }),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: Container(
+            width: physicalW,
+            height: physicalH,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Stack(
+                children: [
+                  ListenableBuilder(
+                    listenable: SkinManager(),
+                    builder: (context, _) {
+                      final skin = SkinManager().current;
+                      final gridColor = skin?.colors['grid'] ?? Theme.of(context).dividerColor.withValues(alpha: 0.3);
+                      
+                      return CustomPaint(
+                        size: Size(physicalW, physicalH),
+                        painter: _GridPainter(
+                          color: gridColor,
+                          style: skin?.gridStyle ?? GridStyle.lines,
+                          spacing: 10.0, // Fixed 10-unit grid
+                          scaleX: internalScale,
+                          scaleY: internalScale,
+                        ),
+                      );
+                    },
+                  ),
+                  ...deviceProvider.widgets.map((config) {
+                    return _buildPositionedWidget(
+                        config, internalScale, canvasVH, deviceProvider);
+                  }),
+                ],
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

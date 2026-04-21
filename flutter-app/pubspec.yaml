@@ -37,6 +37,7 @@ dependencies:
   flutter_svg: ^2.0.10+1
   archive: ^4.0.0
   flutter_joystick: ^0.2.2
+  animated_toggle_switch: ^0.3.0
 
 dev_dependencies:
   flutter_test:
