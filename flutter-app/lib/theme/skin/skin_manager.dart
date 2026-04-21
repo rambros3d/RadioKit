@@ -16,6 +16,8 @@ import 'behavior_config.dart';
 class SkinManager extends ChangeNotifier {
   static final SkinManager _instance = SkinManager._internal();
   factory SkinManager() => _instance;
+  AssetManifest? _assetManifest;
+  
   SkinManager._internal();
 
   static const String _skinsDirName = 'skins';
@@ -30,7 +32,6 @@ class SkinManager extends ChangeNotifier {
 
   final Map<String, BehaviorConfig> _configCache = {};
   final Map<String, SkinManifest> _manifestCache = {};
-  AssetManifest? _assetManifest;
 
   SkinManifest? get current => _currentManifest;
   String get activeSkinName => _activeSkinName;
@@ -59,6 +60,10 @@ class SkinManager extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       skinName = prefs.getString(_prefsKey) ?? 'standard';
     } catch (_) {}
+    try {
+      _assetManifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    } catch (_) {}
+
     await applySkin(skinName);
   }
 
@@ -230,7 +235,7 @@ class SkinManager extends ChangeNotifier {
   }
 
   Future<bool> _assetExists(String path) async {
-    // If we have a manifest, check it first to avoid 404s on Web
+    // Web safe check: Use the loaded AssetManifest to avoid triggering console 404s
     if (_assetManifest != null) {
       return _assetManifest!.listAssets().contains(path);
     }

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_joystick/flutter_joystick.dart';
 import 'skin_renderer.dart';
 import '../skin_manager.dart';
 import '../skin_tokens.dart';
@@ -86,6 +87,8 @@ class NativeSkinRenderer extends SkinRenderer {
         return _renderSlider(layerSpec, manifest, config);
       case cfg.LayerType.repeater:
         return _renderRepeater(context, layerSpec.props, manifest, config);
+      case cfg.LayerType.joystick:
+        return _renderJoystickNative(context, layerSpec.props, manifest, config);
     }
   }
 
@@ -332,6 +335,29 @@ class NativeSkinRenderer extends SkinRenderer {
         ],
       );
     });
+  }
+
+  Widget _renderJoystickNative(BuildContext context, Map<String, dynamic> props, SkinManifest manifest, cfg.BehaviorConfig config) {
+    final baseLayerJson = props['base'];
+    final stickLayerJson = props['stick'];
+
+    final baseLayer = baseLayerJson != null ? cfg.RenderingLayer.fromJson(baseLayerJson) : null;
+    final stickLayer = stickLayerJson != null ? cfg.RenderingLayer.fromJson(stickLayerJson) : null;
+
+    final double size = _resolveDim(props['size'], manifest, 150.0);
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Joystick(
+        listener: (details) {
+          // Send joystick data to device provider
+          state.onJoystickChanged?.call(details.x, details.y);
+        },
+        base: baseLayer != null ? _buildLayer(context, baseLayer, manifest, config) : null,
+        stick: stickLayer != null ? _buildLayer(context, stickLayer, manifest, config) : const JoystickStick(),
+      ),
+    );
   }
 
   Widget _renderAlignment(BuildContext context, Map<String, dynamic> props, SkinManifest manifest, cfg.BehaviorConfig config) {

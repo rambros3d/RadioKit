@@ -29,6 +29,7 @@ class RKSkinState {
   final String label;
   final String icon;
   final double scale;
+  final void Function(double x, double y)? onJoystickChanged;
 
   const RKSkinState({
     this.isPressed = false,
@@ -42,5 +43,6 @@ class RKSkinState {
     this.label = '',
     this.icon = '',
     this.scale = 1.0,
+    this.onJoystickChanged,
   });
 }

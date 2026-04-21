@@ -6,6 +6,7 @@ import '../models/widget_config.dart';
 import '../theme/skin/renderers/dynamic_skin_renderer.dart';
 import '../theme/skin/renderers/skin_renderer.dart';
 import '../theme/skin/behavior_config.dart';
+import '../theme/skin/skin_tokens.dart';
 import '../theme/skin/skin_manager.dart';
 
 /// 2-axis joystick widget with support for premium multi-layer skins.
@@ -142,6 +143,25 @@ class _JoystickWidgetState extends State<JoystickWidget>
 
   @override
   Widget build(BuildContext context) {
+    final manifest = SkinManager().current;
+    final isNative = manifest?.renderer == SkinRendererType.native || manifest?.name == 'neon';
+
+    if (isNative) {
+      return Center(
+        child: DynamicSkinRenderer(
+          widgetFolder: 'joystick',
+          state: RKSkinState(
+            styleIndex: widget.config.style,
+            label: widget.config.label,
+            icon: widget.config.icon,
+            scale: widget.scale,
+            // Pass the callback to the native renderer
+            onJoystickChanged: (dx, dy) => widget.onChanged((dx * 100).round(), (dy * 100).round()),
+          ),
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // Enforce square aspect ratio for joystick

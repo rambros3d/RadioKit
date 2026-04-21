@@ -25,6 +25,11 @@ class CustomSkinRenderer extends SkinRenderer {
         final manifest = SkinManager().current;
         if (manifest == null) return const SizedBox.shrink();
 
+        // Fail-safe: If we are in a native skin, CustomSkinRenderer should NOT run.
+        if (manifest.renderer == SkinRendererType.native || manifest.name == 'neon') {
+          return const SizedBox.shrink();
+        }
+
         return _buildComposition(context, manifest, config);
       },
     );
@@ -41,21 +46,27 @@ class CustomSkinRenderer extends SkinRenderer {
     switch (widgetFolder) {
       case 'button_push':
       case 'multiple_button':
+        if (config.layers.isEmpty) return const SizedBox.shrink();
         return _renderButton(manifest, config);
       case 'joystick':
+        if (config.layers.isEmpty) return const SizedBox.shrink();
         return _renderJoystick(manifest, config);
       case 'slider':
+        if (config.layers.isEmpty) return const SizedBox.shrink();
         return _renderSlider(manifest, config);
       case 'knob':
+        if (config.layers.isEmpty) return const SizedBox.shrink();
         return _renderKnob(manifest, config);
       case 'led':
+        if (config.layers.isEmpty) return const SizedBox.shrink();
         return _renderLed(manifest, config);
       case 'toggle_switch':
       case 'button_toggle':
+        if (config.layers.isEmpty) return const SizedBox.shrink();
         return _renderToggleSwitch(manifest, config);
       default:
         // Generic fallback: render 'base' or first available layer
-        final base = config.layers['base'] ?? config.layers.values.firstOrNull;
+        final base = config.layers['base'] ?? (config.layers.isNotEmpty ? config.layers.values.first : null);
         return base != null ? _renderLayer(base, manifest) : const SizedBox.shrink();
     }
   }
@@ -65,7 +76,9 @@ class CustomSkinRenderer extends SkinRenderer {
   Widget _renderButton(SkinManifest manifest, cfg.BehaviorConfig config) {
     final bool pressed = state.isPressed;
     final String layerKey = pressed ? (config.layers.containsKey('pressed') ? 'pressed' : 'idle') : 'idle';
-    final assetPath = config.layers[layerKey] ?? config.layers.values.first;
+    final assetPath = config.layers[layerKey] ?? (config.layers.isNotEmpty ? config.layers.values.first : '');
+    
+    if (assetPath.isEmpty) return const SizedBox.shrink();
 
     final bool isGlowEnabled = config.effects['glow_states']?.contains(pressed ? 'pressed' : 'idle') ?? false;
     final double glowIntensity = isGlowEnabled ? (config.animations['press']?.glowBoost ?? 1.2) : 1.0;
@@ -146,7 +159,11 @@ class CustomSkinRenderer extends SkinRenderer {
 
   Widget _renderLed(SkinManifest manifest, cfg.BehaviorConfig config) {
     final bool on = state.isOn;
-    final assetPath = on ? (config.layers['on'] ?? config.layers.values.first) : (config.layers['off'] ?? config.layers.values.first);
+    final assetPath = on 
+        ? (config.layers['on'] ?? (config.layers.isNotEmpty ? config.layers.values.first : '')) 
+        : (config.layers['off'] ?? (config.layers.isNotEmpty ? config.layers.values.first : ''));
+    
+    if (assetPath.isEmpty) return const SizedBox.shrink();
     
     final bool isGlowEnabled = config.effects['glow_states']?.contains('on') ?? true;
     final bool drivenByOverride = config.effects['glow_driven_by'] == 'color_override';
@@ -165,8 +182,10 @@ class CustomSkinRenderer extends SkinRenderer {
 
   Widget _renderToggleSwitch(SkinManifest manifest, cfg.BehaviorConfig config) {
     final bool on = state.isOn;
-    final offAsset = config.layers['off'] ?? config.layers.values.first;
-    final onAsset = config.layers['on'] ?? config.layers.values.last;
+    final offAsset = config.layers['off'] ?? (config.layers.isNotEmpty ? config.layers.values.first : '');
+    final onAsset = config.layers['on'] ?? (config.layers.isNotEmpty ? config.layers.values.last : '');
+
+    if (offAsset.isEmpty || onAsset.isEmpty) return const SizedBox.shrink();
     final bool crossfade = config.effects['crossfade'] ?? true;
 
     if (!crossfade) {

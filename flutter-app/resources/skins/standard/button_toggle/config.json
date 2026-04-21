@@ -1,6 +1,6 @@
 {
-  "states": {
-    "on": "active.svg",
-    "off": "bg.svg"
+  "layers": {
+    "off": "bg.svg",
+    "on": "active.svg"
   }
 }

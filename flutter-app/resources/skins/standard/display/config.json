@@ -1,5 +1,5 @@
 {
-  "states": {
-    "background": "bg.svg"
+  "layers": {
+    "base": "bg.svg"
   }
 }

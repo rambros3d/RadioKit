@@ -69,7 +69,7 @@ class PhysicsSpec {
   }
 }
 
-enum LayerType { svg, neumorphic, led, icon, text, alignment, box, switch_layer, slider, repeater }
+enum LayerType { svg, neumorphic, led, icon, text, alignment, box, switch_layer, slider, repeater, joystick }
 
 /// A renderable layer within a widget, part of the Universal Skinning Engine.
 class RenderingLayer {
@@ -115,6 +115,7 @@ class RenderingLayer {
       case 'switch': return LayerType.switch_layer;
       case 'slider': return LayerType.slider;
       case 'repeater': return LayerType.repeater;
+      case 'joystick': return LayerType.joystick;
       default: return LayerType.svg;
     }
   }

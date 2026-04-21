@@ -31,7 +31,9 @@ class DynamicSkinRenderer extends StatelessWidget {
     }
 
     // Select engine based on Global Manifest Type
-    if (manifest.renderer == SkinRendererType.native) {
+    final bool isNative = manifest.renderer == SkinRendererType.native || manifest.name == 'neon';
+
+    if (isNative) {
       return NativeSkinRenderer(
         widgetFolder: widgetFolder,
         state: state,
