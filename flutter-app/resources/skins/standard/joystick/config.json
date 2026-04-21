@@ -3,16 +3,17 @@
     "base": "base.svg",
     "stick": "stick.svg"
   },
-  "physics": {
-    "damping": 0.5,
-    "stiffness": 100.0,
-    "mass": 1.0,
-    "deadzone": 0.1
+  "stick": {
+    "travel": 0.35,
+    "size": 0.35
   },
-  "animations": {
-    "spring": {
-      "duration_ms": 200,
-      "curve": "elasticOut"
-    }
+  "effects": {
+    "glow_states": ["stick"],
+    "glow_layer": "stick"
+  },
+  "physics": {
+    "damping": 0.4,
+    "stiffness": 80.0,
+    "deadzone": 0.05
   }
 }

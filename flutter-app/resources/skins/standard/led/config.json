@@ -1,10 +1,11 @@
 {
-  "states": {
-    "base": "base.svg",
+  "layers": {
+    "off": "base.svg",
     "on": "base.svg"
   },
-  "options": {
-    "glow_layer": "glow.png",
-    "glow_intensity": 1.0
+  "effects": {
+    "glow_asset": "glow.png",
+    "glow_states": ["on"],
+    "glow_driven_by": "color_override"
   }
 }

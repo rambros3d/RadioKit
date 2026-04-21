@@ -1,6 +1,6 @@
 {
-  "states": {
+  "layers": {
     "idle": "item.svg",
-    "active": "item.svg"
+    "pressed": "item.svg"
   }
 }

@@ -248,7 +248,7 @@ class SkinManager extends ChangeNotifier {
     if (kIsWeb || _localSkinsPath == null) return false;
 
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['rkskin', 'zip'],
       );

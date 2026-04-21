@@ -1,10 +1,13 @@
 {
-  "states": {
+  "layers": {
     "idle": "bg.svg",
     "pressed": "active.svg"
   },
-  "physics": {
-    "damping": 0.5,
-    "stiffness": 100.0
+  "effects": {
+    "glow_states": ["pressed"]
+  },
+  "animations": {
+    "press": { "duration_ms": 100, "curve": "easeOut" },
+    "release": { "duration_ms": 200, "curve": "easeOutCubic" }
   }
 }

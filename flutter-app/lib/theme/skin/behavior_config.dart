@@ -69,7 +69,7 @@ class PhysicsSpec {
   }
 }
 
-enum LayerType { svg, neumorphic, led, icon, text, alignment, box, switch_layer, slider }
+enum LayerType { svg, neumorphic, led, icon, text, alignment, box, switch_layer, slider, repeater }
 
 /// A renderable layer within a widget, part of the Universal Skinning Engine.
 class RenderingLayer {
@@ -114,6 +114,7 @@ class RenderingLayer {
       case 'box': return LayerType.box;
       case 'switch': return LayerType.switch_layer;
       case 'slider': return LayerType.slider;
+      case 'repeater': return LayerType.repeater;
       default: return LayerType.svg;
     }
   }
@@ -130,6 +131,14 @@ class BehaviorConfig {
   final Map<String, String> haptics;
   final Map<String, dynamic> audio;
   final Map<String, dynamic> effects;
+  final String? colorSlot;
+
+  // Widget-specific groups
+  final Map<String, dynamic>? stick;
+  final Map<String, dynamic>? fill;
+  final Map<String, dynamic>? thumb;
+  final Map<String, dynamic>? indicator;
+
   final Map<String, dynamic> options;
 
   BehaviorConfig({
@@ -141,6 +150,11 @@ class BehaviorConfig {
     required this.haptics,
     required this.audio,
     required this.effects,
+    this.colorSlot,
+    this.stick,
+    this.fill,
+    this.thumb,
+    this.indicator,
     this.options = const {},
   });
 
@@ -180,6 +194,11 @@ class BehaviorConfig {
       haptics: (json['haptics'] ?? {}).cast<String, String>(),
       audio: json['audio'] ?? {},
       effects: json['effects'] ?? {},
+      colorSlot: json['color_slot'],
+      stick: json['stick'],
+      fill: json['fill'],
+      thumb: json['thumb'],
+      indicator: json['indicator'],
       options: (json['options'] as Map<String, dynamic>?) ?? {},
     );
   }

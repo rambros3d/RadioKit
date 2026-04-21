@@ -2,6 +2,7 @@
   "name": "neon",
   "version": "1.5.0",
   "author": "RadioKit",
+  "renderer": "native",
   "tokens": {
     "colors": {
       "primary": "#39FF14",

@@ -1,6 +1,17 @@
 {
-  "states": {
-    "on": "on.svg",
-    "off": "off.svg"
+  "layers": {
+    "off": "off.svg",
+    "on": "on.svg"
+  },
+  "effects": {
+    "crossfade": true
+  },
+  "animations": {
+    "toggle": { "duration_ms": 300, "curve": "easeInOut" }
+  },
+  "physics": {
+    "damping": 0.5,
+    "stiffness": 100.0,
+    "deadzone": 0.05
   }
 }

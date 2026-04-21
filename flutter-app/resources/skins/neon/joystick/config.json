@@ -1,25 +1,158 @@
 {
   "renderingLayers": [
     {
-       "type": "neumorphic",
-       "props": {
-         "depth": "@neumorphicDepth",
-         "intensity": "@neumorphicIntensity",
-         "borderRadius": 20,
-         "color": "#surface",
-         "isPressed": true
-       },
-       "visibility": { "layer": "base" }
+      "type": "box",
+      "props": {
+        "width": 20,
+        "height": 20,
+        "borderRadius": 50,
+        "color": "#surface",
+        "gradient": {
+          "type": "radial",
+          "colors": ["#444444", "#111111"],
+          "center": "bottomRight",
+          "radius": 1.5
+        },
+        "boxShadow": [
+          { "color": "#000000", "opacity": 0.5, "offsetX": 2, "offsetY": 2, "blur": 4 },
+          { "color": "#ffffff", "opacity": 0.05, "offsetX": -1, "offsetY": -1, "blur": 2 }
+        ]
+      },
+      "visibility": { "layer": "base" }
     },
     {
-      "type": "neumorphic",
+      "type": "box",
       "props": {
-        "depth": "@neumorphicDepth",
-        "intensity": "@neumorphicIntensity",
-        "borderRadius": 20,
-        "color": "#surface"
+        "width": 14,
+        "height": 14,
+        "borderRadius": 50,
+        "color": "#background",
+        "gradient": {
+          "type": "radial",
+          "colors": ["#000000", "#181818"],
+          "center": "center",
+          "radius": 1.0
+        },
+        "boxShadow": [
+          { "inset": true, "color": "#000000", "opacity": 0.8, "offsetX": 1.5, "offsetY": 1.5, "blur": 3 },
+          { "inset": true, "color": "#ffffff", "opacity": 0.05, "offsetX": -1, "offsetY": -1, "blur": 2 }
+        ]
       },
-      "visibility": { "layer": "handle" }
+      "visibility": { "layer": "base" }
+    },
+    {
+      "type": "repeater",
+      "props": {
+         "count": 28,
+         "radius": 8.0,
+         "child": {
+            "type": "box",
+            "props": {
+              "width": 0.4,
+              "height": 0.4,
+              "borderRadius": 50,
+              "color": "#primary",
+              "opacity": 0.3
+            }
+         }
+      },
+      "visibility": { "layer": "base" }
+    },
+    {
+      "type": "box",
+      "props": {
+        "width": 10,
+        "height": 10,
+        "borderRadius": 50,
+        "color": "#surface",
+        "gradient": {
+          "type": "radial",
+          "colors": ["#444444", "#111111"],
+          "center": "topLeft",
+          "radius": 1.2
+        },
+        "boxShadow": [
+          { "color": "#000000", "opacity": 0.6, "offsetX": 2, "offsetY": 2, "blur": 6 },
+          { "color": "#ffffff", "opacity": 0.1, "offsetX": -1, "offsetY": -1, "blur": 2 }
+        ]
+      },
+      "visibility": { "layer": "stick" }
+    },
+    {
+      "type": "alignment",
+      "props": {
+        "align": "center",
+        "child": {
+          "type": "box",
+          "props": {
+            "width": 0.6,
+            "height": 0.6,
+            "borderRadius": 50,
+            "color": "#onSurface",
+            "opacity": 0.4,
+            "offsetX": 0,
+            "offsetY": -2.5
+          }
+        }
+      },
+      "visibility": { "layer": "stick" }
+    },
+    {
+      "type": "alignment",
+      "props": {
+        "align": "center",
+        "child": {
+          "type": "box",
+          "props": {
+            "width": 0.6,
+            "height": 0.6,
+            "borderRadius": 50,
+            "color": "#onSurface",
+            "opacity": 0.4,
+            "offsetX": 0,
+            "offsetY": 2.5
+          }
+        }
+      },
+      "visibility": { "layer": "stick" }
+    },
+    {
+      "type": "alignment",
+      "props": {
+        "align": "center",
+        "child": {
+          "type": "box",
+          "props": {
+            "width": 0.6,
+            "height": 0.6,
+            "borderRadius": 50,
+            "color": "#onSurface",
+            "opacity": 0.4,
+            "offsetX": -2.5,
+            "offsetY": 0
+          }
+        }
+      },
+      "visibility": { "layer": "stick" }
+    },
+    {
+      "type": "alignment",
+      "props": {
+        "align": "center",
+        "child": {
+          "type": "box",
+          "props": {
+            "width": 0.6,
+            "height": 0.6,
+            "borderRadius": 50,
+            "color": "#onSurface",
+            "opacity": 0.4,
+            "offsetX": 2.5,
+            "offsetY": 0
+          }
+        }
+      },
+      "visibility": { "layer": "stick" }
     }
   ]
 }

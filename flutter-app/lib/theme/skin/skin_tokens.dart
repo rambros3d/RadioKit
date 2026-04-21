@@ -3,6 +3,9 @@ import 'dart:ui';
 /// Defines how the background grid should be rendered.
 enum GridStyle { lines, dots, none }
 
+/// Defines which rendering engine to use for the skin.
+enum SkinRendererType { native, svg }
+
 /// Data class representing a style override from the manifest 'styles' map.
 class SkinStyle {
   final Color primary;
@@ -73,6 +76,9 @@ class SkinManifest {
   /// Grid spacing in virtual units.
   final double gridSpacing;
 
+  /// The rendering engine to use for this skin.
+  final SkinRendererType renderer;
+
   SkinManifest({
     required this.name,
     required this.version,
@@ -83,6 +89,7 @@ class SkinManifest {
     this.colors = const {},
     this.gridStyle = GridStyle.lines,
     this.gridSpacing = 50.0,
+    this.renderer = SkinRendererType.svg,
   });
 
   factory SkinManifest.fromJson(Map<String, dynamic> json) {
@@ -98,7 +105,10 @@ class SkinManifest {
 
     // Parse Grid Config
     final gridStyle = json['gridStyle'] == 'none' ? GridStyle.none : (json['gridStyle'] == 'dots' ? GridStyle.dots : GridStyle.lines);
-    final gridSpacing = (json['gridSpacing'] as num?)?.toDouble() ?? 50.0;
+    final int gridSpacingValue = (json['gridSpacing'] as num?)?.toInt() ?? 50;
+    final gridSpacing = gridSpacingValue.toDouble();
+
+    final renderer = json['renderer'] == 'native' ? SkinRendererType.native : SkinRendererType.svg;
 
     return SkinManifest(
       name: json['name'],
@@ -110,6 +120,7 @@ class SkinManifest {
       colors: colorsMap,
       gridStyle: gridStyle,
       gridSpacing: gridSpacing,
+      renderer: renderer,
     );
   }
 }
