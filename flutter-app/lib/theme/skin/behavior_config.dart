@@ -69,11 +69,62 @@ class PhysicsSpec {
   }
 }
 
+enum LayerType { svg, neumorphic, led, icon, text, alignment, box, switch_layer, slider }
+
+/// A renderable layer within a widget, part of the Universal Skinning Engine.
+class RenderingLayer {
+  final LayerType type;
+  final Map<String, dynamic> props;
+  final Map<String, dynamic>? visibility;
+  
+  // Recursive layers for complex widgets like switches or sliders
+  final List<RenderingLayer>? children;
+
+  RenderingLayer({
+    required this.type,
+    required this.props,
+    this.visibility,
+    this.children,
+  });
+
+  factory RenderingLayer.fromJson(Map<String, dynamic> json) {
+    final children = <RenderingLayer>[];
+    if (json['children'] != null) {
+      for (var l in (json['children'] as List)) {
+        children.add(RenderingLayer.fromJson(l as Map<String, dynamic>));
+      }
+    }
+
+    return RenderingLayer(
+      type: _parseType(json['type'] as String),
+      props: (json['props'] as Map<String, dynamic>?) ?? {},
+      visibility: json['visibility'] as Map<String, dynamic>?,
+      children: children.isNotEmpty ? children : null,
+    );
+  }
+
+  static LayerType _parseType(String type) {
+    switch (type) {
+      case 'svg': return LayerType.svg;
+      case 'neumorphic': return LayerType.neumorphic;
+      case 'led': return LayerType.led;
+      case 'icon': return LayerType.icon;
+      case 'text': return LayerType.text;
+      case 'alignment': return LayerType.alignment;
+      case 'box': return LayerType.box;
+      case 'switch': return LayerType.switch_layer;
+      case 'slider': return LayerType.slider;
+      default: return LayerType.svg;
+    }
+  }
+}
+
 /// Root config object for a widget variant.
 /// Now handles both Asset Mapping (states/layers) and Behavioral Logic (physics/animations).
 class BehaviorConfig {
   final Map<String, String> states;
   final Map<String, String> layers;
+  final List<RenderingLayer> renderingLayers; // NEW: Universal Rendering
   final Map<String, AnimationSpec> animations;
   final PhysicsSpec physics;
   final Map<String, String> haptics;
@@ -84,6 +135,7 @@ class BehaviorConfig {
   BehaviorConfig({
     this.states = const {},
     this.layers = const {},
+    this.renderingLayers = const [],
     required this.animations,
     required this.physics,
     required this.haptics,
@@ -95,6 +147,7 @@ class BehaviorConfig {
   factory BehaviorConfig.empty() => BehaviorConfig(
         states: {},
         layers: {},
+        renderingLayers: [],
         animations: {},
         physics: PhysicsSpec(),
         haptics: {},
@@ -111,9 +164,17 @@ class BehaviorConfig {
       });
     }
 
+    final renderLayers = <RenderingLayer>[];
+    if (json['renderingLayers'] != null) {
+      for (var l in (json['renderingLayers'] as List)) {
+        renderLayers.add(RenderingLayer.fromJson(l as Map<String, dynamic>));
+      }
+    }
+
     return BehaviorConfig(
       states: (json['states'] as Map<String, dynamic>?)?.cast<String, String>() ?? {},
       layers: (json['layers'] as Map<String, dynamic>?)?.cast<String, String>() ?? {},
+      renderingLayers: renderLayers,
       animations: anims,
       physics: PhysicsSpec.fromJson(json['physics'] ?? {}),
       haptics: (json['haptics'] ?? {}).cast<String, String>(),

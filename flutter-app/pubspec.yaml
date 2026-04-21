@@ -62,6 +62,19 @@ flutter:
     - resources/skins/standard/sounds/
     - resources/skins/debug/
     - resources/skins/neon/
+    - resources/skins/neon/button_push/
+    - resources/skins/neon/button_toggle/
+    - resources/skins/neon/toggle_switch/
+    - resources/skins/neon/slider/
+    - resources/skins/neon/joystick/
+    - resources/skins/neon/knob/
+    - resources/skins/neon/led/
+    - resources/skins/neon/multiple_button/
+    - resources/skins/neon/multiple_select/
+    - resources/skins/neon/display/
+    - resources/skins/neon/global/
+    - resources/skins/neon/sounds/
+    - resources/skins/neon/text/
 
 flutter_gen:
   output: lib/gen/

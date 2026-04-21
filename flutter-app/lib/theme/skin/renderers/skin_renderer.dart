@@ -26,6 +26,9 @@ class RKSkinState {
   final double valueY; // 2D Y-axis (-1 to 1)
   final int styleIndex;
   final Color? colorOverride; // For dynamic RGB LEDs
+  final String label;
+  final String icon;
+  final double scale;
 
   const RKSkinState({
     this.isPressed = false,
@@ -36,5 +39,8 @@ class RKSkinState {
     this.valueY = 0.0,
     this.styleIndex = 0,
     this.colorOverride,
+    this.label = '',
+    this.icon = '',
+    this.scale = 1.0,
   });
 }

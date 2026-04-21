@@ -9,12 +9,21 @@
       "background": "#000000",
       "surface": "#111111",
       "onSurface": "#FFFFFF",
-      "outline": "#333333"
+      "outline": "#333333",
+      "toggleTrack": "#9fa19f",
+      "toggleActive": "#5400f3",
+      "neumorphicLight": "#ffffff",
+      "neumorphicShadow": "#88a5bf",
+      "sliderOrange": "#fd8421"
     },
     "effects": {
       "glassOpacity": 0.0,
       "glassBlur": 0.0,
-      "glowIntensity": 1.0
+      "glowIntensity": 1.0,
+      "neumorphicDepth": 4.0,
+      "neumorphicIntensity": 0.2,
+      "neumorphicLightSource": {"x": -1.0, "y": -1.0},
+      "neumorphicCurve": 0.1
     },
     "typography": {
       "fontFamily": "VT323",

@@ -10,12 +10,14 @@ class ButtonWidget extends StatefulWidget {
   final WidgetConfig config;
   final int value;
   final ValueChanged<int> onChanged;
+  final double scale;
 
   const ButtonWidget({
     super.key,
     required this.config,
     required this.value,
     required this.onChanged,
+    this.scale = 1.0,
   });
 
   @override
@@ -65,6 +67,9 @@ class _ButtonWidgetState extends State<ButtonWidget> {
           isOn: widget.value != 0,
           styleIndex: widget.config.style,
           isEnabled: true,
+          label: widget.config.label,
+          icon: widget.config.icon,
+          scale: widget.scale,
         ),
       ),
     );

@@ -1,5 +1,8 @@
 import 'dart:ui';
 
+/// Defines how the background grid should be rendered.
+enum GridStyle { lines, dots, none }
+
 /// Data class representing a style override from the manifest 'styles' map.
 class SkinStyle {
   final Color primary;
@@ -61,8 +64,14 @@ class SkinManifest {
   final String? preview;
   final SkinTokens tokens;
 
-  /// App-wide color overrides (accent, background, grid).
+  /// Root-level color overrides (accent, background, grid).
   final Map<String, Color> colors;
+
+  /// Background grid rendering style.
+  final GridStyle gridStyle;
+
+  /// Grid spacing in virtual units.
+  final double gridSpacing;
 
   SkinManifest({
     required this.name,
@@ -72,6 +81,8 @@ class SkinManifest {
     this.preview,
     required this.tokens,
     this.colors = const {},
+    this.gridStyle = GridStyle.lines,
+    this.gridSpacing = 50.0,
   });
 
   factory SkinManifest.fromJson(Map<String, dynamic> json) {
@@ -85,6 +96,10 @@ class SkinManifest {
       });
     }
 
+    // Parse Grid Config
+    final gridStyle = json['gridStyle'] == 'none' ? GridStyle.none : (json['gridStyle'] == 'dots' ? GridStyle.dots : GridStyle.lines);
+    final gridSpacing = (json['gridSpacing'] as num?)?.toDouble() ?? 50.0;
+
     return SkinManifest(
       name: json['name'],
       version: json['version'],
@@ -93,6 +108,8 @@ class SkinManifest {
       preview: json['preview'],
       tokens: SkinTokens.fromJson(json['tokens']),
       colors: colorsMap,
+      gridStyle: gridStyle,
+      gridSpacing: gridSpacing,
     );
   }
 }

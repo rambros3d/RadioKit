@@ -10,12 +10,14 @@ class SlideSwitchWidget extends StatelessWidget {
   final WidgetConfig config;
   final int value;
   final ValueChanged<int> onChanged;
+  final double scale;
 
   const SlideSwitchWidget({
     super.key,
     required this.config,
     required this.value,
     required this.onChanged,
+    this.scale = 1.0,
   });
 
   @override
@@ -29,6 +31,9 @@ class SlideSwitchWidget extends StatelessWidget {
         state: RKSkinState(
           isOn: active,
           styleIndex: config.style,
+          label: config.label,
+          icon: config.icon,
+          scale: scale,
         ),
       ),
     );

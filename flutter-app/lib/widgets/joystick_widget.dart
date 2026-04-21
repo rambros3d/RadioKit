@@ -15,6 +15,7 @@ class JoystickWidget extends StatefulWidget {
   final int x;
   final int y;
   final void Function(int x, int y) onChanged;
+  final double scale;
 
   const JoystickWidget({
     super.key,
@@ -22,6 +23,7 @@ class JoystickWidget extends StatefulWidget {
     required this.x,
     required this.y,
     required this.onChanged,
+    this.scale = 1.0,
   });
 
   @override
@@ -163,6 +165,9 @@ class _JoystickWidgetState extends State<JoystickWidget>
                     layer: 'base',
                     state: RKSkinState(
                       styleIndex: widget.config.style,
+                      label: widget.config.label,
+                      icon: widget.config.icon,
+                      scale: widget.scale,
                     ),
                   ),
                   // Layer 2: Stick (Moving)
@@ -176,6 +181,9 @@ class _JoystickWidgetState extends State<JoystickWidget>
                         state: RKSkinState(
                           isPressed: true,
                           styleIndex: widget.config.style,
+                          label: widget.config.label,
+                          icon: widget.config.icon,
+                          scale: widget.scale,
                         ),
                       ),
                     ),

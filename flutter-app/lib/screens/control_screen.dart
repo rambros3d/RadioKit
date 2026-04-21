@@ -18,6 +18,8 @@ import '../widgets/led_widget.dart';
 import '../widgets/text_widget.dart';
 import '../widgets/multiple_widget.dart';
 import '../widgets/knob_widget.dart';
+import '../theme/skin/skin_manager.dart';
+import '../theme/skin/skin_tokens.dart';
 
 /// Dynamic widget rendering screen for the connected RadioKit device.
 class ControlScreen extends StatefulWidget {
@@ -33,7 +35,7 @@ class _ControlScreenState extends State<ControlScreen> {
   Future<void> _disconnect() async {
     final dp = context.read<DeviceProvider>();
     await dp.disconnect();
-    if (mounted) context.go('/pair');
+    if (mounted) context.go('/models');
   }
 
   void _openDebug() {
@@ -202,50 +204,55 @@ class _ControlScreenState extends State<ControlScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final (canvasVW, canvasVH) = _canvasDimensions(orientation);
-
-        const padding = 16.0;
-        final availW = constraints.maxWidth  - padding * 2;
-        final availH = constraints.maxHeight - padding * 2;
         final aspectRatio = canvasVW / canvasVH;
 
-        double physW, physH;
-        if (availW / availH > aspectRatio) {
-          physH = availH;
-          physW = physH * aspectRatio;
-        } else {
-          physW = availW;
-          physH = physW / aspectRatio;
-        }
-
-        final scaleX = physW / canvasVW;
-        final scaleY = physH / canvasVH;
-
         return Center(
-          child: Container(
-            width: physW,
-            height: physH,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              border: Border.all(
-                  color: Theme.of(context).dividerColor, width: 1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: Stack(
-                children: [
-                  CustomPaint(
-                    size: Size(physW, physH),
-                    painter: _GridPainter(
-                        color: Theme.of(context)
-                            .dividerColor
-                            .withValues(alpha: 0.3)),
-                  ),
-                  ...deviceProvider.widgets.map((config) {
-                    return _buildPositionedWidget(
-                        config, scaleX, scaleY, canvasVH, deviceProvider);
-                  }),
-                ],
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: AspectRatio(
+              aspectRatio: aspectRatio,
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  // Unified scale ensures 1:1 physical aspect ratio for virtual units
+                  final scale = box.maxWidth / canvasVW;
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: Stack(
+                        children: [
+                          ListenableBuilder(
+                            listenable: SkinManager(),
+                            builder: (context, _) {
+                              final skin = SkinManager().current;
+                              final gridColor = skin?.colors['grid'] ?? Theme.of(context).dividerColor.withValues(alpha: 0.3);
+                              
+                              return CustomPaint(
+                                size: Size.infinite,
+                                painter: _GridPainter(
+                                  color: gridColor,
+                                  style: skin?.gridStyle ?? GridStyle.lines,
+                                  spacing: 10.0, // Fixed 10-unit grid for v3
+                                  scaleX: scale,
+                                  scaleY: scale,
+                                ),
+                              );
+                            },
+                          ),
+                          ...deviceProvider.widgets.map((config) {
+                            return _buildPositionedWidget(
+                                config, scale, canvasVH, deviceProvider);
+                          }),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -256,19 +263,19 @@ class _ControlScreenState extends State<ControlScreen> {
 
   Widget _buildPositionedWidget(
     WidgetConfig config,
-    double scaleX,
-    double scaleY,
+    double scale,
     double canvasVH,
     DeviceProvider deviceProvider,
   ) {
-    final scaledW  = config.w * scaleX;
-    final scaledH  = config.h * scaleY;
-    final screenX  = config.x * scaleX;
-    final screenY  = (canvasVH - config.y) * scaleY;
+    final scaledW  = config.w * scale;
+    final scaledH  = config.h * scale;
+    final screenX  = config.x * scale;
+    final screenY  = (canvasVH - config.y) * scale;
     final left     = screenX - scaledW / 2;
     final top      = screenY - scaledH / 2;
     final angleRad = config.rotationDegrees * pi / 180.0;
-    final state    = deviceProvider.widgetState;
+    
+    final state = deviceProvider.widgetState;
 
     return Positioned(
       left: left,
@@ -278,13 +285,13 @@ class _ControlScreenState extends State<ControlScreen> {
       child: Transform.rotate(
         angle: angleRad,
         alignment: Alignment.center,
-        child: _buildWidgetForConfig(config, state, deviceProvider),
+        child: _buildWidgetForConfig(config, state, deviceProvider, scale),
       ),
     );
   }
 
   Widget _buildWidgetForConfig(
-      WidgetConfig config, RadioWidgetState? state, DeviceProvider dp) {
+      WidgetConfig config, RadioWidgetState? state, DeviceProvider dp, double scale) {
     switch (config.typeId) {
       case kWidgetButton:
         final value = state?.inputValues[config.widgetId]?.first ?? 0;
@@ -292,6 +299,7 @@ class _ControlScreenState extends State<ControlScreen> {
           config: config,
           value: value,
           onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
+          scale: scale,
         );
 
       case kWidgetSwitch:
@@ -300,6 +308,7 @@ class _ControlScreenState extends State<ControlScreen> {
           config: config,
           value: value,
           onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
+          scale: scale,
         );
 
       case kWidgetSlideSwitch:
@@ -308,6 +317,7 @@ class _ControlScreenState extends State<ControlScreen> {
           config: config,
           value: slideValue,
           onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
+          scale: scale,
         );
 
       case kWidgetSlider:
@@ -316,6 +326,7 @@ class _ControlScreenState extends State<ControlScreen> {
           config: config,
           value: value,
           onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
+          scale: scale,
         );
 
       case kWidgetJoystick:
@@ -325,15 +336,16 @@ class _ControlScreenState extends State<ControlScreen> {
           x: values.isNotEmpty ? values[0] : 0,
           y: values.length > 1 ? values[1] : 0,
           onChanged: (x, y) => dp.setInputValue(config.widgetId, [x, y]),
+          scale: scale,
         );
 
       case kWidgetLed:
         final value = state?.outputValues[config.widgetId] ?? [0, 0, 0, 0];
-        return LedWidget(config: config, value: value);
+        return LedWidget(config: config, value: value, scale: scale);
 
       case kWidgetText:
         final value = state?.outputValues[config.widgetId] ?? '';
-        return TextWidget(config: config, text: value.toString());
+        return TextWidget(config: config, text: value.toString(), scale: scale);
 
       case kWidgetMultiple:
         final value = state?.inputValues[config.widgetId]?.first ?? 0;
@@ -341,6 +353,7 @@ class _ControlScreenState extends State<ControlScreen> {
           config: config,
           value: value,
           onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
+          scale: scale,
         );
 
       case kWidgetKnob:
@@ -349,6 +362,7 @@ class _ControlScreenState extends State<ControlScreen> {
           config: config,
           value: knobValue,
           onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
+          scale: scale,
         );
 
       default:
@@ -374,22 +388,57 @@ class _ControlScreenState extends State<ControlScreen> {
 
 class _GridPainter extends CustomPainter {
   final Color color;
-  _GridPainter({required this.color});
+  final GridStyle style;
+  final double spacing;
+  final double scaleX;
+  final double scaleY;
+
+  _GridPainter({
+    required this.color,
+    required this.style,
+    required this.spacing,
+    required this.scaleX,
+    required this.scaleY,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (style == GridStyle.none) return;
+
     final paint = Paint()
       ..color = color
       ..strokeWidth = 0.5;
-    const spacing = 50.0;
-    for (int i = 0; i <= (size.width / spacing).ceil(); i++) {
-      canvas.drawLine(Offset(i * spacing, 0), Offset(i * spacing, size.height), paint);
-    }
-    for (int i = 0; i <= (size.height / spacing).ceil(); i++) {
-      canvas.drawLine(Offset(0, i * spacing), Offset(size.width, i * spacing), paint);
+
+    final physSpacingX = spacing * scaleX;
+    final physSpacingY = spacing * scaleY;
+
+    if (style == GridStyle.lines) {
+      // Draw vertical lines
+      for (double x = 0; x <= size.width + 0.1; x += physSpacingX) {
+        canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+      }
+      // Draw horizontal lines
+      for (double y = 0; y <= size.height + 0.1; y += physSpacingY) {
+        canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+      }
+    } else {
+      // Draw dots
+      paint.style = PaintingStyle.fill;
+      const radius = 1.25;
+      for (double x = 0; x <= size.width + 0.1; x += physSpacingX) {
+        for (double y = 0; y <= size.height + 0.1; y += physSpacingY) {
+          canvas.drawCircle(Offset(x, y), radius, paint);
+        }
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _GridPainter oldDelegate) {
+    return oldDelegate.color != color ||
+           oldDelegate.style != style ||
+           oldDelegate.spacing != spacing ||
+           oldDelegate.scaleX != scaleX ||
+           oldDelegate.scaleY != scaleY;
+  }
 }

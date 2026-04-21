@@ -55,19 +55,31 @@ RK_Slider speed({ .label="Speed", .value=50 });
 
 ### Common variables
 
+All widgets share these positional and dimensional parameters:
 
-| Field            | Type          | Description                                            | Default  |
-| ---------------- | ------------- | ------------------------------------------------------ | -------- |
-| `**label**`      | `const char*` | The text label displayed.                              | REQUIRED |
-| `**icon**`       | `const char*` | Optional icon name (e.g. "wifi")                       | `nullptr`|
-| `**x**`, `**y**` | `uint8_t`     | Center coordinates ($0\dots 250$).                     | REQUIRED |
-| `**rotation**`   | `int16_t`     | Rotation in degrees.                                   | `0`      |
-| `**scale**`      | `float`       | Global size multiplier.                                | `1.0`    |
-| `**aspect**`     | `float`       | Width/Height ratio.                                    | `1.0`    |
-| `**enabled**`    | `bool`        | Visibility and traffic toggle.                         | `true`   |
-| `**variant**`    | `uint8_t`     | Widget-specific variation (visual style).              | `0`      |
-| `**style**`      | `uint8_t`     | Visual theme index (Primary, Secondary, Danger, etc.). | `0`      |
+| Variable       | Type        | Description                                            | Default |
+|----------------|-------------|--------------------------------------------------------|---------|
+| **x**, **y**   | uint8       | Center position in virtual canvas units (0–200).       | 100, 100|
+| **width**      | uint8       | Width multiplier × 10 (e.g., 20 = 2.0×).               | 10      |
+| **height**     | uint8       | Height multiplier × 10 (e.g., 10 = 1.0×).              | 10      |
+| **rotation**   | int16       | Rotation in degrees (clockwise).                       | 0       |
+| **style**      | uint8       | Visual style ID (Theme/Color variant).                 | 0       |
 
+### Layout Calculation
+
+The final physical size on screen is calculated using a **Baseline × Scale** model:
+
+1.  **Baseline Dimensions**: Fixed values per widget type (at scale 1.0).
+    *   **BaseHeight**: Default height for all widgets (commonly 10 units).
+    *   **Aspect Ratio**: Default aspect for the type (e.g., 5.0 for Slider). 
+2.  **Final Dimensions**:
+    *   `Height = BaseHeight * scale_height`
+    *   `Width  = (BaseHeight * Aspect) * scale_height * ExtraWidthScale`
+        *   `ExtraWidthScale` is only active for resizable widgets (Slider, Text) via the `width` parameter.
+        *   For all other widgets, it is locked to `1.0`.
+
+> [!TIP]
+> This model ensure that widgets scale proportionally when only `height` is changed, while still allowing independent width control for resizable types.
 
 ---
 
@@ -88,7 +100,7 @@ struct RK_ButtonProps {
     const char* icon  = nullptr;
     uint8_t     x = 0, y = 0;
     int16_t     rotation = 0;
-    float       scale = 1.0;
+    float       height = 1.0;
     //--------------------------
     uint8_t     style = 0;
     bool        state = false;
@@ -137,8 +149,7 @@ struct RK_SlideSwitchProps {
     const char* icon  = nullptr;
     uint8_t     x = 0, y = 0;
     int16_t     rotation = 0;
-    float       scale = 1.0;
-    float       aspect = 1.0;
+    float       height = 1.0;
     //--------------------------
     uint8_t     style = 0;
     bool        state = false;
@@ -186,8 +197,8 @@ struct RK_SliderProps {
     const char* label    = nullptr;
     uint8_t     x = 0, y = 0;
     int16_t     rotation = 0;
-    float       scale    = 1.0;
-    float       aspect   = 1.0;
+    float       width    = 1.0;
+    float       height   = 1.0;
     //--------------------------
     uint8_t     centering = RK_CENTER_NONE; // RK_CENTER_NONE/LEFT/CENTER/RIGHT
     uint8_t     detents   = 0;             // 0=continuous, 1-63=snap positions
@@ -207,7 +218,7 @@ struct RK_SliderProps {
 
 ```cpp
 // Continuous horizontal slider, full range:
-RK_Slider throttle({ .label="Throttle", .x=50, .y=40, .aspect=2.5 });
+RK_Slider throttle({ .label="Throttle", .x=50, .y=40, .width=2.5 });
 
 // Spring-returns to centre (e.g. trim / pitch):
 RK_Slider pitch({ .label="Pitch", .centering=RK_CENTER, .x=80, .y=40 });
@@ -233,7 +244,7 @@ struct RK_KnobProps {
     const char* label    = nullptr;
     const char* icon     = nullptr; // Shown on knob face
     uint8_t     x = 0, y = 0;
-    float       scale    = 1.0;
+    float       height    = 1.0;
     uint8_t     style    = 0;
     //--------------------------
     uint8_t     centering = RK_CENTER_NONE;
@@ -278,7 +289,7 @@ struct RK_JoystickProps {
     const char* label = nullptr;
     uint8_t     x = 0, y = 0;
     int16_t     rotation = 0;
-    float       scale = 1.0;
+    float       height = 1.0;
     bool        enabled = true;
     uint8_t     variant = 0;
     //--------------------------
@@ -328,7 +339,7 @@ struct RK_MultipleProps {
     const char* icon  = nullptr;
     uint8_t     x = 0, y = 0;
     int16_t     rotation = 0;
-    float       scale = 1.0;
+    float       height = 1.0;
     //--------------------------
     uint8_t     style = 0;
     uint8_t     variant = 0;
@@ -390,7 +401,7 @@ struct RK_LEDProps {
     const char* icon  = nullptr;
     uint8_t     x = 0, y = 0;
     int16_t     rotation = 0;
-    float       scale = 1.0;
+    float       height = 1.0;
     //--------------------------
     uint8_t     style = 0;
     bool        state = false;
@@ -438,7 +449,8 @@ struct RK_TextProps {
     const char* icon  = nullptr;
     uint8_t     x = 0, y = 0;
     int16_t     rotation = 0;
-    float       scale = 1.0;
+    float       width = 1.0;
+    float       height = 1.0;
     //--------------------------
     uint8_t     style = 0;
     const char* text = nullptr;

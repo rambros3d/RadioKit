@@ -1,0 +1,54 @@
+{
+  "renderingLayers": [
+    {
+      "type": "slider",
+      "children": [
+        {
+          "type": "box",
+          "props": {
+            "role": "track",
+            "width": 48.0,
+            "height": 9.6,
+            "borderRadius": 4.8,
+            "color": "#111111",
+            "boxShadow": [
+              { "inset": true, "color": "#000000", "opacity": 0.4, "offsetX": 1.2, "offsetY": 1.6, "blur": 2.0 },
+              { "inset": true, "color": "#ffffff", "opacity": 0.05, "offsetX": -1.2, "offsetY": -1.6, "blur": 2.0 }
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "props": {
+            "role": "track_decoration",
+            "text": "0 1 2 3 4 5 6 7 8 9",
+            "size": 2.8,
+            "color": "#333333",
+            "shadows": [
+              { "color": "#000000", "opacity": 0.4, "offsetX": 0.2, "offsetY": 0.2, "blur": 0.2 }
+            ]
+          }
+        },
+        {
+          "type": "box",
+          "props": {
+            "role": "thumb",
+            "width": 7.2,
+            "height": 7.2,
+            "borderRadius": 20.0,
+            "gradient": {
+              "type": "radial",
+              "colors": ["#fd8421", "#cc6600"],
+              "center": "center",
+              "radius": 1.0
+            },
+            "boxShadow": [
+              { "color": "#000000", "opacity": 0.4, "offsetX": 0.8, "offsetY": 0.8, "blur": 1.2 },
+              { "inset": true, "color": "#ffffff", "opacity": 0.3, "offsetX": 0.2, "offsetY": 0.2, "blur": 0.4 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -9,12 +9,14 @@ class MultipleWidget extends StatelessWidget {
   final WidgetConfig config;
   final int value;
   final ValueChanged<int> onChanged;
+  final double scale;
 
   const MultipleWidget({
     super.key,
     required this.config,
     required this.value,
     required this.onChanged,
+    this.scale = 1.0,
   });
 
   String get _folder => config.variant == 1 ? 'multiple_select' : 'multiple_button';
@@ -27,15 +29,15 @@ class MultipleWidget extends StatelessWidget {
     final bool isBitmask = config.variant == 1;
 
     return LayoutBuilder(builder: (context, constraints) {
-      final isHorizontal = constraints.maxWidth > constraints.maxHeight;
+      final isHorizontal = config.w >= config.h;
 
-      final children = <Widget>[];
+      final dividers = <Widget>[];
       for (int i = 0; i < items.length; i++) {
         final bool isActive = isBitmask 
             ? (value & (1 << i)) != 0 
             : (value == i);
 
-        children.add(
+        dividers.add(
           Expanded(
             child: GestureDetector(
               onTap: () {
@@ -48,10 +50,14 @@ class MultipleWidget extends StatelessWidget {
               },
               child: DynamicSkinRenderer(
                 widgetFolder: _folder,
+                layer: 'item',
                 state: RKSkinState(
                   isOn: isActive,
                   styleIndex: config.style,
-                  value: i / (items.length - 1), // Optional: individual item index normalized
+                  value: i / (items.length - 1), 
+                  label: items[i].label,
+                  icon: items[i].icon,
+                  scale: scale,
                 ),
               ),
             ),
@@ -59,9 +65,26 @@ class MultipleWidget extends StatelessWidget {
         );
       }
 
-      return isHorizontal 
-          ? Row(children: children) 
-          : Column(children: children);
+      final content = isHorizontal 
+          ? Row(children: dividers) 
+          : Column(children: dividers);
+
+      return Stack(
+        children: [
+          DynamicSkinRenderer(
+            widgetFolder: _folder,
+            layer: 'base',
+            state: RKSkinState(
+              styleIndex: config.style,
+              isOn: value != 0,
+              label: config.label,
+              icon: config.icon,
+              scale: scale,
+            ),
+          ),
+          Positioned.fill(child: content),
+        ],
+      );
     });
   }
 }

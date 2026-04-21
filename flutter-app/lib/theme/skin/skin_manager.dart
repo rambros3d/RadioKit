@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart' show rootBundle, AssetManifest;
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,12 +30,15 @@ class SkinManager extends ChangeNotifier {
 
   final Map<String, BehaviorConfig> _configCache = {};
   final Map<String, SkinManifest> _manifestCache = {};
+  AssetManifest? _assetManifest;
 
   SkinManifest? get current => _currentManifest;
   String get activeSkinName => _activeSkinName;
 
   /// Initializes the skin engine and local storage paths.
   Future<void> init() async {
+    _assetManifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    
     if (!kIsWeb) {
       try {
         final appDocs = await getApplicationDocumentsDirectory();
@@ -227,6 +230,11 @@ class SkinManager extends ChangeNotifier {
   }
 
   Future<bool> _assetExists(String path) async {
+    // If we have a manifest, check it first to avoid 404s on Web
+    if (_assetManifest != null) {
+      return _assetManifest!.listAssets().contains(path);
+    }
+
     try {
       await rootBundle.load(path);
       return true;

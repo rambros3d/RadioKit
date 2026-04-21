@@ -1,6 +1,13 @@
-# RadioKit - Controller UI Skins (v1.6)
+# RadioKit - Controller UI Skins (v1.7)
 
-RadioKit v1.6 introduces a **100% Native Vector Engine**. We have completely removed support for HTML/CSS rendering to ensure maximum performance, buttery-smooth interactions, and a consistent "mechanical" feel across all platforms.
+RadioKit v1.7 introduces **Independent Width & Height Scaling** for supported widgets, while maintaining a high-fidelity native vector engine for all skin packs.
+
+## 1. Dimensional Scaling
+Starting with v1.7, the layout engine strictly separates width and height multipliers to provide more intuitive control over the dashboard layout:
+
+- **Variable Scaling**: Slider and Text widgets allow independent `width` and `height` factors.
+- **Dynamic Aspect**: `MultipleButton` and `MultipleSelect` widgets automatically calculate their width based on the number of items (`1 : N`), scaled by the `height` factor.
+- **Fixed Scaling**: All other widgets (Joystick, Knob, LED, Button, Switch) are scaled using a single `height` factor to preserve their natural shapes.
 
 ## 1. Pure Native Architecture
 

@@ -1,0 +1,22 @@
+{
+  "renderingLayers": [
+    {
+      "type": "neumorphic",
+      "props": {
+        "depth": "@neumorphicDepth",
+        "intensity": "@neumorphicIntensity",
+        "borderRadius": 1.6,
+        "color": "#surface",
+        "margin": 1.2
+      }
+    },
+    {
+      "type": "text",
+      "props": {
+        "text": "$state.label",
+        "size": 2.4,
+        "color": "#primary"
+      }
+    }
+  ]
+}

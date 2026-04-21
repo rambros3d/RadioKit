@@ -1,0 +1,11 @@
+{
+  "renderingLayers": [
+    {
+      "type": "text",
+      "props": {
+        "color": "#onSurface",
+        "size": 2.8
+      }
+    }
+  ]
+}

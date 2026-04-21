@@ -1,19 +1,29 @@
 import 'protocol.dart';
 
-// ── Per-type base sizes in canvas units ──────────────────────────────────────
-// These are the default H of each widget at scale=1.0.
-// W = baseH * scale * (aspect / 10.0)
-// H = baseH * scale
-const Map<int, double> kWidgetBaseSize = {
-  kWidgetButton:      10.0,
-  kWidgetSwitch:      10.0,
+// These are the baseline dimensions of each widget at scale=1.0.
+// Resizable widgets (Slider, Text) use both maps. 
+// Non-resizable widgets ignore kWidgetBaseWidth and derive width from height * aspect.
+const Map<int, double> kWidgetBaseHeight = {
+  kWidgetButton:      15.0,
+  kWidgetSlideSwitch:  12.0,
   kWidgetSlider:      10.0,
   kWidgetJoystick:    20.0,
-  kWidgetLed:          8.0,
-  kWidgetText:         8.0,
+  kWidgetLed:          15.0,
+  kWidgetText:         10.0,
   kWidgetMultiple:    10.0,
-  kWidgetSlideSwitch:  8.0,
-  kWidgetKnob:        12.0,
+  kWidgetKnob:        20.0,
+};
+
+const Map<int, double> kWidgetDefaultAspect = {
+  kWidgetButton:      1.0, // Visual Square
+  // kWidgetSwitch:      5.0, // Wide Pill
+  kWidgetSlideSwitch: 1.5,
+  kWidgetSlider:      1.0, 
+  kWidgetJoystick:    1.0, // Visual Square
+  kWidgetLed:         1.0, // Visual Square
+  kWidgetMultiple:    1.0,
+  kWidgetKnob:        1.0, // Visual Square
+  kWidgetText:         5.0,
 };
 
 /// Represents a single item in a Multiple widget.
@@ -39,11 +49,15 @@ class WidgetConfig {
   /// Center Y in virtual canvas coordinates, bottom-left origin (uint8).
   final double y;
 
-  /// Scale factor × 10 (uint8). e.g. 20 = 2.0×.
-  final int scale;
+  /// Scale Width factor × 10 (uint8). 
+  /// From the user/firmware perspective, this is "scalewidth".
+  /// e.g. 20 = 2.0× multiplier.
+  final int width;
 
-  /// Aspect ratio × 10 (uint8). e.g. 10 = 1.0 (square). 0 = use widget default.
-  final int aspect;
+  /// Scale Height factor × 10 (uint8). 
+  /// From the user/firmware perspective, this is "scaleheight".
+  /// e.g. 10 = 1.0× multiplier.
+  final int height;
 
   /// Style / color variant (uint8, v3). See kStyle* constants.
   final int style;
@@ -76,23 +90,38 @@ class WidgetConfig {
   /// Multiply by 2 to get display degrees.
   final int rotation;
 
-  /// Scale as a float (scale / 10.0).
-  double get scaleF => scale / 10.0;
+  /// The float multiplier for width (scalewidth).
+  double get widthF => width / 10.0;
 
-  /// Aspect ratio as a float. Falls back to widget-type default if 0.
-  double get aspectF {
-    if (aspect != 0) return aspect / 10.0;
-    return (kWidgetDefaultAspect[typeId] ?? 10) / 10.0;
+  /// The float multiplier for height (scaleheight).
+  double get heightF => height / 10.0;
+
+  /// Whether this widget supports independent width/height control.
+  bool get isResizable => typeId == kWidgetSlider || typeId == kWidgetText;
+
+  /// The intrinsic aspect ratio of this widget.
+  /// For Multiple widgets, this is derived from the number of menu items.
+  double get dynamicAspect {
+    if (typeId == kWidgetMultiple) {
+      final itemsCount = multipleItems.length;
+      return itemsCount > 0 ? itemsCount.toDouble() : 1.0;
+    }
+    return kWidgetDefaultAspect[typeId] ?? 1.0;
   }
 
   /// Base height for this widget type in canvas units at scale 1.0.
-  double get baseH => kWidgetBaseSize[typeId] ?? 10.0;
+  double get baseH => kWidgetBaseHeight[typeId] ?? 10.0;
 
-  /// Computed height in canvas units.
-  double get h => baseH * scaleF;
+  /// Base width derived from height and aspect ratio.
+  double get baseW => baseH * dynamicAspect;
 
-  /// Computed width in canvas units.
-  double get w => h * aspectF;
+  /// Computed height in absolute virtual units for the canvas.
+  double get h => baseH * heightF;
+
+  /// Computed width in absolute virtual units for the canvas.
+  /// For all widgets, width scales with height scale [heightF]. 
+  /// For resizable widgets, the [widthF] acts as an additional multiplier.
+  double get w => baseW * heightF * (isResizable ? widthF : 1.0);
 
   /// Display rotation in degrees.
   double get rotationDegrees => rotation.toDouble();
@@ -102,8 +131,8 @@ class WidgetConfig {
     required this.widgetId,
     required this.x,
     required this.y,
-    required this.scale,
-    required this.aspect,
+    this.width = 10,
+    required this.height,
     this.style   = 0,
     this.variant = 0,
     this.strMask = 0,
@@ -138,7 +167,7 @@ class WidgetConfig {
   @override
   String toString() =>
       'WidgetConfig(id=$widgetId, type=$typeName, label="$label", '
-      'pos=($x,$y), scale=$scaleF× aspect=$aspectF → '
+      'pos=($x,$y), w=$widthF× h=$heightF× → '
       '${w.toStringAsFixed(1)}×${h.toStringAsFixed(1)}, '
       'style=$style, variant=$variant, rot=${rotationDegrees}°)';
 }

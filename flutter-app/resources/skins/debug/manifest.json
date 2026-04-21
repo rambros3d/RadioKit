@@ -31,5 +31,12 @@
       "3": { "primary": "#FFFF00", "glow": false },
       "4": { "primary": "#FF0000", "glow": false }
     }
-  }
+  },
+  "colors": {
+    "accent": "#FF00FF",
+    "background": "#000000",
+    "grid": "#333333"
+  },
+  "gridStyle": "dots",
+  "gridSpacing": 100.0
 }

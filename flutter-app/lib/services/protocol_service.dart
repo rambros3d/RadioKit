@@ -204,8 +204,8 @@ class ProtocolService {
       final widgetId = payload[offset + 1];
       final x        = payload[offset + 2].toDouble();
       final y        = payload[offset + 3].toDouble();
-      final scale    = payload[offset + 4]; // ×10  e.g. 20 = 2.0×
-      final aspect   = payload[offset + 5]; // ×10  e.g. 0 = use type default
+      final width    = payload[offset + 4]; // ×10 multiplier
+      final height   = payload[offset + 5]; // ×10 multiplier
       // Rotation: signed LE int16
       final rotRaw   = payload[offset + 6] | (payload[offset + 7] << 8);
       final rotation = rotRaw >= 0x8000 ? rotRaw - 0x10000 : rotRaw;
@@ -246,8 +246,8 @@ class ProtocolService {
         widgetId: widgetId,
         x:        x,
         y:        y,
-        scale:    scale,
-        aspect:   aspect,
+        width:    width,
+        height:   height,
         rotation: rotation,
         style:    style,
         variant:  variant,

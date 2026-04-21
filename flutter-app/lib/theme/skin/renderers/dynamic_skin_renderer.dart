@@ -1,32 +1,35 @@
 import 'package:flutter/material.dart';
-import 'skin_renderer.dart';
-import 'native_skin_renderer.dart';
+import 'universal_skin_renderer.dart';
 import 'debug_skin_renderer.dart';
+import 'skin_renderer.dart';
 import '../skin_manager.dart';
 
 /// The high-level entry point for rendering a skinned widget.
-class DynamicSkinRenderer extends SkinRenderer {
+/// Now simplified to use the UniversalSkinEngine for all standard skins.
+class DynamicSkinRenderer extends StatelessWidget {
+  final String widgetFolder;
+  final RKSkinState state;
+  final String? layer;
+
   const DynamicSkinRenderer({
     super.key,
-    required super.widgetFolder,
-    required super.state,
-    super.layer,
+    required this.widgetFolder,
+    required this.state,
+    this.layer,
   });
 
   @override
   Widget build(BuildContext context) {
-    final manager = SkinManager();
-    final skinName = manager.activeSkinName;
+    final manifest = SkinManager().current;
+    if (manifest == null) return const SizedBox.shrink();
 
-    if (skinName == 'debug') {
-      return DebugSkinRenderer(
-        widgetFolder: widgetFolder,
-        state: state,
-        layer: layer,
-      );
+    // Debug skin still uses its hardcoded logic for development
+    if (manifest.name == 'debug') {
+      return DebugSkinRenderer(widgetFolder: widgetFolder, state: state, layer: layer);
     }
 
-    return NativeSkinRenderer(
+    // All other skins (standard, neon, hybrid) use the universal engine
+    return UniversalSkinRenderer(
       widgetFolder: widgetFolder,
       state: state,
       layer: layer,

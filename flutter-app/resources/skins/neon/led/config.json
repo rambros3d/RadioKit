@@ -1,0 +1,20 @@
+{
+  "renderingLayers": [
+    {
+      "type": "neumorphic",
+      "props": {
+        "depth": "@neumorphicDepth",
+        "intensity": "@neumorphicIntensity",
+        "borderRadius": 20,
+        "color": "#surface",
+        "isPressed": true
+      }
+    },
+    {
+      "type": "led",
+      "props": {
+        "size": 4.0
+      }
+    }
+  ]
+}

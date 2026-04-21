@@ -39,7 +39,7 @@ class ConnectionNotifier extends ChangeNotifier {
 
 GoRouter createRouter(ConnectionNotifier connectionNotifier) {
   return GoRouter(
-    initialLocation: '/pair',
+    initialLocation: '/models',
     refreshListenable: connectionNotifier,
     redirect: (context, state) {
       final isConnected = connectionNotifier.isConnected;
@@ -47,7 +47,7 @@ GoRouter createRouter(ConnectionNotifier connectionNotifier) {
           state.matchedLocation == '/debug';
 
       if (isGuardedRoute && !isConnected) {
-        return '/pair';
+        return '/models';
       }
       return null;
     },

@@ -16,12 +16,14 @@ class SliderWidget extends StatefulWidget {
   final WidgetConfig config;
   final int value;
   final ValueChanged<int> onChanged;
+  final double scale;
 
   const SliderWidget({
     super.key,
     required this.config,
     required this.value,
     required this.onChanged,
+    this.scale = 1.0,
   });
 
   @override
@@ -79,16 +81,21 @@ class _SliderWidgetState extends State<SliderWidget>
     super.dispose();
   }
 
+  bool get _isHorizontal => widget.config.w > widget.config.h;
+
   void _onDragUpdate(DragUpdateDetails details) {
     setState(() => _isDragging = true);
     _springController.stop();
     final RenderBox box = context.findRenderObject() as RenderBox;
     final localPos = box.globalToLocal(details.globalPosition);
     
-    // Calculate 0..1 based on vertical height
-    // Assume top is 100, bottom is -100
-    final percent = (1.0 - (localPos.dy / box.size.height)).clamp(0.0, 1.0);
-    // Convert to -100..100
+    double percent;
+    if (_isHorizontal) {
+      percent = (localPos.dx / box.size.width).clamp(0.0, 1.0);
+    } else {
+      percent = (1.0 - (localPos.dy / box.size.height)).clamp(0.0, 1.0);
+    }
+    
     final val = ((percent * 200) - 100).round();
     widget.onChanged(val);
   }
@@ -115,22 +122,18 @@ class _SliderWidgetState extends State<SliderWidget>
       _springListener = null;
     }
 
-    // Use SpringSimulation for a more premium, physics-accurate feel
     final spring = SpringDescription(
       mass: _behavior.physics.mass,
       stiffness: _behavior.physics.stiffness,
       damping: _behavior.physics.damping,
     );
 
-    final simulation = SpringSimulation(spring, from.toDouble(), to.toDouble(), 0);
-
-    // We still use AnimationController but drive it with the simulation
     _springAnimation = Tween<double>(
       begin: from.toDouble(),
       end: to.toDouble(),
     ).animate(CurvedAnimation(
       parent: _springController,
-      curve: Curves.linear, // The simulation handles the curve
+      curve: Curves.linear,
     ));
 
     _springListener = () {
@@ -138,60 +141,76 @@ class _SliderWidgetState extends State<SliderWidget>
     };
 
     _springAnimation.addListener(_springListener!);
-    
-    // Note: To truly use SpringSimulation accurately, 
-    // we should use a Ticker and simulate manually, 
-    // but for now, fitting it into the 250ms/500ms window defined 
-    // in durationMs is a good hybrid.
     _springController.forward(from: 0);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Normalize -100..100 to 0..1 for the renderer
     final normalizedValue = (widget.value + 100) / 200.0;
+    final skinName = context.watch<SkinProvider>().skinName;
 
-    return AspectRatio(
-      aspectRatio: 55 / 132, // Match the premium asset ratio
-      child: GestureDetector(
-        onPanUpdate: _onDragUpdate,
-        onPanEnd:    _onDragEnd,
-        behavior: HitTestBehavior.opaque,
-        child: Stack(
-          children: [
-            // Layer 1: Track (Stationary)
-            DynamicSkinRenderer(
+    return GestureDetector(
+      onPanUpdate: _onDragUpdate,
+      onPanEnd:    _onDragEnd,
+      behavior: HitTestBehavior.opaque,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // If the skin defines universal rendering layers, delegate the ENTIRE stack to the engine.
+          // This avoids duplicate layering and offset conflicts.
+          if (_behavior.renderingLayers.isNotEmpty) {
+            return DynamicSkinRenderer(
               widgetFolder: 'slider',
-              layer: 'track',
+              state: RKSkinState(
+                isPressed: _isDragging,
+                isOn: false,
+                styleIndex: widget.config.style,
+                value: normalizedValue, 
+                label: widget.config.label,
+                icon: widget.config.icon,
+                scale: widget.scale,
+              ),
+            );
+          }
+
+          final isDebug = skinName == 'debug';
+          
+          // Legacy Path: Manual stacking for Standard/SVG skins
+          final bool needsRotation = _isHorizontal && !isDebug;
+
+          Widget buildLayer(String layer) {
+            Widget renderer = DynamicSkinRenderer(
+              widgetFolder: 'slider',
+              layer: layer,
               state: RKSkinState(
                 isPressed: _isDragging,
                 styleIndex: widget.config.style,
+                value: normalizedValue, 
+                label: widget.config.label,
+                icon: widget.config.icon,
+                scale: widget.scale,
               ),
-            ),
-            // Layer 2: Thumb (Moving)
-            // We translate the thumb vertically. 
-            // The thumb asset is full track height (132), so we offset it.
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final totalHeight = constraints.maxHeight;
-                // Move from center-bottom to center-top
-                final offset = (0.5 - normalizedValue) * totalHeight;
-                
-                return Transform.translate(
-                  offset: Offset(0, offset),
-                  child: DynamicSkinRenderer(
-                    widgetFolder: 'slider',
-                    layer: 'thumb',
-                    state: RKSkinState(
-                      isPressed: _isDragging,
-                      styleIndex: widget.config.style,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+            );
+            
+            if (needsRotation) {
+              return RotatedBox(quarterTurns: 3, child: renderer);
+            }
+            return renderer;
+          }
+
+          final thumbOffset = _isHorizontal 
+              ? Offset((normalizedValue - 0.5) * constraints.maxWidth, 0)
+              : Offset(0, (0.5 - normalizedValue) * constraints.maxHeight);
+
+          return Stack(
+            children: [
+              buildLayer('track'),
+              Transform.translate(
+                offset: thumbOffset,
+                child: buildLayer('thumb'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

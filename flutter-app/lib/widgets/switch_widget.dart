@@ -9,12 +9,14 @@ class SwitchWidget extends StatelessWidget {
   final WidgetConfig config;
   final int value;
   final ValueChanged<int> onChanged;
+  final double scale;
 
   const SwitchWidget({
     super.key,
     required this.config,
     required this.value,
     required this.onChanged,
+    this.scale = 1.0,
   });
 
   @override
@@ -25,6 +27,7 @@ class SwitchWidget extends StatelessWidget {
       config: config,
       value: value,
       onChanged: onChanged,
+      scale: scale,
     );
   }
 }

@@ -1,0 +1,28 @@
+{
+  "renderingLayers": [
+    {
+      "type": "neumorphic",
+      "props": {
+        "depth": "@neumorphicDepth",
+        "intensity": "@neumorphicIntensity",
+        "borderRadius": 20,
+        "color": "#surface"
+      }
+    },
+    {
+      "type": "alignment",
+      "props": {
+        "align": "topCenter",
+        "child": {
+          "type": "box",
+          "props": {
+            "width": 0.6,
+            "height": 1.6,
+            "borderRadius": 0.2,
+            "color": "#primary"
+          }
+        }
+      }
+    }
+  ]
+}

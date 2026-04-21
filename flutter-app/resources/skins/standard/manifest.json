@@ -26,16 +26,33 @@
       "borderWidth": 1.0
     },
     "styles": {
-      "0": { "primary": "#007AFF", "glow": false },
-      "1": { "primary": "#8E8E93", "glow": false },
-      "2": { "primary": "#34C759", "glow": false },
-      "3": { "primary": "#FF9500", "glow": false },
-      "4": { "primary": "#FF3B30", "glow": false }
+      "0": {
+        "primary": "#007AFF",
+        "glow": false
+      },
+      "1": {
+        "primary": "#8E8E93",
+        "glow": false
+      },
+      "2": {
+        "primary": "#34C759",
+        "glow": false
+      },
+      "3": {
+        "primary": "#FF9500",
+        "glow": false
+      },
+      "4": {
+        "primary": "#FF3B30",
+        "glow": false
+      }
     }
   },
   "colors": {
     "accent": "#FF8C00",
     "background": "#1A1A1A",
     "grid": "#2A2A2A"
-  }
+  },
+  "gridStyle": "dots",
+  "gridSpacing": 10.0
 }

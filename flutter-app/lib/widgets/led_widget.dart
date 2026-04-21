@@ -7,14 +7,14 @@ import '../theme/skin/renderers/skin_renderer.dart';
 /// Fully skinned using v1.6 Mixed-Mode engine.
 class LedWidget extends StatelessWidget {
   final WidgetConfig config;
-
-  /// Expected: List<int> [state, r, g, b, opacity] or palette index
   final dynamic value;
+  final double scale;
 
   const LedWidget({
     super.key,
     required this.config,
     required this.value,
+    this.scale = 1.0,
   });
 
   bool get _isOn {
@@ -58,6 +58,9 @@ class LedWidget extends StatelessWidget {
         isOn: _isOn,
         colorOverride: _color,
         styleIndex: config.style,
+        label: config.label,
+        icon: config.icon,
+        scale: scale,
       ),
     );
   }

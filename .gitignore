@@ -85,6 +85,7 @@ flutter-app/android/app/src/debug/lib*
 flutter-app/android/app/src/main/jniLibs
 flutter-app/assets/fonts/
 !flutter-app/assets/fonts/.gitkeep
+flutter-app/flutter_*.png
 
 # AI Agent Specifics (Comprehensive)
 .agent/

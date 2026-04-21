@@ -28,9 +28,11 @@ RadioKit uses a virtual coordinate system which is independent of the actual scr
 RadioKit uses a **Default Size + Scale + Aspect** model. Each widget has a default size, which can be scaled and have its aspect ratio changed. Using a scale factor of 1.0 and an aspect ratio of 1.0 will result in the default size and aspect ratio of the widget. Likewise, n aspect ratio of 0.5 will result in a widget that is twice as tall and half as wide as the default size and aspect ratio.
 
 ```
-height = default_height × scale
-width  = height × aspect
+height = base_height × scale_height
+width  = (base_height × aspect) × scale_height × extra_width_scale
 ```
+
+*For fixed-aspect widgets, `scale_width` is locked to `scale_height` and `base_width` is derived as `base_height × aspect`.*
 
 | Float (User) | Wire Encoding | Result |
 | ------------ | -------------- | -------------- |

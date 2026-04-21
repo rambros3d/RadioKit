@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:provider/provider.dart';
@@ -15,12 +16,14 @@ class KnobWidget extends StatefulWidget {
   final WidgetConfig config;
   final int value;
   final ValueChanged<int> onChanged;
+  final double scale;
 
   const KnobWidget({
     super.key,
     required this.config,
     required this.value,
     required this.onChanged,
+    this.scale = 1.0,
   });
 
   @override
@@ -29,9 +32,6 @@ class KnobWidget extends StatefulWidget {
 
 class _KnobWidgetState extends State<KnobWidget>
     with SingleTickerProviderStateMixin {
-  
-  double _dragAccum = 0.0;
-  static const double _sensitivity = 1.5; 
 
   late final AnimationController _springController;
   late Animation<double> _springAnimation;
@@ -81,22 +81,71 @@ class _KnobWidgetState extends State<KnobWidget>
     super.dispose();
   }
 
-  void _onPanStart(DragStartDetails _) {
+  void _handleGesture(Offset localPosition) {
+    // 1. Calculate center and local vector
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    final center = Offset(size.width / 2, size.height / 2);
+    
+    final dx = localPosition.dx - center.dx;
+    final dy = localPosition.dy - center.dy;
+
+    // 2. Calculate angle where North (top) is 0 radians
+    // atan2 range is -PI to PI
+    // We add PI/2 to make North = 0.
+    double angle = math.atan2(dy, dx) + math.pi / 2;
+
+    // 3. Normalize angle to (-PI..PI) range
+    if (angle > math.pi) angle -= 2 * math.pi;
+    if (angle < -math.pi) angle += 2 * math.pi;
+
+    // 4. Convert to degrees for easier limit handling
+    double degrees = angle * 180 / math.pi;
+
+    // 5. Knob constraints: -100 is at -135deg, +100 is at +135deg.
+    // Total sweep: 270 degrees.
+    // The "Gap" is the bottom 90 degrees (from 135 to 225/ -135).
+    
+    // Hard wall / Gap protection:
+    // If the user drags into the bottom gap, we clamp to the nearest limit
+    // to prevent "jumping" from -100 to 100.
+    if (degrees > 135) {
+      if (degrees < 160) {
+        degrees = 135; // Near right limit
+      } else {
+        // We are on the left side of the gap
+        degrees = -135; // Near left limit
+      }
+    } else if (degrees < -135) {
+      if (degrees > -160) {
+        degrees = -135;
+      } else {
+        degrees = 135;
+      }
+    }
+
+    // 6. Map degrees (-135..135) to value (-100..100)
+    final double valueF = (degrees / 135.0) * 100.0;
+    final int rawValue = valueF.round().clamp(-100, 100);
+
+    if (rawValue != widget.value) {
+      widget.onChanged(rawValue);
+    }
+  }
+
+  void _onPanStart(DragStartDetails details) {
     setState(() => _isDragging = true);
     _springController.stop();
-    _dragAccum = 0.0;
+    _handleGesture(details.localPosition);
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
-    _dragAccum -= details.delta.dy * _sensitivity;
-    final raw = (widget.value + _dragAccum).round().clamp(-100, 100);
-    widget.onChanged(raw);
-    _dragAccum -= (raw - widget.value); 
+    _handleGesture(details.localPosition);
   }
 
   void _onPanEnd(DragEndDetails _) {
     setState(() => _isDragging = false);
-    _dragAccum = 0.0;
+    
     final centering = variantCentering(widget.config.variant);
     final detents   = variantDetents(widget.config.variant);
 
@@ -117,19 +166,12 @@ class _KnobWidgetState extends State<KnobWidget>
       _springListener = null;
     }
 
-    // Use SpringSimulation for a more premium, physics-accurate feel
-    final spring = SpringDescription(
-      mass: _behavior.physics.mass,
-      stiffness: _behavior.physics.stiffness,
-      damping: _behavior.physics.damping,
-    );
-
     _springAnimation = Tween<double>(
       begin: from.toDouble(),
       end: to.toDouble(),
     ).animate(CurvedAnimation(
       parent: _springController,
-      curve: Curves.linear,
+      curve: Curves.easeOut, // Better feel than direct linear for spring
     ));
 
     _springListener = () {
@@ -152,32 +194,57 @@ class _KnobWidgetState extends State<KnobWidget>
         onPanEnd:    _onPanEnd,
         child: AspectRatio(
           aspectRatio: 1.0,
-          child: Stack(
-            children: [
-              // Layer 1: Base (Stationary)
-              DynamicSkinRenderer(
-                widgetFolder: 'knob',
-                layer: 'base',
-                state: RKSkinState(
-                  isPressed: _isDragging,
-                  styleIndex: widget.config.style,
-                ),
-              ),
-              // Layer 2: Indicator (Rotatable)
-              Transform.rotate(
-                // Rotate based on -100..100 value
-                // Standard knob swept angle is ~270 degrees
-                angle: (normalizedValue * 270 - 135) * (3.14159 / 180),
-                child: DynamicSkinRenderer(
-                  widgetFolder: 'knob',
-                  layer: 'indicator',
-                  state: RKSkinState(
-                    isPressed: _isDragging,
-                    styleIndex: widget.config.style,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Universal Path: Delegate to engine
+              if (_behavior.renderingLayers.isNotEmpty) {
+                return Transform.rotate(
+                  angle: (normalizedValue * 270 - 135) * (math.pi / 180),
+                  child: DynamicSkinRenderer(
+                    widgetFolder: 'knob',
+                    state: RKSkinState(
+                      isPressed: _isDragging,
+                      styleIndex: widget.config.style,
+                      value: normalizedValue,
+                      label: widget.config.label,
+                      icon: widget.config.icon,
+                      scale: widget.scale,
+                    ),
                   ),
-                ),
-              ),
-            ],
+                );
+              }
+
+              // Legacy Path: Manual stacking
+              return Stack(
+                children: [
+                  DynamicSkinRenderer(
+                    widgetFolder: 'knob',
+                    layer: 'base',
+                    state: RKSkinState(
+                      isPressed: _isDragging,
+                      styleIndex: widget.config.style,
+                      label: widget.config.label,
+                      icon: widget.config.icon,
+                      scale: widget.scale,
+                    ),
+                  ),
+                  Transform.rotate(
+                    angle: (normalizedValue * 270 - 135) * (math.pi / 180),
+                    child: DynamicSkinRenderer(
+                      widgetFolder: 'knob',
+                      layer: 'indicator',
+                      state: RKSkinState(
+                        isPressed: _isDragging,
+                        styleIndex: widget.config.style,
+                        label: widget.config.label, 
+                        icon: widget.config.icon,
+                        scale: widget.scale,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
           ),
         ),
       ),

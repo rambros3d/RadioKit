@@ -1,0 +1,25 @@
+{
+  "renderingLayers": [
+    {
+       "type": "neumorphic",
+       "props": {
+         "depth": "@neumorphicDepth",
+         "intensity": "@neumorphicIntensity",
+         "borderRadius": 20,
+         "color": "#surface",
+         "isPressed": true
+       },
+       "visibility": { "layer": "base" }
+    },
+    {
+      "type": "neumorphic",
+      "props": {
+        "depth": "@neumorphicDepth",
+        "intensity": "@neumorphicIntensity",
+        "borderRadius": 20,
+        "color": "#surface"
+      },
+      "visibility": { "layer": "handle" }
+    }
+  ]
+}

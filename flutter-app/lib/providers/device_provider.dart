@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../models/device_info.dart';
 import '../models/widget_config.dart';
@@ -154,28 +155,65 @@ class DeviceProvider extends ChangeNotifier {
     // Setup dummy widgets for demo
     if (demoId == 'WIDGETS_DEMO') {
       _widgets = [
-        const WidgetConfig(typeId: kWidgetButton, widgetId: 1, x: 20, y: 60, scale: 20, aspect: 10, label: 'Press', icon: 'wifi', strMask: kStrMaskLabel | kStrMaskIcon),
-        const WidgetConfig(typeId: kWidgetButton, widgetId: 2, x: 20, y: 80, scale: 20, aspect: 10, variant: 1, label: 'LED', strMask: kStrMaskLabel), // Toggle
-        const WidgetConfig(typeId: kWidgetSlideSwitch, widgetId: 3, x: 20, y: 40, scale: 10, aspect: 25, label: 'Power', icon: 'power', onText: 'ON', offText: 'OFF', strMask: kStrMaskLabel | kStrMaskIcon | kStrMaskOnText | kStrMaskOffText),
-        const WidgetConfig(typeId: kWidgetSlider, widgetId: 4, x: 100, y: 60, scale: 10, aspect: 80, rotation: 45, label: 'Level', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetKnob, widgetId: 5, x: 170, y: 40, scale: 20, aspect: 10, variant: 2, label: 'Pan', icon: 'knob', strMask: kStrMaskLabel | kStrMaskIcon),
-        const WidgetConfig(typeId: kWidgetJoystick, widgetId: 6, x: 160, y: 70, scale: 20, aspect: 10, label: 'Stick', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetMultiple, widgetId: 7, x: 60, y: 30, scale: 10, aspect: 20, variant: 0, label: 'Multiple Button', content: 'Auto:cpu|Man:hand', strMask: kStrMaskLabel | kStrMaskContent),
-        const WidgetConfig(typeId: kWidgetMultiple, widgetId: 8, x: 60, y: 90, scale: 10, aspect: 20, variant: 1, label: 'Multiple Select', content: 'Log:file-text|Mute:volume-x', strMask: kStrMaskLabel | kStrMaskContent),
-        const WidgetConfig(typeId: kWidgetLed, widgetId: 9, x: 20, y: 20, scale: 14, aspect: 10, label: 'Status', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetText, widgetId: 10, x: 20, y: 10, scale: 10, aspect: 30, label: 'Uptime', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetButton,      widgetId: 1, x: 25, y: 75, height: 10, label: 'PUSH', icon: 'zap', strMask: kStrMaskLabel | kStrMaskIcon),
+        const WidgetConfig(typeId: kWidgetButton,      widgetId: 2, x: 25, y: 50, height: 10, variant: 1, label: 'TOGGLE', icon: 'power', strMask: kStrMaskLabel | kStrMaskIcon),
+        const WidgetConfig(typeId: kWidgetSlideSwitch, widgetId: 3, x: 25, y: 25, height: 10, label: 'SLIDE', icon: 'sliders', strMask: kStrMaskLabel | kStrMaskIcon),
+        
+        const WidgetConfig(typeId: kWidgetText,        widgetId: 4, x: 100, y: 92, width: 14, height: 10, label: 'v1.7_SCALING_ENGINE', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetSlider,      widgetId: 5, x: 100, y: 75, width: 20, height: 10,  label: 'WIDE_SLIDER', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetMultiple,    widgetId: 11, x: 100, y: 50,  height: 10, variant: 1,  label: 'FLAGS', content: 'WiFi:wifi|BT:bluetooth|GPS:map-pin', strMask: kStrMaskLabel | kStrMaskContent),
+        const WidgetConfig(typeId: kWidgetMultiple,    widgetId: 8, x: 100,  y: 25,  height: 10, variant: 0, label: 'MODES', content: 'Auto:cpu|Man:mouse', strMask: kStrMaskLabel | kStrMaskContent),
+        
+        const WidgetConfig(typeId: kWidgetKnob,        widgetId: 7, x: 175, y: 75, height: 10, label: 'PAN', icon: 'rotate-cw', strMask: kStrMaskLabel | kStrMaskIcon),
+        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 10,x: 175, y: 50, height: 10, label: 'STICK', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetLed,         widgetId: 9, x: 175, y: 25, height: 10, label: 'ALIVE', strMask: kStrMaskLabel),
       ];
       _orientation = kOrientationLandscape;
-    } else {
+    } 
+    else if (demoId == 'RC_CONTROLLER') {
+      _widgets = [
+        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 1, x: 45,  y: 50,  height: 25, label: 'L_STICK', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 2, x: 155, y: 50,  height: 25, label: 'R_STICK', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetLed,         widgetId: 3, x: 100, y: 90,  height: 12, label: 'LINK', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetButton,      widgetId: 4, x: 30,  y: 90,  height: 10, variant: 1, label: 'ARM', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetButton,      widgetId: 5, x: 170, y: 90,  height: 10, label: 'KILL', icon: 'skull', strMask: kStrMaskLabel | kStrMaskIcon),
+        const WidgetConfig(typeId: kWidgetText,        widgetId: 6, x: 100, y: 15, width: 70, height: 10, label: 'TELEMETRY', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetSlideSwitch, widgetId: 7, x: 100, y: 50,  height: 35, label: 'TRIM', strMask: kStrMaskLabel),
+      ];
+      _orientation = kOrientationLandscape;
+    }
+    else if (demoId == 'IOT_DASHBOARD') {
+      _widgets = [
+        const WidgetConfig(typeId: kWidgetKnob,        widgetId: 1, x: 30,  y: 170, height: 15, label: 'TEMP', icon: 'thermometer', strMask: kStrMaskLabel | kStrMaskIcon),
+        const WidgetConfig(typeId: kWidgetKnob,        widgetId: 2, x: 70,  y: 170, height: 15, label: 'HUMID', icon: 'droplet', strMask: kStrMaskLabel | kStrMaskIcon),
+        const WidgetConfig(typeId: kWidgetMultiple,    widgetId: 3, x: 50,  y: 130, height: 15, variant: 1, label: 'HVAC', content: 'Eco:leaf|Turbo:wind|Off:power', strMask: kStrMaskLabel | kStrMaskContent),
+        const WidgetConfig(typeId: kWidgetLed,         widgetId: 4, x: 20,  y: 100, height: 10, label: 'AC', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetLed,         widgetId: 5, x: 50,  y: 100, height: 10, label: 'NET', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetLed,         widgetId: 6, x: 80,  y: 100, height: 10, label: 'SEC', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetSlider,      widgetId: 7, x: 50,  y: 65,  width: 45, height: 10, label: 'BRIGHTNESS', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetText,        widgetId: 8, x: 50,  y: 25,  width: 60, height: 15, label: 'SYSTEM_LOAD', strMask: kStrMaskLabel),
+      ];
+      _orientation = kOrientationPortrait;
+    }
+    else {
       _widgets = [];
       _orientation = kOrientationPortrait;
     }
     
     _widgetState = RadioWidgetState.initial(_widgets);
     
-    // Simulate LED active
-    _widgetState = _widgetState?.copyWithOutput(8, [1, 255, 100, 0, 255]);
-    _widgetState = _widgetState?.copyWithOutput(10, 'Hello World!');
+    // Initial values for specific demos
+    if (demoId == 'WIDGETS_DEMO') {
+      _widgetState = _widgetState?.copyWithOutput(9, [1, 57, 255, 20, 255]); // Neon Green
+      _widgetState = _widgetState?.copyWithOutput(4, 'LINK_READY_v1.7');
+    } else if (demoId == 'RC_CONTROLLER') {
+      _widgetState = _widgetState?.copyWithOutput(3, [1, 255, 120, 0, 255]); // Amber
+      _widgetState = _widgetState?.copyWithOutput(6, '912MHz / -84dBm');
+    } else if (demoId == 'IOT_DASHBOARD') {
+      _widgetState = _widgetState?.copyWithOutput(4, [1, 0, 255, 255, 255]); // Cyan
+      _widgetState = _widgetState?.copyWithOutput(5, [1, 255, 255, 0, 255]); // Yellow
+      _widgetState = _widgetState?.copyWithOutput(6, [0, 255, 0, 0, 0]);      // Dim red
+    }
 
     _connectionState = DeviceConnectionState.connected;
     
@@ -253,6 +291,12 @@ class DeviceProvider extends ChangeNotifier {
     _pingTimer?.cancel();
     _pollTimer = null;
     _pingTimer = null;
+    _demoTimer?.cancel();
+    _demoTimer = null;
+
+    if (_configName != null) {
+      _startDemoSimulation();
+    }
 
     _pollTimer = Timer.periodic(kGetVarsInterval, (_) async {
       if (!_transport.isConnected) return;
@@ -276,6 +320,80 @@ class DeviceProvider extends ChangeNotifier {
   void _stopPolling() {
     _pollTimer?.cancel(); _pollTimer = null;
     _pingTimer?.cancel(); _pingTimer = null;
+    _demoTimer?.cancel(); _demoTimer = null;
+  }
+
+  // ── Simulation Logic ────────────────────────────────────────────────────────
+
+  Timer? _demoTimer;
+  double _simTime = 0;
+
+  void _startDemoSimulation() {
+    _demoTimer?.cancel();
+    _demoTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      if (_widgetState == null || _configName == null) return;
+      _simTime += 0.05;
+
+      final current = _widgetState!;
+      RadioWidgetState next = current;
+
+      if (_configName == 'WIDGETS_DEMO') {
+        // ID 9: Alive LED pulses opacity
+        final brightness = (128 + 127 * sin(_simTime * 2)).toInt();
+        next = next.copyWithOutput(9, [1, 57, 255, 20, brightness]);
+        
+        // ID 4: Text update based on time
+        if ((_simTime * 10).toInt() % 40 == 0) {
+           next = next.copyWithOutput(4, 'SYSTEM_UP: ${_simTime.toStringAsFixed(1)}s');
+        }
+
+        // ID 7: Knob oscillation (Disabled)
+        // final knobVal = (127 * math.sin(_simTime * 0.5)).toInt();
+        // next = next.copyWithInput(7, [knobVal]);
+
+        // ID 10: Joystick orbiting
+        final jsx = (40 * cos(_simTime)).toInt();
+        final jsy = (40 * sin(_simTime)).toInt();
+        next = next.copyWithInput(10, [jsx, jsy]);
+
+        // ID 11: FLAGS bitmask cycling (Disabled)
+        // final mask = (1 << ((_simTime * 0.5).toInt() % 4)) - 1; // 0, 1, 3, 7
+        // next = next.copyWithInput(11, [mask & 0x07]);
+      } 
+      else if (_configName == 'RC_CONTROLLER') {
+        // ID 1 & 2: Joysticks slow drift
+        final driftX = (10 * sin(_simTime)).toInt();
+        final driftY = (10 * cos(_simTime * 0.7)).toInt();
+        next = next.copyWithInput(1, [driftX, driftY]);
+        next = next.copyWithInput(2, [-driftY, driftX]);
+        
+        // ID 6: Dynamic telemetry
+        if ((_simTime * 10).toInt() % 20 == 0) {
+           final bat = 85 + (5 * sin(_simTime * 0.1)).toInt();
+           next = next.copyWithOutput(6, 'BATT: $bat% | PKT: 1.2k');
+        }
+      }
+      else if (_configName == 'IOT_DASHBOARD') {
+        // ID 1 & 2: Knobs sensor drift
+        final temp = (22 + 4 * sin(_simTime * 0.3)).toInt();
+        final hum = (45 + 10 * cos(_simTime * 0.5)).toInt();
+        next = next.copyWithInput(1, [temp]);
+        next = next.copyWithInput(2, [hum]);
+        
+        // ID 8: System load text
+        if ((_simTime * 10).toInt() % 15 == 0) {
+           final load = (10 + 5 * sin(_simTime)).toStringAsFixed(1);
+           next = next.copyWithOutput(8, 'LOAD: $load%');
+        }
+        
+        // ID 5: "NET" LED blinks fast
+        final netPulse = (sin(_simTime * 10) > 0) ? 1 : 0;
+        next = next.copyWithOutput(5, [netPulse, 255, 255, 0, 255]);
+      }
+
+      _widgetState = next;
+      notifyListeners();
+    });
   }
 
   // ── Packet handling ──────────────────────────────────────────────────────────
@@ -339,7 +457,7 @@ class DeviceProvider extends ChangeNotifier {
     final widget = _widgets.firstWhere(
       (w) => w.widgetId == widgetId,
       orElse: () => WidgetConfig(
-          typeId: 0, widgetId: widgetId, x: 0, y: 0, scale: 0, aspect: 0),
+          typeId: 0, widgetId: widgetId, x: 0, y: 0, width: 0, height: 0),
     );
 
     RadioWidgetState next = current;
@@ -371,7 +489,7 @@ class DeviceProvider extends ChangeNotifier {
     final widget = _widgets.firstWhere(
       (w) => w.widgetId == widgetId,
       orElse: () => WidgetConfig(
-          typeId: 0, widgetId: widgetId, x: 0, y: 0, scale: 0, aspect: 0),
+          typeId: 0, widgetId: widgetId, x: 0, y: 0, width: 0, height: 0),
     );
 
     // 0x09 VAR_UPDATE handles Outputs. Inputs sent over 0x09 are echoes/bounces
