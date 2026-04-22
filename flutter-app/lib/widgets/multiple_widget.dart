@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/widget_config.dart';
 import '../theme/skin/renderers/dynamic_skin_renderer.dart';
 import '../theme/skin/renderers/skin_renderer.dart';
+import '../theme/skin/skin_manager.dart';
+import '../theme/skin/skin_tokens.dart';
 
 /// Multiple / segmented-button widget support for v1.6 skin engine.
 /// Delegates individual item rendering to the skin engine.
@@ -27,6 +29,34 @@ class MultipleWidget extends StatelessWidget {
     if (items.isEmpty) return const SizedBox.shrink();
 
     final bool isBitmask = config.variant == 1;
+
+    final manifest = SkinManager().current;
+    final bool isNative = manifest?.renderer == SkinRendererType.native || manifest?.name == 'neon';
+
+    if (isNative && !isBitmask) {
+      return Center(
+        child: AspectRatio(
+          aspectRatio: config.dynamicAspect,
+          child: DynamicSkinRenderer(
+            widgetFolder: 'multiple_button',
+            layer: 'base',
+            state: RKSkinState(
+              styleIndex: config.style,
+              isOn: value != 0,
+              label: config.label,
+              value: value.toDouble(), 
+              bitCount: items.length,
+              items: items,
+              icon: config.icon,
+              scale: scale,
+              onChanged: (val) {
+                onChanged(val.toInt());
+              },
+            ),
+          ),
+        ),
+      );
+    }
 
     return LayoutBuilder(builder: (context, constraints) {
       final isHorizontal = config.w >= config.h;

@@ -47,8 +47,53 @@ class $ResourcesSkinsDebugGen {
 class $ResourcesSkinsNeonGen {
   const $ResourcesSkinsNeonGen();
 
+  /// Directory path: resources/skins/neon/button_push
+  $ResourcesSkinsNeonButtonPushGen get buttonPush =>
+      const $ResourcesSkinsNeonButtonPushGen();
+
+  /// Directory path: resources/skins/neon/button_toggle
+  $ResourcesSkinsNeonButtonToggleGen get buttonToggle =>
+      const $ResourcesSkinsNeonButtonToggleGen();
+
+  /// Directory path: resources/skins/neon/display
+  $ResourcesSkinsNeonDisplayGen get display =>
+      const $ResourcesSkinsNeonDisplayGen();
+
+  /// Directory path: resources/skins/neon/global
+  $ResourcesSkinsNeonGlobalGen get global =>
+      const $ResourcesSkinsNeonGlobalGen();
+
+  /// Directory path: resources/skins/neon/joystick
+  $ResourcesSkinsNeonJoystickGen get joystick =>
+      const $ResourcesSkinsNeonJoystickGen();
+
+  /// Directory path: resources/skins/neon/knob
+  $ResourcesSkinsNeonKnobGen get knob => const $ResourcesSkinsNeonKnobGen();
+
+  /// Directory path: resources/skins/neon/led
+  $ResourcesSkinsNeonLedGen get led => const $ResourcesSkinsNeonLedGen();
+
   /// File path: resources/skins/neon/manifest.json
   String get manifest => 'resources/skins/neon/manifest.json';
+
+  /// Directory path: resources/skins/neon/multiple_button
+  $ResourcesSkinsNeonMultipleButtonGen get multipleButton =>
+      const $ResourcesSkinsNeonMultipleButtonGen();
+
+  /// Directory path: resources/skins/neon/multiple_select
+  $ResourcesSkinsNeonMultipleSelectGen get multipleSelect =>
+      const $ResourcesSkinsNeonMultipleSelectGen();
+
+  /// Directory path: resources/skins/neon/slide_switch
+  $ResourcesSkinsNeonSlideSwitchGen get slideSwitch =>
+      const $ResourcesSkinsNeonSlideSwitchGen();
+
+  /// Directory path: resources/skins/neon/slider
+  $ResourcesSkinsNeonSliderGen get slider =>
+      const $ResourcesSkinsNeonSliderGen();
+
+  /// Directory path: resources/skins/neon/text
+  $ResourcesSkinsNeonTextGen get text => const $ResourcesSkinsNeonTextGen();
 
   /// List of all assets
   List<String> get values => [manifest];
@@ -92,6 +137,10 @@ class $ResourcesSkinsStandardGen {
   $ResourcesSkinsStandardMultipleSelectGen get multipleSelect =>
       const $ResourcesSkinsStandardMultipleSelectGen();
 
+  /// Directory path: resources/skins/standard/slide_switch
+  $ResourcesSkinsStandardSlideSwitchGen get slideSwitch =>
+      const $ResourcesSkinsStandardSlideSwitchGen();
+
   /// Directory path: resources/skins/standard/slider
   $ResourcesSkinsStandardSliderGen get slider =>
       const $ResourcesSkinsStandardSliderGen();
@@ -100,12 +149,128 @@ class $ResourcesSkinsStandardGen {
   $ResourcesSkinsStandardSoundsGen get sounds =>
       const $ResourcesSkinsStandardSoundsGen();
 
-  /// Directory path: resources/skins/standard/toggle_switch
-  $ResourcesSkinsStandardToggleSwitchGen get toggleSwitch =>
-      const $ResourcesSkinsStandardToggleSwitchGen();
-
   /// List of all assets
   List<String> get values => [manifest];
+}
+
+class $ResourcesSkinsNeonButtonPushGen {
+  const $ResourcesSkinsNeonButtonPushGen();
+
+  /// File path: resources/skins/neon/button_push/config.json
+  String get config => 'resources/skins/neon/button_push/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
+}
+
+class $ResourcesSkinsNeonButtonToggleGen {
+  const $ResourcesSkinsNeonButtonToggleGen();
+
+  /// File path: resources/skins/neon/button_toggle/config.json
+  String get config => 'resources/skins/neon/button_toggle/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
+}
+
+class $ResourcesSkinsNeonDisplayGen {
+  const $ResourcesSkinsNeonDisplayGen();
+
+  /// File path: resources/skins/neon/display/config.json
+  String get config => 'resources/skins/neon/display/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
+}
+
+class $ResourcesSkinsNeonGlobalGen {
+  const $ResourcesSkinsNeonGlobalGen();
+
+  /// File path: resources/skins/neon/global/config.json
+  String get config => 'resources/skins/neon/global/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
+}
+
+class $ResourcesSkinsNeonJoystickGen {
+  const $ResourcesSkinsNeonJoystickGen();
+
+  /// File path: resources/skins/neon/joystick/config.json
+  String get config => 'resources/skins/neon/joystick/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
+}
+
+class $ResourcesSkinsNeonKnobGen {
+  const $ResourcesSkinsNeonKnobGen();
+
+  /// File path: resources/skins/neon/knob/config.json
+  String get config => 'resources/skins/neon/knob/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
+}
+
+class $ResourcesSkinsNeonLedGen {
+  const $ResourcesSkinsNeonLedGen();
+
+  /// File path: resources/skins/neon/led/config.json
+  String get config => 'resources/skins/neon/led/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
+}
+
+class $ResourcesSkinsNeonMultipleButtonGen {
+  const $ResourcesSkinsNeonMultipleButtonGen();
+
+  /// File path: resources/skins/neon/multiple_button/config.json
+  String get config => 'resources/skins/neon/multiple_button/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
+}
+
+class $ResourcesSkinsNeonMultipleSelectGen {
+  const $ResourcesSkinsNeonMultipleSelectGen();
+
+  /// File path: resources/skins/neon/multiple_select/config.json
+  String get config => 'resources/skins/neon/multiple_select/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
+}
+
+class $ResourcesSkinsNeonSlideSwitchGen {
+  const $ResourcesSkinsNeonSlideSwitchGen();
+
+  /// File path: resources/skins/neon/slide_switch/config.json
+  String get config => 'resources/skins/neon/slide_switch/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
+}
+
+class $ResourcesSkinsNeonSliderGen {
+  const $ResourcesSkinsNeonSliderGen();
+
+  /// File path: resources/skins/neon/slider/config.json
+  String get config => 'resources/skins/neon/slider/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
+}
+
+class $ResourcesSkinsNeonTextGen {
+  const $ResourcesSkinsNeonTextGen();
+
+  /// File path: resources/skins/neon/text/config.json
+  String get config => 'resources/skins/neon/text/config.json';
+
+  /// List of all assets
+  List<String> get values => [config];
 }
 
 class $ResourcesSkinsStandardButtonPushGen {
@@ -117,8 +282,11 @@ class $ResourcesSkinsStandardButtonPushGen {
   /// File path: resources/skins/standard/button_push/bg.svg
   String get bg => 'resources/skins/standard/button_push/bg.svg';
 
+  /// File path: resources/skins/standard/button_push/config.json
+  String get config => 'resources/skins/standard/button_push/config.json';
+
   /// List of all assets
-  List<String> get values => [active, bg];
+  List<String> get values => [active, bg, config];
 }
 
 class $ResourcesSkinsStandardButtonToggleGen {
@@ -130,8 +298,11 @@ class $ResourcesSkinsStandardButtonToggleGen {
   /// File path: resources/skins/standard/button_toggle/bg.svg
   String get bg => 'resources/skins/standard/button_toggle/bg.svg';
 
+  /// File path: resources/skins/standard/button_toggle/config.json
+  String get config => 'resources/skins/standard/button_toggle/config.json';
+
   /// List of all assets
-  List<String> get values => [active, bg];
+  List<String> get values => [active, bg, config];
 }
 
 class $ResourcesSkinsStandardDisplayGen {
@@ -140,8 +311,11 @@ class $ResourcesSkinsStandardDisplayGen {
   /// File path: resources/skins/standard/display/bg.svg
   String get bg => 'resources/skins/standard/display/bg.svg';
 
+  /// File path: resources/skins/standard/display/config.json
+  String get config => 'resources/skins/standard/display/config.json';
+
   /// List of all assets
-  List<String> get values => [bg];
+  List<String> get values => [bg, config];
 }
 
 class $ResourcesSkinsStandardJoystickGen {
@@ -150,11 +324,14 @@ class $ResourcesSkinsStandardJoystickGen {
   /// File path: resources/skins/standard/joystick/base.svg
   String get base => 'resources/skins/standard/joystick/base.svg';
 
+  /// File path: resources/skins/standard/joystick/config.json
+  String get config => 'resources/skins/standard/joystick/config.json';
+
   /// File path: resources/skins/standard/joystick/stick.svg
   String get stick => 'resources/skins/standard/joystick/stick.svg';
 
   /// List of all assets
-  List<String> get values => [base, stick];
+  List<String> get values => [base, config, stick];
 }
 
 class $ResourcesSkinsStandardKnobGen {
@@ -163,11 +340,14 @@ class $ResourcesSkinsStandardKnobGen {
   /// File path: resources/skins/standard/knob/base.svg
   String get base => 'resources/skins/standard/knob/base.svg';
 
+  /// File path: resources/skins/standard/knob/config.json
+  String get config => 'resources/skins/standard/knob/config.json';
+
   /// File path: resources/skins/standard/knob/indicator.svg
   String get indicator => 'resources/skins/standard/knob/indicator.svg';
 
   /// List of all assets
-  List<String> get values => [base, indicator];
+  List<String> get values => [base, config, indicator];
 }
 
 class $ResourcesSkinsStandardLedGen {
@@ -176,12 +356,15 @@ class $ResourcesSkinsStandardLedGen {
   /// File path: resources/skins/standard/led/base.svg
   String get base => 'resources/skins/standard/led/base.svg';
 
+  /// File path: resources/skins/standard/led/config.json
+  String get config => 'resources/skins/standard/led/config.json';
+
   /// File path: resources/skins/standard/led/glow.png
   AssetGenImage get glow =>
       const AssetGenImage('resources/skins/standard/led/glow.png');
 
   /// List of all assets
-  List<dynamic> get values => [base, glow];
+  List<dynamic> get values => [base, config, glow];
 }
 
 class $ResourcesSkinsStandardMultipleButtonGen {
@@ -190,11 +373,14 @@ class $ResourcesSkinsStandardMultipleButtonGen {
   /// File path: resources/skins/standard/multiple_button/bg.svg
   String get bg => 'resources/skins/standard/multiple_button/bg.svg';
 
+  /// File path: resources/skins/standard/multiple_button/config.json
+  String get config => 'resources/skins/standard/multiple_button/config.json';
+
   /// File path: resources/skins/standard/multiple_button/item.svg
   String get item => 'resources/skins/standard/multiple_button/item.svg';
 
   /// List of all assets
-  List<String> get values => [bg, item];
+  List<String> get values => [bg, config, item];
 }
 
 class $ResourcesSkinsStandardMultipleSelectGen {
@@ -203,15 +389,37 @@ class $ResourcesSkinsStandardMultipleSelectGen {
   /// File path: resources/skins/standard/multiple_select/bg.svg
   String get bg => 'resources/skins/standard/multiple_select/bg.svg';
 
+  /// File path: resources/skins/standard/multiple_select/config.json
+  String get config => 'resources/skins/standard/multiple_select/config.json';
+
   /// File path: resources/skins/standard/multiple_select/item.svg
   String get item => 'resources/skins/standard/multiple_select/item.svg';
 
   /// List of all assets
-  List<String> get values => [bg, item];
+  List<String> get values => [bg, config, item];
+}
+
+class $ResourcesSkinsStandardSlideSwitchGen {
+  const $ResourcesSkinsStandardSlideSwitchGen();
+
+  /// File path: resources/skins/standard/slide_switch/config.json
+  String get config => 'resources/skins/standard/slide_switch/config.json';
+
+  /// File path: resources/skins/standard/slide_switch/off.svg
+  String get off => 'resources/skins/standard/slide_switch/off.svg';
+
+  /// File path: resources/skins/standard/slide_switch/on.svg
+  String get on => 'resources/skins/standard/slide_switch/on.svg';
+
+  /// List of all assets
+  List<String> get values => [config, off, on];
 }
 
 class $ResourcesSkinsStandardSliderGen {
   const $ResourcesSkinsStandardSliderGen();
+
+  /// File path: resources/skins/standard/slider/config.json
+  String get config => 'resources/skins/standard/slider/config.json';
 
   /// File path: resources/skins/standard/slider/thumb.svg
   String get thumb => 'resources/skins/standard/slider/thumb.svg';
@@ -220,7 +428,7 @@ class $ResourcesSkinsStandardSliderGen {
   String get track => 'resources/skins/standard/slider/track.svg';
 
   /// List of all assets
-  List<String> get values => [thumb, track];
+  List<String> get values => [config, thumb, track];
 }
 
 class $ResourcesSkinsStandardSoundsGen {
@@ -231,19 +439,6 @@ class $ResourcesSkinsStandardSoundsGen {
 
   /// List of all assets
   List<String> get values => [aGitkeep];
-}
-
-class $ResourcesSkinsStandardToggleSwitchGen {
-  const $ResourcesSkinsStandardToggleSwitchGen();
-
-  /// File path: resources/skins/standard/toggle_switch/off.svg
-  String get off => 'resources/skins/standard/toggle_switch/off.svg';
-
-  /// File path: resources/skins/standard/toggle_switch/on.svg
-  String get on => 'resources/skins/standard/toggle_switch/on.svg';
-
-  /// List of all assets
-  List<String> get values => [off, on];
 }
 
 class Assets {

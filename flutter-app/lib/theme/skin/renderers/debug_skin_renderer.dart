@@ -211,7 +211,6 @@ class DebugSkinRenderer extends SkinRenderer {
           );
         }
 
-      case 'toggle_switch':
       case 'slide_switch':
         final isTrack = layer == null || layer == 'base' || layer == 'track';
         final isThumb = layer == 'thumb';

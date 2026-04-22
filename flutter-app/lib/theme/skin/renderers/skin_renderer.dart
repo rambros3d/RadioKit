@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../skin_manager.dart';
 import '../behavior_config.dart';
+import '../../../models/widget_config.dart';
 
 /// Base class for all skin-aware widget renderers.
 abstract class SkinRenderer extends StatelessWidget {
@@ -32,8 +33,10 @@ class RKSkinState {
   final String label; // Logical label/title
   final String content; // Dynamic text content (for displays)
   final String icon;
+  final List<MultipleItem> items;
   final double scale;
   final void Function(double x, double y)? onJoystickChanged;
+  final ValueChanged<double>? onChanged;
 
   const RKSkinState({
     this.isPressed = false,
@@ -50,7 +53,9 @@ class RKSkinState {
     this.label = '',
     this.content = '',
     this.icon = '',
+    this.items = const [],
     this.scale = 1.0,
     this.onJoystickChanged,
+    this.onChanged,
   });
 }

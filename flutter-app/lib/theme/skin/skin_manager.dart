@@ -235,11 +235,12 @@ class SkinManager extends ChangeNotifier {
   }
 
   Future<bool> _assetExists(String path) async {
-    // Web safe check: Use the loaded AssetManifest to avoid triggering console 404s
+    // 1. Check loaded manifest (Fast & Web-safe)
     if (_assetManifest != null) {
-      return _assetManifest!.listAssets().contains(path);
+      if (_assetManifest!.listAssets().contains(path)) return true;
     }
 
+    // 2. Fallback to direct load (Handles stale manifest during development)
     try {
       await rootBundle.load(path);
       return true;

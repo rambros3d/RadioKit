@@ -37,7 +37,8 @@ dependencies:
   flutter_svg: ^2.0.10+1
   archive: ^4.0.0
   flutter_joystick: ^0.2.2
-  animated_toggle_switch: ^0.3.0
+  animated_toggle_switch: ^0.8.7
+  flutter_oknob: ^0.0.5
 
 dev_dependencies:
   flutter_test:
@@ -45,7 +46,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   build_runner: ^2.4.14
   flutter_gen_runner: ^5.10.0
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
@@ -54,7 +55,7 @@ flutter:
     - resources/skins/standard/global/
     - resources/skins/standard/button_push/
     - resources/skins/standard/button_toggle/
-    - resources/skins/standard/toggle_switch/
+    - resources/skins/standard/slide_switch/
     - resources/skins/standard/slider/
     - resources/skins/standard/joystick/
     - resources/skins/standard/knob/
@@ -67,7 +68,7 @@ flutter:
     - resources/skins/neon/
     - resources/skins/neon/button_push/
     - resources/skins/neon/button_toggle/
-    - resources/skins/neon/toggle_switch/
+    - resources/skins/neon/slide_switch/
     - resources/skins/neon/slider/
     - resources/skins/neon/joystick/
     - resources/skins/neon/knob/

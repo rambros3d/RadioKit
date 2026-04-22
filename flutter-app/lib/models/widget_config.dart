@@ -17,7 +17,7 @@ const Map<int, double> kWidgetBaseHeight = {
 const Map<int, double> kWidgetDefaultAspect = {
   kWidgetButton:      1.0, // Visual Square
   // kWidgetSwitch:      5.0, // Wide Pill
-  kWidgetSlideSwitch: 1.5,
+  kWidgetSlideSwitch: 2.5,
   kWidgetSlider:      1.0, 
   kWidgetJoystick:    1.0, // Visual Square
   kWidgetLed:         1.0, // Visual Square

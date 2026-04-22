@@ -60,7 +60,7 @@ class CustomSkinRenderer extends SkinRenderer {
       case 'led':
         if (config.layers.isEmpty) return const SizedBox.shrink();
         return _renderLed(manifest, config);
-      case 'toggle_switch':
+      case 'slide_switch':
       case 'button_toggle':
         if (config.layers.isEmpty) return const SizedBox.shrink();
         return _renderToggleSwitch(manifest, config);

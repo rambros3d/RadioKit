@@ -13,8 +13,8 @@
       "surface": "#111111",
       "onSurface": "#FFFFFF",
       "outline": "#333333",
-      "toggleTrack": "#9fa19f",
-      "toggleActive": "#5400f3",
+      "toggleTrack": "#1a1a1a",
+      "toggleActive": "#39FF14",
       "neumorphicLight": "#ffffff",
       "neumorphicShadow": "#88a5bf",
       "sliderOrange": "#fd8421"

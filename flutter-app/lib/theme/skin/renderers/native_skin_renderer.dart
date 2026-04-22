@@ -8,7 +8,9 @@ import '../skin_manager.dart';
 import '../skin_tokens.dart';
 import '../behavior_config.dart' as cfg;
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
+import 'package:flutter_oknob/flutter_oldschool_knob.dart';
 import 'svg_loader.dart';
+import '../../../utils/icon_utils.dart';
 
 /// Renderer for Native/Primitive skins (e.g. Neon).
 /// Uses 'renderingLayers' from config.json to build the UI from Box, Icon, Text primitives.
@@ -29,6 +31,16 @@ class NativeSkinRenderer extends SkinRenderer {
         final config = snapshot.data!;
         final manifest = SkinManager().current;
         if (manifest == null) return const SizedBox.shrink();
+
+        if (manifest.name == 'neon' || manifest.renderer == SkinRendererType.native) {
+          if (widgetFolder == 'multiple_button' && layer == 'base') {
+            return _renderMultipleButtonRolling(context, manifest, config);
+          }
+          if (widgetFolder == 'slide_switch' && layer == null) {
+            // Force render the switch even if config is empty (fail-safe)
+            return _renderSwitch(cfg.RenderingLayer(type: cfg.LayerType.switch_layer, props: {}), manifest, config);
+          }
+        }
 
         final layers = _getLayers(config);
         
@@ -90,6 +102,8 @@ class NativeSkinRenderer extends SkinRenderer {
         return _renderRepeater(context, layerSpec.props, manifest, config);
       case cfg.LayerType.joystick:
         return _renderJoystickNative(context, layerSpec.props, manifest, config);
+      case cfg.LayerType.knob:
+        return _renderKnobNative(context, layerSpec.props, manifest, config);
     }
   }
 
@@ -103,10 +117,14 @@ class NativeSkinRenderer extends SkinRenderer {
     final Color? tintColor = shouldTint ? _getAccentColor(manifest) : null;
     final fullPath = 'resources/skins/${manifest.name}/$widgetFolder/$relPath';
 
-    return SvgPicture.asset(
-      fullPath,
-      colorFilter: tintColor != null ? ColorFilter.mode(tintColor, BlendMode.srcIn) : null,
-      fit: BoxFit.contain,
+    return Center(
+      widthFactor: 1.0,
+      heightFactor: 1.0,
+      child: SvgPicture.asset(
+        fullPath,
+        colorFilter: tintColor != null ? ColorFilter.mode(tintColor, BlendMode.srcIn) : null,
+        fit: BoxFit.contain,
+      ),
     );
   }
 
@@ -160,6 +178,8 @@ class NativeSkinRenderer extends SkinRenderer {
     final double glow = _resolveDouble(manifest.tokens.effects['glowIntensity'], manifest, 1.0);
 
     return Center(
+      widthFactor: 1.0,
+      heightFactor: 1.0,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         width: size, height: size,
@@ -220,7 +240,7 @@ class NativeSkinRenderer extends SkinRenderer {
       content = Transform.translate(offset: Offset(offX, offY), child: content);
     }
 
-    return Center(child: content);
+    return Center(widthFactor: 1.0, heightFactor: 1.0, child: content);
   }
 
   Gradient? _parseGradient(Map<String, dynamic> json, SkinManifest manifest) {
@@ -281,29 +301,91 @@ class NativeSkinRenderer extends SkinRenderer {
     final String iconName = _resolve<String>(props['icon'] ?? state.icon, manifest, state.icon);
     final Color color = _resolveColor(props['color'], manifest, Colors.white);
     final double size = _resolveDim(props['size'], manifest, 4.8);
-    return Center(child: Icon(_getIconData(iconName), color: color, size: size));
+    return Center(widthFactor: 1.0, heightFactor: 1.0, child: Icon(_getIconData(iconName), color: color, size: size));
   }
 
   Widget _renderText(Map<String, dynamic> props, SkinManifest manifest) {
     final String text = _resolve<String>(props['text'] ?? state.label, manifest, state.label);
     final Color color = _resolveColor(props['color'], manifest, Colors.white);
     final double size = _resolveDim(props['size'], manifest, 2.4);
-    return Center(child: Text(text, style: GoogleFonts.getFont(manifest.tokens.typography['fontFamily'] ?? 'Inter', color: color, fontSize: size, fontWeight: state.isOn ? FontWeight.bold : FontWeight.normal)));
+    return Center(widthFactor: 1.0, heightFactor: 1.0, child: Text(text, style: GoogleFonts.getFont(manifest.tokens.typography['fontFamily'] ?? 'Inter', color: color, fontSize: size, fontWeight: state.isOn ? FontWeight.bold : FontWeight.normal)));
   }
 
   Widget _renderSwitch(cfg.RenderingLayer spec, SkinManifest manifest, cfg.BehaviorConfig config) {
     final active = state.isOn;
-    final trackLayer = spec.children?.firstWhere((l) => l.props['role'] == 'track');
-    final thumbLayer = spec.children?.firstWhere((l) => l.props['role'] == 'thumb');
-    final trackWidth = _resolveDim(trackLayer?.props['width'], manifest, 12.0);
-    final thumbWidth = _resolveDim(thumbLayer?.props['width'], manifest, 6.0);
-    if (manifest.name == 'neon') {
-      return AnimatedToggleSwitch<bool>.rolling(
-        current: active,
-        values: const [true, false],
-        onChanged: (_) {},
+    final trackLayer = spec.children?.where((l) => l.props['role'] == 'track').firstOrNull;
+    final thumbLayer = spec.children?.where((l) => l.props['role'] == 'thumb').firstOrNull;
+    
+    // Resolve dimensions from layers if available, else defaults
+    // Forced dimensions for a premium feel
+    final trackHeight = 15.0 * state.scale; // Matches MultipleButton height baseline
+    final trackWidth = trackHeight * 2.5;  // Matches the new kWidgetSlideSwitch aspect ratio (2.5)
+    final thumbSize = trackHeight; 
+    final radius = trackHeight / 2;
+
+    if (manifest.name == 'neon' || manifest.renderer == SkinRendererType.native) {
+      final Color activeColor = _resolveColor('#toggleActive', manifest, _getAccentColor(manifest));
+      final Color trackColor = _resolveColor('#toggleTrack', manifest, Colors.grey.shade800);
+      
+      return Center(
+        child: SizedBox(
+          width: trackWidth,
+          height: trackHeight,
+          child: AnimatedToggleSwitch<bool>.dual(
+            current: active,
+            first: false,
+            second: true,
+            onChanged: (b) {
+              state.onChanged?.call(b ? 1.0 : 0.0);
+            },
+            animationDuration: const Duration(milliseconds: 300),
+            animationCurve: Curves.easeOutBack,
+            indicatorSize: Size.square(thumbSize),
+            height: trackHeight,
+            borderWidth: 1.0 * state.scale,
+            style: ToggleStyle(
+              backgroundColor: trackColor,
+              indicatorColor: Colors.white,
+              borderColor: Colors.white10,
+              borderRadius: BorderRadius.circular(radius),
+              indicatorBorderRadius: BorderRadius.circular(100.0 * state.scale),
+            ),
+            styleBuilder: (b) => ToggleStyle(
+              indicatorColor: b ? activeColor : Colors.white,
+              backgroundColor: b ? activeColor.withValues(alpha: 0.3) : trackColor,
+            ),
+            iconBuilder: (b) => Icon(
+              b ? Icons.chevron_right : _getIconData(state.icon.isNotEmpty ? state.icon : 'power'),
+              size: thumbSize * 0.6,
+              color: b ? Colors.black : Colors.black87,
+            ),
+            textBuilder: (b) => Center(
+              child: Text(
+                b ? (state.label.isNotEmpty ? state.label : 'ON') : 'OFF',
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.visible,
+                style: GoogleFonts.getFont(
+                  manifest.tokens.typography['fontFamily'] ?? 'Inter',
+                  color: Colors.white,
+                  fontSize: trackHeight * 0.35,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
       );
     }
+
+    final defaultTrack = cfg.RenderingLayer(
+      type: cfg.LayerType.box,
+      props: {'width': trackWidth, 'height': trackHeight, 'color': '#outline', 'borderRadius': trackHeight / 2}
+    );
+    final defaultThumb = cfg.RenderingLayer(
+      type: cfg.LayerType.box,
+      props: {'width': thumbSize, 'height': thumbSize, 'color': '#primary', 'borderRadius': thumbSize / 2}
+    );
 
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 300),
@@ -313,12 +395,11 @@ class NativeSkinRenderer extends SkinRenderer {
         return Stack(
           alignment: Alignment.centerLeft,
           children: [
-            if (trackLayer != null) _buildLayer(context, trackLayer, manifest, config),
-            if (thumbLayer != null)
-              Positioned(
-                left: value * (trackWidth - thumbWidth - 0.5 * state.scale) + 0.25 * state.scale,
-                child: _buildLayer(context, thumbLayer, manifest, config),
-              ),
+            _buildLayer(context, trackLayer ?? defaultTrack, manifest, config),
+            Positioned(
+              left: value * (trackWidth - thumbSize - 0.5 * state.scale) + 0.25 * state.scale,
+              child: _buildLayer(context, thumbLayer ?? defaultThumb, manifest, config),
+            ),
           ],
         );
       },
@@ -363,8 +444,56 @@ class NativeSkinRenderer extends SkinRenderer {
           // Send joystick data to device provider
           state.onJoystickChanged?.call(details.x, details.y);
         },
-        base: baseLayer != null ? IgnorePointer(child: _buildLayer(context, baseLayer, manifest, config)) : null,
-        stick: stickLayer != null ? IgnorePointer(child: _buildLayer(context, stickLayer, manifest, config)) : const JoystickStick(),
+        // Remove IgnorePointer to ensure stick receives hits for the library's GestureDetector
+        // Wrap base in a regular expanding Center to prevent it from moving with the Stack alignment
+        base: baseLayer != null ? Center(child: _buildLayer(context, baseLayer, manifest, config)) : null,
+        stick: stickLayer != null ? _buildLayer(context, stickLayer, manifest, config) : const JoystickStick(),
+      ),
+    );
+  }
+
+  Widget _renderKnobNative(BuildContext context, Map<String, dynamic> props, SkinManifest manifest, cfg.BehaviorConfig config) {
+    final double size = _resolveDim(props['size'], manifest, 20.0);
+    final Color activeColor = _resolveColor('#primary', manifest, _getAccentColor(manifest));
+    final Color surfaceColor = _resolveColor('#surface', manifest, const Color(0xFF111111));
+    
+    // Scale 0..1 to 0..100
+    final double initialValue = state.value * 100;
+
+    return Center(
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: ClipRect( // Prevent value labels from overflowing the knob's bounding box
+          child: OverflowBox(
+            maxHeight: size + 40, // Allow some room for labels if they bleed out, but clip them
+            maxWidth: size + 40,
+            child: FlutterOKnob(
+              size: size,
+              knobvalue: initialValue,
+              minValue: 0,
+              maxValue: 100,
+              onChanged: (val) {
+                // Scale back 0..100 to 0..1
+                state.onChanged?.call(val / 100.0);
+              },
+              markerColor: activeColor,
+              innerKnobGradient: LinearGradient(
+                colors: [surfaceColor.withValues(alpha: 0.8), surfaceColor],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              outerRingGradient: LinearGradient(
+                colors: [surfaceColor, surfaceColor.withValues(alpha: 0.5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              showKnobLabels: false,
+              maxRotationAngle: 270,
+              angleOffset: 135,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -431,9 +560,9 @@ class NativeSkinRenderer extends SkinRenderer {
     // State Interpolation
     if (s.startsWith('$state.')) {
       final key = s.substring(7);
-      if (key == 'label') return state.label as T;
-      if (key == 'icon') return state.icon as T;
-      if (key == 'value') return state.value.toString() as T;
+      if (key == 'label') return (state.label ?? fallback) as T;
+      if (key == 'icon') return (state.icon ?? fallback) as T;
+      if (key == 'value') return (state.value.toString()) as T;
     }
 
     if (s.startsWith('#')) {
@@ -499,13 +628,69 @@ class NativeSkinRenderer extends SkinRenderer {
     }
   }
 
+  Widget _renderMultipleButtonRolling(BuildContext context, SkinManifest manifest, cfg.BehaviorConfig config) {
+    final items = state.items;
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    final Color activeColor = _resolveColor('#toggleActive', manifest, _getAccentColor(manifest));
+    final Color trackColor = _resolveColor('#toggleTrack', manifest, Colors.grey.shade800);
+    
+    // Calculate dimensions
+    final double h = _resolveDim(10.0, manifest, 10.0);
+    final double w = h * items.length;
+    final double thumbSize = h * 0.9;
+
+    return Center(
+      child: Container(
+        width: w,
+        height: h,
+        decoration: BoxDecoration(
+          color: trackColor,
+          borderRadius: BorderRadius.circular(h / 2),
+          border: Border.all(color: Colors.white10, width: 0.5 * state.scale),
+        ),
+        child: AnimatedToggleSwitch<int>.rolling(
+          current: state.value.toInt().clamp(0, items.length - 1),
+          values: List.generate(items.length, (i) => i),
+          onChanged: (val) {
+            state.onChanged?.call(val.toDouble());
+          },
+          animationDuration: const Duration(milliseconds: 350),
+          animationCurve: Curves.easeOutBack,
+          indicatorSize: Size.square(thumbSize),
+          height: h,
+          style: ToggleStyle(
+            indicatorColor: activeColor,
+            backgroundColor: Colors.transparent,
+          ),
+          borderWidth: 0.0,
+          iconBuilder: (value, foreground) {
+            final item = items[value];
+            
+            if (item.icon.isNotEmpty) {
+              return Icon(
+                _getIconData(item.icon),
+                size: thumbSize * 0.6,
+                color: foreground ? Colors.black : Colors.white70,
+              );
+            }
+            
+            return Text(
+              _resolveString(item.label, manifest),
+              style: GoogleFonts.getFont(
+                manifest.tokens.typography['fontFamily'] ?? 'VT323',
+                fontSize: h * 0.35,
+                color: foreground ? Colors.black : Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   IconData _getIconData(String name) {
-    switch (name) {
-      case 'power': return Icons.power_settings_new;
-      case 'settings': return Icons.settings;
-      case 'wifi': return Icons.wifi;
-      case 'bluetooth': return Icons.bluetooth;
-      default: return Icons.radio_button_checked;
-    }
+    return parseIconFromName(name) ?? Icons.radio_button_checked;
   }
 }

@@ -9,6 +9,7 @@ import '../theme/skin/renderers/dynamic_skin_renderer.dart';
 import '../theme/skin/renderers/skin_renderer.dart';
 import '../theme/skin/behavior_config.dart';
 import '../theme/skin/skin_manager.dart';
+import '../theme/skin/skin_tokens.dart';
 
 /// Rotary knob widget (-100 to +100) using v1.6 skin engine.
 /// Maintains vertical-drag interaction and physics while delegating rendering.
@@ -179,6 +180,36 @@ class _KnobWidgetState extends State<KnobWidget>
   Widget build(BuildContext context) {
     // Normalize -100..100 to 0..1 for the renderer
     final normalizedValue = (widget.value + 100) / 200.0;
+    final manifest = SkinManager().current;
+    final bool isNative = manifest?.renderer == SkinRendererType.native || manifest?.name == 'neon';
+
+    Widget renderer = DynamicSkinRenderer(
+      widgetFolder: 'knob',
+      state: RKSkinState(
+        isPressed: _isDragging,
+        styleIndex: widget.config.style,
+        value: normalizedValue,
+        x: widget.config.x,
+        y: widget.config.y,
+        label: widget.config.label,
+        icon: widget.config.icon,
+        scale: widget.scale,
+        onChanged: (val) {
+          // Map back 0..1 to -100..100
+          final int rawValue = (val * 200 - 100).round().clamp(-100, 100);
+          if (rawValue != widget.value) widget.onChanged(rawValue);
+        },
+      ),
+    );
+
+    if (isNative) {
+      return Center(
+        child: AspectRatio(
+          aspectRatio: 1.0,
+          child: renderer,
+        ),
+      );
+    }
 
     return Center(
       child: GestureDetector(
@@ -193,19 +224,7 @@ class _KnobWidgetState extends State<KnobWidget>
               if (_behavior.renderingLayers.isNotEmpty) {
                 return Transform.rotate(
                   angle: (normalizedValue * 270 - 135) * (math.pi / 180),
-                  child: DynamicSkinRenderer(
-                    widgetFolder: 'knob',
-                    state: RKSkinState(
-                      isPressed: _isDragging,
-                      styleIndex: widget.config.style,
-                      value: normalizedValue,
-                      x: widget.config.x,
-                      y: widget.config.y,
-                      label: widget.config.label,
-                      icon: widget.config.icon,
-                      scale: widget.scale,
-                    ),
-                  ),
+                  child: renderer,
                 );
               }
 
