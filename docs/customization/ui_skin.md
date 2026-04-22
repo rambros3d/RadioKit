@@ -29,6 +29,14 @@ A Skin Pack is a ZIP archive (identifiable by the `.rkskin` extension). To add s
 ├── manifest.json        # Global tokens and metadata
 ├── global/              # Shared assets (backgrounds, overlays)
 ├── button_push/         # Folder for RK_PushButton
+├── button_toggle/       # Folder for RK_ToggleButton
+├── toggle_switch/       # Folder for RK_SlideSwitch
+├── multiple_button/     # Folder for RK_MultipleButton
+├── multiple_select/     # Folder for RK_MultipleSelect
+├── knob/                # Folder for RK_Knob
+├── joystick/            # Folder for RK_Joystick
+├── led/                 # Folder for RK_LED
+├── display/             # Folder for RK_Text (display)
 │   ├── bg.svg
 │   ├── active.svg       # Shown when pressed
 │   └── config.json      # Mapping and local animations

@@ -139,6 +139,8 @@ RK_ToggleButton power({
 
 ### SlideSwitch
 
+> **Skin folder**: `toggle_switch` – assets for this widget reside in the `toggle_switch/` directory of a skin pack.
+
 iOS-style slide/toggle switch for binary on/off control. Unlike `ToggleButton` (which renders as a button), `SlideSwitch` renders as a horizontal track with a sliding thumb.
 
 **Structure:**
@@ -329,6 +331,8 @@ RK_Joystick drive({
 
 ### MultipleButton / MultipleSelect
 
+> **Skin folders**: `multiple_button/` for button style, `multiple_select/` for select/checkbox style. Assets for these widgets reside in the respective directories of a skin pack.
+
 Selection groups (Radio or Checkbox). State is an **8-bit Bitmask**.
 
 **Widget Structure:**
@@ -391,6 +395,8 @@ RK_MultipleSelect toolbar({
 
 ### LED
 
+> **Skin folder**: `led/` – assets for the LED widget live in this directory of a skin pack.
+
 Visual status indicator (Arduino -> App).
 
 **Structure:**
@@ -438,6 +444,8 @@ RK_LED telemetryOK({
 ---
 
 ### Text
+
+> **Skin folder**: `display/` – the read‑only text widget uses the `display/` directory in a skin pack.
 
 Dynamic text display label (Arduino -> App).
 

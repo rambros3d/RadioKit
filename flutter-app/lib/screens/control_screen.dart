@@ -229,14 +229,14 @@ class _ControlScreenState extends State<ControlScreen> {
                     listenable: SkinManager(),
                     builder: (context, _) {
                       final skin = SkinManager().current;
-                      final gridColor = skin?.colors['grid'] ?? Theme.of(context).dividerColor.withValues(alpha: 0.3);
+                      final gridColor = skin?.colors['grid'] ?? Theme.of(context).dividerColor;
                       
                       return CustomPaint(
                         size: Size(physicalW, physicalH),
                         painter: _GridPainter(
                           color: gridColor,
                           style: skin?.gridStyle ?? GridStyle.lines,
-                          spacing: 10.0, // Fixed 10-unit grid
+                          spacing: skin?.gridSpacing ?? 10.0,
                           scaleX: internalScale,
                           scaleY: internalScale,
                         ),
@@ -402,7 +402,7 @@ class _GridPainter extends CustomPainter {
 
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 0.5;
+      ..strokeWidth = 1.0;
 
     final physSpacingX = spacing * scaleX;
     final physSpacingY = spacing * scaleY;

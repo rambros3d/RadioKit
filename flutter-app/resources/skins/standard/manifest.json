@@ -1,7 +1,7 @@
 {
   "name": "standard",
   "version": "2.0.0",
-  "author": "RadioKit",
+  "author": "RamBros",
   "renderer": "svg",
   "description": "Clean, functional default skin",
   "tokens": {

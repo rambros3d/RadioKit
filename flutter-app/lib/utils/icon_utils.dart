@@ -12,6 +12,18 @@ IconData? parseIconFromName(String name) {
     case 'pause':    return LucideIcons.pause;
     case 'stop':     return LucideIcons.square;
     case 'power':    return LucideIcons.power;
+    case 'zap':      return LucideIcons.zap;
+    case 'sliders':  return LucideIcons.slidersHorizontal;
+    case 'cpu':      return LucideIcons.cpu;
+    case 'mouse':    return LucideIcons.mouse;
+    case 'moon':     return LucideIcons.moon;
+    case 'sun':      return LucideIcons.sun;
+    case 'leaf':     return LucideIcons.leaf;
+    case 'rotate-cw':return LucideIcons.rotateCw;
+    case 'rotate-ccw':return LucideIcons.rotateCcw;
+    case 'skull':    return LucideIcons.skull;
+    case 'thermometer':return LucideIcons.thermometer;
+    case 'map-pin':  return LucideIcons.mapPin;
     case 'volume':   return LucideIcons.volume2;
     case 'mute':     return LucideIcons.volumeX;
     case 'mic':      return LucideIcons.mic;

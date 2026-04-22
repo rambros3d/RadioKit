@@ -16,9 +16,23 @@ echo "🚀 Starting RadioKit Debug APK Build..."
 if [ $? -eq 0 ]; then
     echo "✅ Build Successful!"
     echo "APK located at: build/app/outputs/flutter-apk/app-debug.apk"
-    echo ""
-    echo "To install to your connected device, run:"
-    echo "adb install build/app/outputs/flutter-apk/app-debug.apk"
+    
+    # Check for authorized ADB devices
+    DEVICES=$(adb devices | grep -v "List of devices" | grep -w "device" | awk '{print $1}')
+    
+    if [ -n "$DEVICES" ]; then
+        echo ""
+        echo "📲 Authorized ADB device(s) found. Starting automatic sideload..."
+        for DEVICE in $DEVICES; do
+            echo "📦 Installing to $DEVICE..."
+            adb -s "$DEVICE" install -r build/app/outputs/flutter-apk/app-debug.apk
+        done
+        echo "✨ Sideload process complete!"
+    else
+        echo ""
+        echo "ℹ️ No authorized ADB devices found. Skipping sideload."
+        echo "To install manually, run: adb install build/app/outputs/flutter-apk/app-debug.apk"
+    fi
 else
     echo "❌ Build Failed!"
     exit 1

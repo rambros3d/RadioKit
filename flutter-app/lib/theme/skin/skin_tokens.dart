@@ -104,11 +104,15 @@ class SkinManifest {
     }
 
     // Parse Grid Config
-    final gridStyle = json['gridStyle'] == 'none' ? GridStyle.none : (json['gridStyle'] == 'dots' ? GridStyle.dots : GridStyle.lines);
+    final String gridStyleRaw = (json['gridStyle'] ?? 'lines').toString().toLowerCase().trim();
+    final gridStyle = gridStyleRaw == 'none' ? GridStyle.none : 
+                     (gridStyleRaw == 'dots' ? GridStyle.dots : GridStyle.lines);
+                     
     final int gridSpacingValue = (json['gridSpacing'] as num?)?.toInt() ?? 50;
     final gridSpacing = gridSpacingValue.toDouble();
 
-    final renderer = json['renderer'] == 'native' ? SkinRendererType.native : SkinRendererType.svg;
+    final String rendererRaw = (json['renderer'] ?? 'svg').toString().toLowerCase().trim();
+    final renderer = rendererRaw == 'native' ? SkinRendererType.native : SkinRendererType.svg;
 
     return SkinManifest(
       name: json['name'],

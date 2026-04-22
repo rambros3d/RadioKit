@@ -1,7 +1,7 @@
 {
   "name": "neon",
   "version": "1.5.0",
-  "author": "RadioKit",
+  "author": "RamBros",
   "renderer": "native",
   "gridStyle": "none",
   "gridSpacing": 50,
@@ -25,7 +25,10 @@
       "glowIntensity": 1.0,
       "neumorphicDepth": 4.0,
       "neumorphicIntensity": 0.2,
-      "neumorphicLightSource": {"x": -1.0, "y": -1.0},
+      "neumorphicLightSource": {
+        "x": -1.0,
+        "y": -1.0
+      },
       "neumorphicCurve": 0.1
     },
     "typography": {
@@ -37,11 +40,26 @@
       "borderWidth": 2.0
     },
     "styles": {
-      "0": { "primary": "#39FF14", "glow": true }, 
-      "1": { "primary": "#555555", "glow": false },
-      "2": { "primary": "#39FF14", "glow": true }, 
-      "3": { "primary": "#FFEA00", "glow": true },
-      "4": { "primary": "#FF073A", "glow": true }
+      "0": {
+        "primary": "#39FF14",
+        "glow": true
+      },
+      "1": {
+        "primary": "#555555",
+        "glow": false
+      },
+      "2": {
+        "primary": "#39FF14",
+        "glow": true
+      },
+      "3": {
+        "primary": "#FFEA00",
+        "glow": true
+      },
+      "4": {
+        "primary": "#FF073A",
+        "glow": true
+      }
     }
   }
 }

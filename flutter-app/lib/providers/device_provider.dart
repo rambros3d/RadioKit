@@ -159,14 +159,14 @@ class DeviceProvider extends ChangeNotifier {
         const WidgetConfig(typeId: kWidgetButton,      widgetId: 2, x: 25, y: 50, height: 10, variant: 1, label: 'TOGGLE', icon: 'power', strMask: kStrMaskLabel | kStrMaskIcon),
         const WidgetConfig(typeId: kWidgetSlideSwitch, widgetId: 3, x: 25, y: 25, height: 10, label: 'SLIDE', icon: 'sliders', strMask: kStrMaskLabel | kStrMaskIcon),
         
-        const WidgetConfig(typeId: kWidgetText,        widgetId: 4, x: 100, y: 92, width: 14, height: 10, label: 'v1.7_SCALING_ENGINE', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetSlider,      widgetId: 5, x: 100, y: 75, width: 20, height: 10,  label: 'WIDE_SLIDER', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetMultiple,    widgetId: 11, x: 100, y: 50,  height: 10, variant: 1,  label: 'FLAGS', content: 'WiFi:wifi|BT:bluetooth|GPS:map-pin', strMask: kStrMaskLabel | kStrMaskContent),
-        const WidgetConfig(typeId: kWidgetMultiple,    widgetId: 8, x: 100,  y: 25,  height: 10, variant: 0, label: 'MODES', content: 'Auto:cpu|Man:mouse', strMask: kStrMaskLabel | kStrMaskContent),
+        const WidgetConfig(typeId: kWidgetText,        widgetId: 4, x: 100, y: 92, width: 14, height: 10, label: 'WIDGETS_TEST', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetSlider,      widgetId: 5, x: 100, y: 75, width: 60, height: 10,  label: 'SLIDER', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetMultiple,    widgetId: 11, x: 100, y: 50,  height: 10, variant: 1,  label: 'MULTI', content: 'WiFi:wifi|BT:bluetooth|GPS:map-pin', strMask: kStrMaskLabel | kStrMaskContent),
+        const WidgetConfig(typeId: kWidgetMultiple,    widgetId: 8, x: 100,  y: 25,  height: 10, variant: 0, label: 'MODES', content: 'Auto:cpu|Man:mouse|Night:moon|Eco:leaf', strMask: kStrMaskLabel | kStrMaskContent),
         
-        const WidgetConfig(typeId: kWidgetKnob,        widgetId: 7, x: 175, y: 75, height: 10, label: 'PAN', icon: 'rotate-cw', strMask: kStrMaskLabel | kStrMaskIcon),
-        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 10,x: 175, y: 50, height: 10, label: 'STICK', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetLed,         widgetId: 9, x: 175, y: 25, height: 10, label: 'ALIVE', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetKnob,        widgetId: 7, x: 170, y: 80, height: 10, label: 'PAN', icon: 'rotate-cw', strMask: kStrMaskLabel | kStrMaskIcon),
+        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 10,x: 170, y: 50, height: 10, label: 'STICK', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetLed,         widgetId: 9, x: 170, y: 25, height: 10, label: 'ALIVE', strMask: kStrMaskLabel),
       ];
       _orientation = kOrientationLandscape;
     } 
@@ -343,8 +343,8 @@ class DeviceProvider extends ChangeNotifier {
         next = next.copyWithOutput(9, [1, 57, 255, 20, brightness]);
         
         // ID 4: Text update based on time
-        if ((_simTime * 10).toInt() % 40 == 0) {
-           next = next.copyWithOutput(4, 'SYSTEM_UP: ${_simTime.toStringAsFixed(1)}s');
+        if ((_simTime * 10).toInt() % 10 == 0) {
+           next = next.copyWithOutput(4, 'SYSTEM_UP: ${_simTime.toInt()}s');
         }
 
         // ID 7: Knob oscillation (Disabled)
@@ -382,7 +382,7 @@ class DeviceProvider extends ChangeNotifier {
         
         // ID 8: System load text
         if ((_simTime * 10).toInt() % 15 == 0) {
-           final load = (10 + 5 * sin(_simTime)).toStringAsFixed(1);
+           final load = (10 + 5 * sin(_simTime)).round().toString();
            next = next.copyWithOutput(8, 'LOAD: $load%');
         }
         
