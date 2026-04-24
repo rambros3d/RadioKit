@@ -37,6 +37,8 @@ class SlideSwitchWidget extends StatelessWidget {
         y: config.y,
         styleIndex: config.style,
         label: config.label,
+        onText: config.onText,
+        offText: config.offText,
         icon: config.icon,
         scale: scale,
         onChanged: (val) {

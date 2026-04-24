@@ -71,6 +71,8 @@ class _ButtonWidgetState extends State<ButtonWidget> {
           styleIndex: widget.config.style,
           isEnabled: true,
           label: widget.config.label,
+          onText: widget.config.onText,
+          offText: widget.config.offText,
           icon: widget.config.icon,
           scale: widget.scale,
         ),

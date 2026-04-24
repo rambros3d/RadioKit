@@ -31,6 +31,8 @@ class RKSkinState {
   final int bitCount; // For binary padding (Multiple widgets)
   final Color? colorOverride; // For dynamic RGB LEDs
   final String label; // Logical label/title
+  final String onText; // Text for ON state
+  final String offText; // Text for OFF state
   final String content; // Dynamic text content (for displays)
   final String icon;
   final List<MultipleItem> items;
@@ -51,6 +53,8 @@ class RKSkinState {
     this.bitCount = 0,
     this.colorOverride,
     this.label = '',
+    this.onText = '',
+    this.offText = '',
     this.content = '',
     this.icon = '',
     this.items = const [],

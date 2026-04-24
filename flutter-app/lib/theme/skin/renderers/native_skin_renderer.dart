@@ -355,24 +355,30 @@ class NativeSkinRenderer extends SkinRenderer {
               backgroundColor: b ? activeColor.withValues(alpha: 0.3) : trackColor,
             ),
             iconBuilder: (b) => Icon(
-              b ? Icons.chevron_right : _getIconData(state.icon.isNotEmpty ? state.icon : 'power'),
+              _getIconData(state.icon.isNotEmpty ? state.icon : (b ? 'check' : 'power')),
               size: thumbSize * 0.6,
               color: b ? Colors.black : Colors.black87,
             ),
-            textBuilder: (b) => Center(
-              child: Text(
-                b ? (state.label.isNotEmpty ? state.label : 'ON') : 'OFF',
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.visible,
-                style: GoogleFonts.getFont(
-                  manifest.tokens.typography['fontFamily'] ?? 'Inter',
-                  color: Colors.white,
-                  fontSize: trackHeight * 0.35,
-                  fontWeight: FontWeight.bold,
+            textBuilder: (b) {
+              final text = b 
+                  ? (state.onText.isNotEmpty ? state.onText : (state.label.isNotEmpty ? state.label : 'ON'))
+                  : (state.offText.isNotEmpty ? state.offText : 'OFF');
+              
+              return Center(
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                  style: GoogleFonts.getFont(
+                    manifest.tokens.typography['fontFamily'] ?? 'Inter',
+                    color: Colors.white,
+                    fontSize: trackHeight * 0.35,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       );
