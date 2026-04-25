@@ -43,9 +43,9 @@ Open the RadioKit app, scan, and connect. The UI will appear instantly.
 
 ## 📖 Dive Deeper
 
-Use the sidebar to explore technical details:
-
-- **[API Reference](FUNCTIONS.md)**: Every class and method documented.
-- **[UI Layout](UI_LAYOUT.md)**: How the coordinate system and layout works.
-- **[Binary Protocol](PROTOCOL.md)**: For those interested in the wire format.
-- **[Skins & Themes](UI_SKINS.md)**: Personalize the look of your controllers.
+- **[Getting Started](arduino/setup.md)**: How to set up the RadioKit library.
+- **[Widgets Reference](arduino/widgets.md)**: Every widget and its configuration.
+- **[UI Layout](arduino/ui_layout.md)**: How the coordinate system and layout works.
+- **[Binary Protocol](arduino/protocol.md)**: For those interested in the wire format.
+- **[Skins & Themes](arduino/ui_skin.md)**: Personalize the look of your controllers.
+- **[Flutter Library](flutter-library/)**: Use RadioKit widgets in your own Flutter apps.

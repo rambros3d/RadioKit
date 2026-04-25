@@ -526,7 +526,7 @@ When using `RK_SliderProps` or `RK_KnobProps`, you can set `centering` and `dete
 
 ### UI Theme
 
-RadioKit uses string-based identifiers for UI skins. For a full list of built-in skins and details on custom skin packs, refer to **[UI Skins Documentation](UI_SKINS.md)**.
+RadioKit uses string-based identifiers for UI skins. For a full list of built-in skins and details on custom skin packs, refer to **[UI Skins Documentation](ui_skin.md)**.
 
 ### Widget Styles
 

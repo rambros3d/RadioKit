@@ -12,9 +12,9 @@
 - **Action**: If you add/remove/update a function, update its corresponding `.md` file in the `docs/` folder. If you change a parameter type, update the signature in the documentation.
 - **Goal**: Ensure that the library remains "Plug-and-Play" for human users at all times.
 
-## 2. Using DeepWiki MCP for Research
+## 2. Using DeepWiki MCP and Github MCP for Research
 
-When working on tasks that require understanding external libraries or codebases, use the **DeepWiki MCP** tool before writing or modifying any code.
+When working on tasks that require understanding external libraries or codebases, use the **DeepWiki MCP** and **Github MCP** tools before writing or modifying any code.
 
 **When to use DeepWiki MCP:**
 - Before integrating or extending support for a third-party library (e.g., NimBLE-Arduino, Flutter packages).
@@ -25,12 +25,6 @@ When working on tasks that require understanding external libraries or codebases
 - Use `read_wiki_structure` to get an overview of a repository's topics.
 - Use `read_wiki_contents` to read detailed documentation for a repository.
 - Use `ask_question` to ask a targeted question about a specific repo.
-
-**Priority repositories to query via DeepWiki:**
-| Repository | Purpose |
-|---|---|
-| `RemoteXY/RemoteXY-Arduino-library` | Reference implementation |
-| `h2zero/NimBLE-Arduino` | BLE transport layer reference |
 
 > [!TIP]
 > Always prefer DeepWiki MCP over assumptions or general knowledge when working with these codebases.

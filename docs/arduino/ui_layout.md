@@ -78,7 +78,7 @@ Setting `RadioKit.config.theme` changes the aesthetic of the entire controller i
 2.  Sideloaded/Local Library (e.g., `"custom-gold"`)
 
 > [!TIP]
-> For a full list of available skins and instructions on creating custom skin packs, see the **[UI Skins Documentation](file:///home/sun/Apps/RadioKit/docs/UI_SKINS.md)**.
+> For a full list of available skins and instructions on creating custom skin packs, see the **[UI Skins Documentation](ui_skin.md)**.
 
 ### Semantic Styles
 Use the `style` field to define the **purpose** of a widget. The app automatically maps these to theme-appropriate color palettes (Success, Warning, Danger, etc.).
@@ -89,7 +89,7 @@ Icons are passed as simple strings. Using standard names ensures compatibility a
 - Actions: `"flame"`, `"target"`, `"camera"`.
 
 > [!TIP]
-> **Implementation Details**: To apply these layout and visual principles in code, see the **[Common Variables](file:///home/sun/Apps/RadioKit/docs/FUNCTIONS.md#common-variables)** and **[Widget Reference](file:///home/sun/Apps/RadioKit/docs/FUNCTIONS.md#4-widget-class-reference)** in the Functions documentation.
+> **Implementation Details**: To apply these layout and visual principles in code, see the **[Common Variables](widgets.md#common-variables)** and **[Widget Reference](widgets.md#2-widget-class-reference)** in the Functions documentation.
 
 ---
 

@@ -1,14 +1,11 @@
-- **Getting Started**
-  - [Overview](README.md)
-  - [UI Layout](widgets/ui_layout.md)
-  - [Protocol Spec](tehnical/protocol.md)
+- [Home](README.md)
 
-- **Development**
-  - [Library Setup](getting-started/setup.md)
-  - [Widgets Reference](widgets/widgets.md)
+- **RadioKit App (Arduino)**
+  - [Getting Started](arduino/setup.md)
+  - [Widgets Reference](arduino/widgets.md)
+  - [UI Layout](arduino/ui_layout.md)
+  - [Protocol Spec](arduino/protocol.md)
 
-- **Custom Skins**
-  - [UI Skins & Themes](customization/ui_skin.md)
-
-- **External Links**
-  - [GitHub Repository](https://github.com/rambros3d/RadioKit)
+- **Flutter Library**
+  - [Overview](flutter-library/README.md)
+  - [Widget API](flutter-library/rk_button.md)

@@ -18,17 +18,17 @@ import 'package:radiokit_widgets/radiokit_widgets.dart';
 
 ## Widgets Overview
 
-- [RKButton](/rk_button.md)
-- [RKSwitch](/rk_switch.md)
-- [RKRollingSwitch](/rk_rolling_switch.md)
-- [RKRockerSwitch](/rk_rocker_switch.md)
-- [RKSlider](/rk_slider.md)
-- [RKKnob](/rk_knob.md)
-- [RKJoystick](/rk_joystick.md)
-- [RKLed](/rk_led.md)
-- [RKMultiButton](/rk_multi_button.md)
-- [RKMultiSelect](/rk_multi_select.md)
-- [RKDisplay](/rk_display.md)
+- [RKButton](rk_button.md)
+- [RKSwitch](rk_switch.md)
+- [RKRollingSwitch](rk_rolling_switch.md)
+- [RKRockerSwitch](rk_rocker_switch.md)
+- [RKSlider](rk_slider.md)
+- [RKKnob](rk_knob.md)
+- [RKJoystick](rk_joystick.md)
+- [RKLed](rk_led.md)
+- [RKMultiButton](rk_multi_button.md)
+- [RKMultiSelect](rk_multi_select.md)
+- [RKDisplay](rk_display.md)
 
 Each widget follows the RadioKit visual language – industrial‑grade, 3‑D depth, and optional haptic feedback.
 

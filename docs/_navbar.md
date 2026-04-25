@@ -1,3 +1,5 @@
-- [Home](README.md)
-- [RamBros3D](https://rambros3d.com)
-- [Source code](https://github.com/rambros3d/RadioKit)
+<div class="custom-navbar">
+  <a href="#/arduino/"><img src="assets/arduino.svg" class="nav-icon"> RadioKit Arduino</a>
+  <a href="#/flutter-library/"><img src="assets/flutter.svg" class="nav-icon"> Flutter Library</a>
+  <a href="https://rambros3d.com" target="_blank" class="nav-button"><img src="assets/rambros-dragon.svg" class="btn-icon"> RamBros3D</a>
+</div>

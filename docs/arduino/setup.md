@@ -8,7 +8,7 @@
 
 1. [Setup & Sketch Structure](#1-setup--sketch-structure)
 2. [RadioKit (Main Object)](#2-radiokit-main-object)
-3. [Widgets Reference (Composition & Classes)](WIDGETS.md)
+3. [Widgets Reference (Composition & Classes)](widgets.md)
 
 ---
 
@@ -62,7 +62,7 @@ Global settings object.
 | `**password**`    | `const char*` | Optional connection password (leave empty for none).            |
 | `**description**` | `const char*` | Short overview of the device's function.                        |
 | `**version**`     | `const char*` | User-defined firmware version string (e.g. `"1.0.4"`).          |
-| `**theme**`       | `const char*` | Controller skin identifier. Supports built-in names or GitHub URLs. See [UI Skins](UI_SKINS.md). |
+| `**theme**`       | `const char*` | Controller skin identifier. Supports built-in names or GitHub URLs. See [UI Skins](ui_skin.md). |
 | `**type**`        | `const char*` | Category of device (e.g. `"truck"`, `"robot"`, `"locomotive"`). |
 | `**orientation**` | `uint8_t`     | `RK_LANDSCAPE` (Default) or `RK_PORTRAIT`.                      |
 | `**width**`       | `uint8_t`     | Canvas width (0-250).                                           |
