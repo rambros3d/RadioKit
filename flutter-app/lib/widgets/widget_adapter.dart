@@ -224,7 +224,7 @@ class WidgetAdapter {
       key: ValueKey('js_${config.widgetId}'),
       value: RKJoystickValue(x: rawX / 100.0, y: rawY / 100.0),
       size: size,
-      autoCenter: true,
+      autoCenter: variantCentering(config.variant) != kCenterNone,
       label: null,
       onChanged: (v) {
         // Normalized -1.0..1.0 → protocol -100..100

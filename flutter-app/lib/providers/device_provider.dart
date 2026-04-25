@@ -155,9 +155,9 @@ class DeviceProvider extends ChangeNotifier {
     // Setup dummy widgets for demo
     if (demoId == 'WIDGETS_DEMO') {
       _widgets = [
-        const WidgetConfig(typeId: kWidgetButton,      widgetId: 1, x: 25, y: 75, height: 10, label: 'PUSH', icon: 'zap', strMask: kStrMaskLabel | kStrMaskIcon),
-        const WidgetConfig(typeId: kWidgetButton,      widgetId: 2, x: 25, y: 50, height: 10, variant: 1, label: 'TOGGLE', icon: 'power', strMask: kStrMaskLabel | kStrMaskIcon),
-        const WidgetConfig(typeId: kWidgetSlideSwitch, widgetId: 3, x: 25, y: 25, height: 10, label: 'SLIDE', icon: 'sliders', strMask: kStrMaskLabel | kStrMaskIcon),
+        const WidgetConfig(typeId: kWidgetButton,      widgetId: 1, x: 25, y: 75, height: 10, label: 'PUSH', icon: 'zap', onText: 'ACTIVE', offText: 'IDLE', strMask: kStrMaskLabel | kStrMaskIcon | kStrMaskOnText | kStrMaskOffText),
+        const WidgetConfig(typeId: kWidgetButton,      widgetId: 2, x: 25, y: 50, height: 10, variant: 1, label: 'TOGGLE', icon: 'power', onText: 'ON', offText: 'OFF', strMask: kStrMaskLabel | kStrMaskIcon | kStrMaskOnText | kStrMaskOffText),
+        const WidgetConfig(typeId: kWidgetSlideSwitch, widgetId: 3, x: 25, y: 25, height: 10, label: 'SLIDE', icon: 'sliders', onText: 'HI', offText: 'LO', strMask: kStrMaskLabel | kStrMaskIcon | kStrMaskOnText | kStrMaskOffText),
         
         const WidgetConfig(typeId: kWidgetText,        widgetId: 4, x: 100, y: 92, width: 14, height: 10, label: 'WIDGETS_TEST', strMask: kStrMaskLabel),
         const WidgetConfig(typeId: kWidgetSlider,      widgetId: 5, x: 100, y: 75, width: 60, height: 10,  label: 'SLIDER', strMask: kStrMaskLabel),
@@ -165,18 +165,18 @@ class DeviceProvider extends ChangeNotifier {
         const WidgetConfig(typeId: kWidgetMultiple,    widgetId: 8, x: 100,  y: 25,  height: 10, variant: 0, label: 'MODES', content: 'Auto:cpu|Man:mouse|Night:moon|Eco:leaf', strMask: kStrMaskLabel | kStrMaskContent),
         
         const WidgetConfig(typeId: kWidgetKnob,        widgetId: 7, x: 170, y: 80, height: 10, label: 'PAN', icon: 'rotate-cw', strMask: kStrMaskLabel | kStrMaskIcon),
-        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 10,x: 170, y: 50, height: 10, label: 'STICK', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 10,x: 170, y: 50, height: 10, variant: kCenterMid, label: 'STICK', strMask: kStrMaskLabel),
         const WidgetConfig(typeId: kWidgetLed,         widgetId: 9, x: 170, y: 25, height: 10, label: 'ALIVE', strMask: kStrMaskLabel),
       ];
       _orientation = kOrientationLandscape;
     } 
     else if (demoId == 'RC_CONTROLLER') {
       _widgets = [
-        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 1, x: 45,  y: 50,  height: 25, label: 'L_STICK', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 2, x: 155, y: 50,  height: 25, label: 'R_STICK', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 1, x: 45,  y: 50,  height: 25, variant: kCenterMid, label: 'L_STICK', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 2, x: 155, y: 50,  height: 25, variant: kCenterMid, label: 'R_STICK', strMask: kStrMaskLabel),
         const WidgetConfig(typeId: kWidgetLed,         widgetId: 3, x: 100, y: 90,  height: 12, label: 'LINK', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetButton,      widgetId: 4, x: 30,  y: 90,  height: 10, variant: 1, label: 'ARM', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetButton,      widgetId: 5, x: 170, y: 90,  height: 10, label: 'KILL', icon: 'skull', strMask: kStrMaskLabel | kStrMaskIcon),
+        const WidgetConfig(typeId: kWidgetButton,      widgetId: 4, x: 30,  y: 90,  height: 10, variant: 1, label: 'ARM', onText: 'ARMED', offText: 'DISARM', strMask: kStrMaskLabel | kStrMaskOnText | kStrMaskOffText),
+        const WidgetConfig(typeId: kWidgetButton,      widgetId: 5, x: 170, y: 90,  height: 10, label: 'KILL', icon: 'skull', onText: 'ENGAGED', offText: 'READY', strMask: kStrMaskLabel | kStrMaskIcon | kStrMaskOnText | kStrMaskOffText),
         const WidgetConfig(typeId: kWidgetText,        widgetId: 6, x: 100, y: 15, width: 70, height: 10, label: 'TELEMETRY', strMask: kStrMaskLabel),
         const WidgetConfig(typeId: kWidgetSlideSwitch, widgetId: 7, x: 100, y: 50,  height: 35, label: 'TRIM', strMask: kStrMaskLabel),
       ];

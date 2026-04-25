@@ -82,8 +82,10 @@ class _DebugScreenState extends State<DebugScreen>
       appBar: AppBar(
         title: const Text('Debug Monitor'),
         actions: [
-          _buildTransportChip(),
+          _buildDebugModeToggle(context),
           const SizedBox(width: 8),
+          _buildTransportChip(),
+          const SizedBox(width: 16),
         ],
         bottom: TabBar(
           controller: _tabs,
@@ -135,6 +137,29 @@ class _DebugScreenState extends State<DebugScreen>
                       fontWeight: FontWeight.w600,
                       color: color)),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDebugModeToggle(BuildContext context) {
+    return Consumer<DebugProvider>(
+      builder: (context, dp, _) {
+        return TextButton.icon(
+          onPressed: dp.toggleDebugMode,
+          icon: Icon(
+            dp.debugMode ? Icons.bug_report_rounded : Icons.bug_report_outlined,
+            size: 18,
+            color: dp.debugMode ? AppColors.brandOrange : Theme.of(context).disabledColor,
+          ),
+          label: Text(
+            dp.debugMode ? 'DISABLE DEBUG MODE' : 'ENABLE DEBUG MODE',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: dp.debugMode ? AppColors.brandOrange : Theme.of(context).disabledColor,
+            ),
           ),
         );
       },

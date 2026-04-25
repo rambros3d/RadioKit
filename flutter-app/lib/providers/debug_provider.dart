@@ -20,6 +20,7 @@ class DebugProvider extends ChangeNotifier implements DebugLogSink {
   bool _autoScroll = true;
   String _searchTerm = '';
   PacketDirection? _dirFilter; // null = show both
+  bool _debugMode = false;
 
   // The raw transport used when sending manual packets
   TransportService? _transport;
@@ -28,6 +29,7 @@ class DebugProvider extends ChangeNotifier implements DebugLogSink {
   bool get autoScroll => _autoScroll;
   String get searchTerm  => _searchTerm;
   PacketDirection? get dirFilter => _dirFilter;
+  bool get debugMode => _debugMode;
   TransportService? get transport => _transport;
 
   /// Attach (or replace) the transport so the Send panel can write packets.
@@ -97,6 +99,11 @@ class DebugProvider extends ChangeNotifier implements DebugLogSink {
 
   void setDirFilter(PacketDirection? dir) {
     _dirFilter = dir;
+    notifyListeners();
+  }
+
+  void toggleDebugMode() {
+    _debugMode = !_debugMode;
     notifyListeners();
   }
 

@@ -7,7 +7,6 @@ const Map<String, RKTokens> kTokenPresets = {
   'rambros': RKTokens.rambros,
   'neon': RKTokens.neon,
   'minimal': RKTokens.minimal,
-  'debug': RKTokens.debug,
 };
 
 /// The UI-facing provider that manages the active RKTokens preset.
@@ -27,6 +26,10 @@ class SkinProvider extends ChangeNotifier {
       if (saved != null && kTokenPresets.containsKey(saved)) {
         _activePreset = saved;
         _tokens = kTokenPresets[saved]!;
+      } else if (saved == 'debug') {
+        // Fallback if they were on the removed debug skin
+        _activePreset = 'rambros';
+        _tokens = RKTokens.rambros;
       }
     } catch (_) {}
     notifyListeners();

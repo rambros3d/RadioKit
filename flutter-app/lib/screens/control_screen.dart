@@ -93,7 +93,7 @@ class _ControlScreenState extends State<ControlScreen> {
               if (kDebugMode)
                 IconButton(
                   icon: const Icon(Icons.bug_report_rounded),
-                  tooltip: 'Debug Monitor',
+                  tooltip: 'Debug',
                   onPressed: _openDebug,
                 ),
               TextButton.icon(
@@ -200,8 +200,10 @@ class _ControlScreenState extends State<ControlScreen> {
 
     // Source grid color from RKTokens
     final skinProvider = context.watch<SkinProvider>();
+    final debugProvider = context.watch<DebugProvider>();
     final tokens = skinProvider.tokens;
     final gridColor = tokens.trackColor.withValues(alpha: 0.3);
+    final debugMode = debugProvider.debugMode;
 
     return Center(
       child: Padding(
@@ -233,7 +235,7 @@ class _ControlScreenState extends State<ControlScreen> {
                   ),
                   ...deviceProvider.widgets.map((config) {
                     return _buildPositionedWidget(
-                        config, internalScale, canvasVH, deviceProvider);
+                        config, internalScale, canvasVH, deviceProvider, debugMode);
                   }),
                 ],
               ),
@@ -249,6 +251,7 @@ class _ControlScreenState extends State<ControlScreen> {
     double scale,
     double canvasVH,
     DeviceProvider deviceProvider,
+    bool debugMode,
   ) {
     final scaledW  = config.w * scale;
     final scaledH  = config.h * scale;
@@ -268,11 +271,61 @@ class _ControlScreenState extends State<ControlScreen> {
       child: Transform.rotate(
         angle: angleRad,
         alignment: Alignment.center,
-        child: WidgetAdapter.build(
-          config: config,
-          state: state,
-          onInputChanged: (values) => deviceProvider.setInputValue(config.widgetId, values),
-          scale: scale,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            WidgetAdapter.build(
+              config: config,
+              state: state,
+              onInputChanged: (values) => deviceProvider.setInputValue(config.widgetId, values),
+              scale: scale,
+            ),
+            if (debugMode) ...[
+              // Bounding box
+              IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.grey.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                  ),
+                ),
+              ),
+              // Variant top-left
+              Positioned(
+                top: -12,
+                left: 0,
+                child: IgnorePointer(
+                  child: Text(
+                    'V:${config.variant}',
+                    style: const TextStyle(
+                      fontSize: 8,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      backgroundColor: Colors.black12,
+                    ),
+                  ),
+                ),
+              ),
+              // Position bottom-right
+              Positioned(
+                bottom: -12,
+                right: 0,
+                child: IgnorePointer(
+                  child: Text(
+                    '${config.x},${config.y}',
+                    style: const TextStyle(
+                      fontSize: 8,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      backgroundColor: Colors.black12,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
