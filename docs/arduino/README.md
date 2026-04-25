@@ -1,6 +1,6 @@
 # RadioKit Arduino Library
 
-> Control your Arduino projects from a mobile app over BLE or Serial. No cloud, no code generation—just pure performance.
+> Control your Arduino projects from a mobile app over BLE or Serial
 
 ---
 

@@ -25,7 +25,7 @@ class _DemoScreenState extends State<DemoScreen> {
   final _toggleState = ValueNotifier<bool>(false);
   final _toggleActive = ValueNotifier<bool>(false);
   final _switchState = ValueNotifier<bool>(false);
-  final _rollingState = ValueNotifier<bool>(false);
+  final _slideState = ValueNotifier<bool>(false);
   final _rockerState = ValueNotifier<bool>(false);
   final _sliderState = ValueNotifier<double>(0.5);
   final _knobState = ValueNotifier<double>(0.42);
@@ -35,7 +35,7 @@ class _DemoScreenState extends State<DemoScreen> {
   final _wheelState = ValueNotifier<double>(0.5);
   final _wheelActive = ValueNotifier<bool>(false);
   final _switchActive = ValueNotifier<bool>(false);
-  final _rollingActive = ValueNotifier<bool>(false);
+  final _slideActive = ValueNotifier<bool>(false);
   final _rockerActive = ValueNotifier<bool>(false);
   final _pedalState = ValueNotifier<double>(0.0);
   final _pedalActive = ValueNotifier<bool>(false);
@@ -131,13 +131,19 @@ class _DemoScreenState extends State<DemoScreen> {
   }
 
   @override
+  void didUpdateWidget(DemoScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset logic here if needed
+  }
+
+  @override
   void dispose() {
     _pushState.dispose();
     _pushActive.dispose();
     _toggleState.dispose();
     _toggleActive.dispose();
     _switchState.dispose();
-    _rollingState.dispose();
+    _slideState.dispose();
     _rockerState.dispose();
     _sliderState.dispose();
     _knobState.dispose();
@@ -147,6 +153,9 @@ class _DemoScreenState extends State<DemoScreen> {
     _knobActive.dispose();
     _wheelState.dispose();
     _wheelActive.dispose();
+    _switchActive.dispose();
+    _slideActive.dispose();
+    _rockerActive.dispose();
     _displayText.dispose();
     _serialInput.dispose();
     _displayActive.dispose();
@@ -634,34 +643,26 @@ class _DemoScreenState extends State<DemoScreen> {
           SizedBox(
             width: 480,
             child: ValueListenableBuilder<bool>(
-              valueListenable: _rollingState,
+              valueListenable: _slideState,
               builder: (context, value, _) {
                 return DemoCard(
                   index: 2,
-                  title: 'ROLLING SWITCH',
-                  liveWidget: RKRollingSwitch(
+                  title: 'SLIDE SWITCH',
+                  liveWidget: RKSlideSwitch(
                     value: value,
-                    onChanged: (v) => _rollingState.value = v,
-                    onInteractionChanged: (active) => _rollingActive.value = active,
-                    // Track content (labels only)
-                    onChild: _switchOnText.isNotEmpty
-                      ? Text(_switchOnText, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))
-                      : null,
-                    offChild: _switchOffText.isNotEmpty
-                      ? Text(_switchOffText, style: const TextStyle(color: Color(0xFF666666), fontSize: 10, fontWeight: FontWeight.bold))
-                      : null,
-                    // Thumb content (icons only)
-                    onThumbChild: _switchOnIcon != null ? Icon(_switchOnIcon, size: 14, color: Colors.white) : null,
-                    offThumbChild: _switchOffIcon != null ? Icon(_switchOffIcon, size: 14, color: const Color(0xFF666666)) : null,
+                    onChanged: (v) => _slideState.value = v,
+                    onInteractionChanged: (active) => _slideActive.value = active,
                     enableHapticFeedback: _hapticsEnabled,
                     rotation: _rotation * math.pi / 180,
+                    onText: _switchOnText.isNotEmpty ? _switchOnText : 'ON',
+                    offText: _switchOffText.isNotEmpty ? _switchOffText : 'OFF',
                   ),
                   inputLabel: 'INPUT CONTROL',
-                  inputWidget: _buildBooleanInput(value, (v) => _rollingState.value = v),
+                  inputWidget: _buildBooleanInput(value, (v) => _slideState.value = v),
                   outputWidget: Column(
                     children: [
                       ValueListenableBuilder<bool>(
-                        valueListenable: _rollingActive,
+                        valueListenable: _slideActive,
                         builder: (context, active, _) => TelemetryRow(
                           label: 'ACTIVE',
                           value: active.toString().toUpperCase(),

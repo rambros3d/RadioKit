@@ -8,7 +8,7 @@ void main() {
       MaterialApp(
         home: RKTheme(
           tokens: RKTokens.neon,
-          child: const RKLed(on: true),
+          child: const RKLed(state: RKLEDState.on),
         ),
       ),
     );
@@ -25,5 +25,35 @@ void main() {
       ),
     );
     expect(find.text('Hello'), findsOneWidget);
+  });
+
+  testWidgets('RKSlideSwitch renders and toggles', (tester) async {
+    bool value = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RKTheme(
+          tokens: RKTokens.neon,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return Scaffold(
+                body: RKSlideSwitch(
+                  value: value,
+                  onChanged: (v) => setState(() => value = v),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(RKSlideSwitch), findsOneWidget);
+    expect(find.text('OFF'), findsOneWidget);
+    expect(find.text('ON'), findsOneWidget);
+
+    await tester.tap(find.byType(RKSlideSwitch));
+    await tester.pumpAndSettle();
+
+    expect(value, isTrue);
   });
 }

@@ -13,7 +13,6 @@ class DemoCard extends StatelessWidget {
     this.telemetry,
     this.inputWidget,
     this.outputWidget,
-    this.isActive = false,
   });
 
   final int index;
@@ -24,19 +23,30 @@ class DemoCard extends StatelessWidget {
   final String? telemetry;
   final Widget? inputWidget;
   final Widget? outputWidget;
-  final bool isActive;
 
   @override
   Widget build(BuildContext context) {
     final tokens = RKTheme.of(context);
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F0F0F),
-        border: Border.all(color: const Color(0xFF222222), width: 1),
-        borderRadius: BorderRadius.circular(4),
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF222222),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           // ─── Card header ───
@@ -61,9 +71,9 @@ class DemoCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                Icon(
+                const Icon(
                   LucideIcons.ellipsisVertical,
-                  color: const Color(0xFF444444),
+                  color: Color(0xFF444444),
                   size: 16,
                 ),
               ],
@@ -140,7 +150,7 @@ class DemoCard extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(2),
                                 ),
                                 child: Text(
-                                  inputValue ?? 'N/A',
+                                  inputValue ?? '--',
                                   style: TextStyle(
                                     color: tokens.primary,
                                     fontSize: 12,
@@ -159,10 +169,10 @@ class DemoCard extends StatelessWidget {
                 // Divider
                 Container(
                   width: 1,
-                  height: 100, // Fixed height or constrained
+                  height: 120,
                   color: const Color(0xFF222222),
                 ),
-                // Right: OUTPUT VALUE
+                // Right: TELEMETRY
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(16),
@@ -170,7 +180,7 @@ class DemoCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'OUTPUT VALUE',
+                          'TELEMETRY',
                           style: TextStyle(
                             color: Color(0xFF666666),
                             fontSize: 10,
@@ -182,16 +192,12 @@ class DemoCard extends StatelessWidget {
                         const SizedBox(height: 12),
                         if (outputWidget != null)
                           outputWidget!
-                        else if (telemetry != null)
-                          SelectableText(
-                            telemetry!,
-                            style: const TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                              color: Color(0xFFB0B0B0),
-                              height: 1.5,
-                            ),
+                        else ...[
+                          TelemetryRow(
+                            label: 'STATE',
+                            value: telemetry ?? 'IDLE',
                           ),
+                        ],
                       ],
                     ),
                   ),
@@ -205,3 +211,44 @@ class DemoCard extends StatelessWidget {
   }
 }
 
+class TelemetryRow extends StatelessWidget {
+  const TelemetryRow({
+    super.key,
+    required this.label,
+    required this.value,
+    this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF555555),
+              fontSize: 9,
+              fontFamily: 'monospace',
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: color ?? const Color(0xFFBBBBBB),
+              fontSize: 9,
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

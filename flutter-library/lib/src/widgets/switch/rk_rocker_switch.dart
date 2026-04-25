@@ -111,7 +111,7 @@ class _RKRockerSwitchState extends State<RKRockerSwitch>
 
   void _handleDragUpdate(double delta) {
     final dragRange = widget.height * 0.45;
-    _controller.value = (_controller.value + delta / dragRange).clamp(0.0, 1.0);
+    _controller.value = (_controller.value - delta / dragRange).clamp(0.0, 1.0);
   }
 
   void _handleDragEnd() {

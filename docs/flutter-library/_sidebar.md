@@ -2,7 +2,7 @@
 - Widgets
   - [Button](/flutter-library/rk_button.md)
   - [Switch](/flutter-library/rk_switch.md)
-  - [Rolling Switch](/flutter-library/rk_rolling_switch.md)
+  - [Slide Switch](/flutter-library/rk_slide_switch.md)
   - [Rocker Switch](/flutter-library/rk_rocker_switch.md)
   - [Slider](/flutter-library/rk_slider.md)
   - [Knob](/flutter-library/rk_knob.md)
