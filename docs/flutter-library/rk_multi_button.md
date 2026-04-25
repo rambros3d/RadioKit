@@ -14,6 +14,7 @@ RKMultiButton({
   bool enableHapticFeedback = true,
   RKAxis orientation = RKAxis.horizontal,
   ValueChanged<bool>? onActiveChanged,
+  double rotation = 0.0,
 })
 ```
 
@@ -28,6 +29,7 @@ RKMultiButton({
 | `enableHapticFeedback` | Whether to trigger haptic feedback on interaction. |
 | `orientation` | Horizontal or vertical layout (`RKAxis`). |
 | `onActiveChanged` | Callback when the user starts/stops touching the group. |
+| `rotation` | Visual rotation of the widget in radians. |
 
 ## RKToggleItem
 A data model for buttons with state-specific labels and icons:

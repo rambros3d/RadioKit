@@ -13,6 +13,7 @@ class RKSerialMonitor extends StatefulWidget {
     this.fontFamily = 'monospace',
     this.textColor,
     this.onInteractionChanged,
+    this.rotation = 0.0,
   });
 
   final List<String> messages;
@@ -22,6 +23,7 @@ class RKSerialMonitor extends StatefulWidget {
   final String fontFamily;
   final Color? textColor;
   final ValueChanged<bool>? onInteractionChanged;
+  final double rotation;
 
   @override
   State<RKSerialMonitor> createState() => _RKSerialMonitorState();
@@ -50,8 +52,10 @@ class _RKSerialMonitorState extends State<RKSerialMonitor> {
       }
     }
     
-    return Listener(
-      onPointerDown: (_) => widget.onInteractionChanged?.call(true),
+    return Transform.rotate(
+      angle: widget.rotation,
+      child: Listener(
+        onPointerDown: (_) => widget.onInteractionChanged?.call(true),
       onPointerUp: (_) => widget.onInteractionChanged?.call(false),
       onPointerCancel: (_) => widget.onInteractionChanged?.call(false),
       child: Container(
@@ -82,6 +86,7 @@ class _RKSerialMonitorState extends State<RKSerialMonitor> {
             );
           },
         ),
+      ),
       ),
     );
   }

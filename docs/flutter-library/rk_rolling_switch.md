@@ -17,12 +17,12 @@ RKRollingSwitch({
   Color? inactiveColor,
   bool enableHapticFeedback = true,
   ValueChanged<bool>? onInteractionChanged,
+  double rotation = 0.0,
 })
 ```
 
 > [!NOTE]
 > `RKRollingSwitch` is a fixed horizontal rolling switch.
-
 
 | Parameter | Description |
 |---|---|
@@ -33,6 +33,7 @@ RKRollingSwitch({
 | `activeColor` / `inactiveColor` | Track colours for ON and OFF positions (defaults to theme primary/track). |
 | `enableHapticFeedback` | Emit a light haptic pulse on tap/drag. |
 | `onInteractionChanged` | Callback for interaction start/end. |
+| `rotation` | Visual rotation of the widget in radians. |
 
 ## Example
 ```dart

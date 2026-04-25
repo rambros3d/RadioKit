@@ -36,6 +36,7 @@ class RKJoystick extends StatefulWidget {
     this.label,
     this.springCurve = Curves.easeOutCubic,
     this.springDuration = const Duration(milliseconds: 300),
+    this.rotation = 0.0,
   });
 
   final ValueChanged<RKJoystickValue> onChanged;
@@ -46,6 +47,7 @@ class RKJoystick extends StatefulWidget {
   final String? label;
   final Curve springCurve;
   final Duration springDuration;
+  final double rotation;
 
   @override
   State<RKJoystick> createState() => _RKJoystickState();
@@ -225,9 +227,11 @@ class _RKJoystickState extends State<RKJoystick> with SingleTickerProviderStateM
     final tokens = RKTheme.of(context);
     final radius = widget.size / 2;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+    return Transform.rotate(
+      angle: widget.rotation,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
         GestureDetector(
           onPanStart: _onPanStart,
           onPanUpdate: _onPanUpdate,
@@ -252,6 +256,7 @@ class _RKJoystickState extends State<RKJoystick> with SingleTickerProviderStateM
           ),
         ],
       ],
+      ),
     );
   }
 }

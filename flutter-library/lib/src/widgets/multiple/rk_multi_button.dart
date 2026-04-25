@@ -35,6 +35,7 @@ class RKMultiButton extends StatelessWidget {
     this.enableHapticFeedback = true,
     this.onActiveChanged,
     this.orientation = RKAxis.horizontal,
+    this.rotation = 0.0,
   });
 
   final List<RKToggleItem> items;
@@ -46,14 +47,17 @@ class RKMultiButton extends StatelessWidget {
   final bool enableHapticFeedback;
   final ValueChanged<bool>? onActiveChanged;
   final RKAxis orientation;
+  final double rotation;
 
   @override
   Widget build(BuildContext context) {
     final tokens = RKTheme.of(context);
 
-    return Container(
-      padding: EdgeInsets.all(padding),
-      decoration: BoxDecoration(
+    return Transform.rotate(
+      angle: rotation,
+      child: Container(
+        padding: EdgeInsets.all(padding),
+        decoration: BoxDecoration(
         color: tokens.surface,
         border: Border.all(color: tokens.trackColor, width: 1),
         borderRadius: BorderRadius.circular(tokens.borderRadius * 2.5),
@@ -74,6 +78,7 @@ class RKMultiButton extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: _buildButtons(spacing),
             ),
+      ),
       ),
     );
   }

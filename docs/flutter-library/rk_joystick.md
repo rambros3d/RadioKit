@@ -13,6 +13,7 @@ RKJoystick({
   String? label,
   Curve springCurve = Curves.easeOutCubic,
   Duration springDuration = const Duration(milliseconds: 300),
+  double rotation = 0.0,
 })
 ```
 
@@ -25,6 +26,7 @@ RKJoystick({
 | `autoCenter` | When true, the knob returns to `center` after drag ends. |
 | `label` | Optional text displayed below the joystick. |
 | `springCurve` / `springDuration` | Controls the spring‑back animation when auto‑centering. |
+| `rotation` | Visual rotation of the widget in radians. |
 
 ## Example
 ```dart

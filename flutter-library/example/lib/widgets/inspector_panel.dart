@@ -59,6 +59,8 @@ class InspectorPanel extends StatelessWidget {
     this.onLEDTimingChanged,
     this.ledColor,
     this.onLEDColorChanged,
+    this.rotation,
+    this.onRotationChanged,
   });
 
   final int selectedIndex;
@@ -112,6 +114,8 @@ class InspectorPanel extends StatelessWidget {
   final ValueChanged<int>? onLEDTimingChanged;
   final Color? ledColor;
   final ValueChanged<Color>? onLEDColorChanged;
+  final double? rotation;
+  final ValueChanged<double>? onRotationChanged;
 
 
 
@@ -422,6 +426,41 @@ class InspectorPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                 ],
+              ],
+            ),
+          ),
+
+          Container(
+            height: 1,
+            color: const Color(0xFF222222),
+          ),
+
+          // ─── TRANSFORM ───
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'TRANSFORM',
+                  style: TextStyle(
+                    color: tokens.primary,
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildSliderRow(
+                  tokens,
+                  'Rotation (deg)',
+                  rotation ?? 0.0,
+                  -180,
+                  180,
+                  onRotationChanged ?? (_) {},
+                  isInteger: true,
+                  onReset: () => onRotationChanged?.call(0.0),
+                ),
               ],
             ),
           ),
@@ -749,6 +788,79 @@ class InspectorPanel extends StatelessWidget {
                 );
               }).toList(),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildSliderRow(
+    RKTokens tokens,
+    String label,
+    double value,
+    double min,
+    double max,
+    ValueChanged<double> onChanged, {
+    bool isInteger = false,
+    VoidCallback? onReset,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label.toUpperCase(),
+              style: const TextStyle(
+                color: Color(0xFF555555),
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Row(
+              children: [
+                if (onReset != null && value != 0) ...[
+                  IconButton(
+                    icon: const Icon(LucideIcons.rotateCcw, size: 10),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: onReset,
+                    color: tokens.primary.withOpacity(0.5),
+                    hoverColor: tokens.primary,
+                    tooltip: 'Reset to 0',
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  isInteger ? value.toInt().toString() : value.toStringAsFixed(1),
+                  style: TextStyle(
+                    color: tokens.primary,
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        SliderTheme(
+          data: SliderThemeData(
+            trackHeight: 2,
+            activeTrackColor: tokens.primary.withOpacity(0.5),
+            inactiveTrackColor: const Color(0xFF222222),
+            thumbColor: tokens.primary,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+          ),
+          child: Slider(
+            value: value,
+            min: min,
+            max: max,
+            divisions: isInteger ? (max - min).toInt() : null,
+            onChanged: onChanged,
           ),
         ),
       ],

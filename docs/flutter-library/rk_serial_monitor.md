@@ -40,3 +40,4 @@ class MySerialMonitorDemo extends StatelessWidget {
 | `fontFamily` | `String` | `'monospace'` | The font family to use for the messages. |
 | `textColor` | `Color?` | `null` | The color of the text. Defaults to the theme's primary color if not provided. |
 | `onInteractionChanged` | `ValueChanged<bool>?` | `null` | Triggered when the user starts or stops touching the serial monitor. |
+| `rotation` | `double` | `0.0` | Visual rotation of the widget in radians. |

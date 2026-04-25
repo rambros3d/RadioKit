@@ -15,18 +15,18 @@ RKRockerSwitch({
   required bool value,
   required ValueChanged<bool> onChanged,
   double width = 72.0,
-  double height = 120.0,
+  double height = 110.0,
   Widget? onIcon,
   Widget? offIcon,
   Color? activeColor,
   bool enableHapticFeedback = true,
   ValueChanged<bool>? onInteractionChanged,
+  double rotation = 0.0,
 })
 ```
 
 > [!NOTE]
 > `RKRockerSwitch` is a fixed vertical toggle switch.
-
 
 | Parameter | Description |
 |---|---|
@@ -37,6 +37,7 @@ RKRockerSwitch({
 | `activeColor` | Colour of the glow when ON; defaults to theme primary. |
 | `enableHapticFeedback` | Emit a medium‑impact haptic pulse on taps and drags. |
 | `onInteractionChanged` | Optional callback when the user begins/ends interaction. |
+| `rotation` | Visual rotation of the widget in radians. |
 
 ## Example
 ```dart

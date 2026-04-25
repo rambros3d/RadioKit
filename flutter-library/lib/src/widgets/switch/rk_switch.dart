@@ -20,6 +20,7 @@ class RKSwitch extends StatefulWidget {
     this.inactiveColor,
     this.enableHapticFeedback = true,
     this.onInteractionChanged,
+    this.rotation = 0.0,
   });
 
   /// Current state of the switch.
@@ -58,8 +59,8 @@ class RKSwitch extends StatefulWidget {
   /// Whether to trigger haptic feedback on state changes.
   final bool enableHapticFeedback;
 
-
-
+  /// Custom rotation of the widget
+  final double rotation;
   @override
   State<RKSwitch> createState() => _RKSwitchState();
 }
@@ -121,8 +122,10 @@ class _RKSwitchState extends State<RKSwitch> with SingleTickerProviderStateMixin
     final thumbSize = height - (thumbPadding * 2);
     final trackRadius = height / 2;
 
-    return GestureDetector(
-      onTapDown: (_) => widget.onInteractionChanged?.call(true),
+    return Transform.rotate(
+      angle: widget.rotation,
+      child: GestureDetector(
+        onTapDown: (_) => widget.onInteractionChanged?.call(true),
       onTapUp: (_) => widget.onInteractionChanged?.call(false),
       onTapCancel: () => widget.onInteractionChanged?.call(false),
       onTap: _handleToggle,
@@ -248,6 +251,7 @@ class _RKSwitchState extends State<RKSwitch> with SingleTickerProviderStateMixin
             ),
           );
         },
+      ),
       ),
     );
   }

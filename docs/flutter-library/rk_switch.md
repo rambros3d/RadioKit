@@ -17,6 +17,7 @@ RKSwitch({
   Color? inactiveColor,
   bool enableHapticFeedback = true,
   ValueChanged<bool>? onInteractionChanged,
+  double rotation = 0.0,
 })
 ```
 
@@ -32,6 +33,7 @@ RKSwitch({
 | `activeColor` / `inactiveColor` | Track colours when ON/OFF (defaults to theme primary/track). |
 | `enableHapticFeedback` | Emit a light haptic impact on state change. |
 | `onInteractionChanged` | Optional callback signalling interaction start/end. |
+| `rotation` | Visual rotation of the widget in radians. |
 
 ## Example
 ```dart

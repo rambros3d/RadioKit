@@ -19,6 +19,7 @@ class RKButton extends StatefulWidget {
     this.activeColor,
     this.enableHapticFeedback = true,
     this.onInteractionChanged,
+    this.rotation = 0.0,
   });
 
   final ValueChanged<bool> onChanged;
@@ -31,6 +32,7 @@ class RKButton extends StatefulWidget {
   final Color? activeColor;
   final bool enableHapticFeedback;
   final ValueChanged<bool>? onInteractionChanged;
+  final double rotation;
 
   @override
   State<RKButton> createState() => _RKButtonState();
@@ -61,7 +63,9 @@ class _RKButtonState extends State<RKButton> with SingleTickerProviderStateMixin
   Widget build(BuildContext context) {
     final tokens = RKTheme.of(context);
     final activeColor = widget.activeColor ?? tokens.primary;
-    return Listener(
+    return Transform.rotate(
+      angle: widget.rotation,
+      child: Listener(
       onPointerDown: (_) => _handleDown(),
       onPointerUp: (_) => _handleUp(),
       onPointerCancel: (_) => _handleCancel(),
@@ -169,8 +173,9 @@ class _RKButtonState extends State<RKButton> with SingleTickerProviderStateMixin
           );
         },
       ),
+      ),
     );
-}
+  }
 
   List<Widget> _buildContent(double t, Color activeColor) {
     final currentIcon = (t > 0.5 ? widget.onIcon : widget.offIcon) ?? Icons.power_settings_new_rounded;

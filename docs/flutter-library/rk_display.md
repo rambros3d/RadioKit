@@ -13,6 +13,7 @@ RKDisplay({
   Color? textColor,
   RKAxis orientation = RKAxis.horizontal,
   ValueChanged<bool>? onInteractionChanged,
+  double rotation = 0.0,
 })
 ```
 
@@ -25,6 +26,7 @@ RKDisplay({
 | `textColor` | Custom text color. If null, uses the theme's primary color. |
 | `orientation` | Horizontal or vertical layout (`RKAxis`). |
 | `onInteractionChanged` | Triggered when the user starts or stops touching the widget. |
+| `rotation` | Visual rotation of the widget in radians. |
 
 The widget uses the theme's `surface` colour as background and a border using `trackColor`.
 

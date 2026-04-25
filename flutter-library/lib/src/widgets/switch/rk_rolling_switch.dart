@@ -21,6 +21,7 @@ class RKRollingSwitch extends StatefulWidget {
     this.inactiveColor,
     this.enableHapticFeedback = true,
     this.onInteractionChanged,
+    this.rotation = 0.0,
   });
 
   final bool value;
@@ -35,6 +36,7 @@ class RKRollingSwitch extends StatefulWidget {
   final Color? activeColor;
   final Color? inactiveColor;
   final bool enableHapticFeedback;
+  final double rotation;
 
 
   @override
@@ -93,7 +95,9 @@ class _RKRollingSwitchState extends State<RKRollingSwitch> with SingleTickerProv
     final thumbSize = height - (thumbPadding * 2);
     final trackRadius = height / 2;
 
-    return GestureDetector(
+    return Transform.rotate(
+      angle: widget.rotation,
+      child: GestureDetector(
       onTapDown: (_) => widget.onInteractionChanged?.call(true),
       onTapUp: (_) => widget.onInteractionChanged?.call(false),
       onTapCancel: () => widget.onInteractionChanged?.call(false),
@@ -223,6 +227,7 @@ class _RKRollingSwitchState extends State<RKRollingSwitch> with SingleTickerProv
             ),
           );
         },
+      ),
       ),
     );
   }

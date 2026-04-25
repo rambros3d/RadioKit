@@ -14,6 +14,7 @@ class RKDisplay extends StatelessWidget {
     this.textColor,
     this.orientation = RKAxis.horizontal,
     this.onInteractionChanged,
+    this.rotation = 0.0,
   });
 
   final String text;
@@ -24,6 +25,7 @@ class RKDisplay extends StatelessWidget {
   final Color? textColor;
   final RKAxis orientation;
   final ValueChanged<bool>? onInteractionChanged;
+  final double rotation;
 
   @override
   Widget build(BuildContext context) {
@@ -69,12 +71,19 @@ class RKDisplay extends StatelessWidget {
       ),
     );
 
+    Widget finalContent;
     if (isVertical) {
-      return RotatedBox(
+      finalContent = RotatedBox(
         quarterTurns: 1,
         child: content,
       );
+    } else {
+      finalContent = content;
     }
-    return content;
+
+    return Transform.rotate(
+      angle: rotation,
+      child: finalContent,
+    );
   }
 }

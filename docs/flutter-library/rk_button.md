@@ -10,33 +10,32 @@
 RKButton({
   required ValueChanged<bool> onChanged,
   RKButtonMode mode = RKButtonMode.push,
-  String? label,
-  IconData? icon,
   String? onText,
   String? offText,
   IconData? onIcon,
   IconData? offIcon,
-  double size = 64.0,
+  double size = 100.0,
   Color? activeColor,
   bool enableHapticFeedback = true,
   ValueChanged<bool>? onInteractionChanged,
+  double rotation = 0.0,
 })
 ```
 
 > [!NOTE]
-> `RKButton` uses a fixed vertical layout with the label/icon positioned above the physical button.
+> `RKButton` uses a centered layout within a circular hardware‑style housing.
 
 | Parameter | Description |
 |---|---|
 | `onChanged` | Called with the new logical state (`true`/`false`). |
 | `mode` | `RKButtonMode.push` for momentary press, `RKButtonMode.toggle` for latch. |
-| `label` / `icon` | Visual content shown on the button. |
-| `onText` / `offText` | Text shown when the button is in the respective state (overrides label). |
-| `onIcon` / `offIcon` | Icons shown for each state. |
+| `onText` / `offText` | Text shown when the button is in the respective state. |
+| `onIcon` / `offIcon` | Icons shown for each state. Defaults to power icon if none provided. |
 | `size` | Diameter of the circular button. |
 | `activeColor` | Colour of the glow when active; defaults to theme primary. |
 | `enableHapticFeedback` | Emit a light haptic pulse on interaction. |
 | `onInteractionChanged` | Optional callback when the user starts/stops touching the widget. |
+| `rotation` | Visual rotation of the widget in radians. |
 
 ## Example
 ```dart

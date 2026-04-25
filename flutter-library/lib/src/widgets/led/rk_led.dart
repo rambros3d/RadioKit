@@ -27,6 +27,7 @@ class RKLed extends StatefulWidget {
     this.size = 24.0,
     this.color,
     this.timing = 500,
+    this.rotation = 0.0,
   });
 
   /// The current state of the LED.
@@ -43,6 +44,9 @@ class RKLed extends StatefulWidget {
 
   /// Animation timing in milliseconds (for blink/breathe).
   final int timing;
+
+  /// Custom rotation of the widget
+  final double rotation;
 
   @override
   State<RKLed> createState() => _RKLedState();
@@ -123,15 +127,18 @@ class _RKLedState extends State<RKLed> with SingleTickerProviderStateMixin {
 
         final ledColor = isActive ? baseColor.withValues(alpha: currentOpacity) : tokens.trackColor;
 
-        return SizedBox(
-          width: widget.size,
-          height: widget.size,
-          child: CustomPaint(
-            painter: _LEDPainter(
-              color: ledColor,
-              shape: widget.shape,
-              glow: isActive ? baseColor.withValues(alpha: currentOpacity * 0.4) : Colors.transparent,
-              glowSize: widget.size * 0.4,
+        return Transform.rotate(
+          angle: widget.rotation,
+          child: SizedBox(
+            width: widget.size,
+            height: widget.size,
+            child: CustomPaint(
+              painter: _LEDPainter(
+                color: ledColor,
+                shape: widget.shape,
+                glow: isActive ? baseColor.withValues(alpha: currentOpacity * 0.4) : Colors.transparent,
+                glowSize: widget.size * 0.4,
+              ),
             ),
           ),
         );

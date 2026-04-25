@@ -21,6 +21,7 @@ RKKnob({
   Duration springDuration = const Duration(milliseconds: 200),
   RKKnobVariant variant = RKKnobVariant.standard,
   RKAxis axis = RKAxis.vertical,
+  double rotation = 0.0,
 })
 ```
 
@@ -31,12 +32,14 @@ RKKnob({
 | `size` | Diameter of the knob widget. |
 | `label` | Optional text displayed below the knob. |
 | `divisions` | If set, the knob snaps to the specified number of steps. |
+| `onInteractionChanged` | Triggered when the user starts or stops touching the widget. |
 | `minAngle` / `maxAngle` | Angular range in degrees (default –135° to +135°). |
 | `autoCenter` | When true, the knob springs back to `center` after interaction. |
 | `center` | Normalised centre position used for auto‑centering. |
 | `springCurve` / `springDuration` | Controls the spring‑back animation. |
 | `variant` | The visual style: `standard` or `steeringWheel`. |
 | `axis` | Orientation of the knob layout: `vertical` (default) or `horizontal`. |
+| `rotation` | Visual rotation of the widget in radians. |
 
 
 ## Example

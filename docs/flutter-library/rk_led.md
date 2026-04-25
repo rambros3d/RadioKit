@@ -5,23 +5,29 @@
 ## Constructor
 ```dart
 RKLed({
-  required bool on,
+  RKLEDState state = RKLEDState.off,
+  RKLEDShape shape = RKLEDShape.circle,
   double size = 24.0,
   Color? color,
+  int timing = 500,
+  double rotation = 0.0,
 })
 ```
 
 | Parameter | Description |
 |---|---|
-| `on` | Whether the LED is illuminated. |
-| `size` | Diameter of the LED circle. |
-| `color` | Optional colour; defaults to the theme's primary colour. |
-
-When `on` is true the LED shows a glow using a subtle `BoxShadow`.
+| `state` | Operating state: `off`, `on`, `blink`, or `breathe`. |
+| `shape` | Visual shape: `circle`, `square`, `diamond`, or `star`. |
+| `size` | Diameter/size of the LED. |
+| `color` | Optional colour for the active state; defaults to theme primary. |
+| `timing` | Animation speed in milliseconds for blink/breathe effects. |
+| `rotation` | Visual rotation of the widget in radians. |
 
 ## Example
 ```dart
-bool _connected = true;
-
-RKLed(on: _connected, color: Colors.green);
+RKLed(
+  state: RKLEDState.blink,
+  color: Colors.green,
+  shape: RKLEDShape.diamond,
+);
 ```

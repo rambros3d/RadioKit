@@ -21,6 +21,7 @@ RKSlider({
   int? divisions,
   bool showTicks = true,
   int tickCount = 20,
+  double rotation = 0.0,
 })
 ```
 
@@ -32,10 +33,12 @@ RKSlider({
 | `type` | Variant type (`linear` or `gasPedal`). |
 | `thickness` | Track thickness in logical pixels. |
 | `length` | Total length of the slider (width for horizontal, height for vertical). |
+| `onInteractionChanged` | Triggered when the user starts or stops touching the widget. |
 | `autoCenter` | When true, the slider animates back to `center` after interaction ends. |
 | `center` | Normalized centre position (0‑1) used when `autoCenter` is enabled. |
 | `divisions` | If set, the slider snaps to the given number of discrete steps. |
 | `showTicks` / `tickCount` | Show minor/major tick marks along the track. |
+| `rotation` | Visual rotation of the widget in radians. |
 
 ## Gas Pedal Variant
 The `RKSliderType.gasPedal` variant provides a 3D perspective-transformed pedal aesthetic. It uses the same logical parameters as the standard slider but renders a premium industrial pedal that tilts and glows based on input.

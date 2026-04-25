@@ -26,6 +26,7 @@ class RKSlider extends StatefulWidget {
     this.showTicks = true,
     this.tickCount = 20,
     this.type = RKSliderType.linear,
+    this.rotation = 0.0,
   });
 
   final double value;
@@ -44,6 +45,7 @@ class RKSlider extends StatefulWidget {
   final bool showTicks;
   final int tickCount;
   final RKSliderType type;
+  final double rotation;
 
   @override
   State<RKSlider> createState() => _RKSliderState();
@@ -136,33 +138,36 @@ class _RKSliderState extends State<RKSlider> with SingleTickerProviderStateMixin
     final normalized = ((widget.value - widget.min) / (widget.max - widget.min)).clamp(0.0, 1.0);
     final zeroPos = ((0.0 - widget.min) / (widget.max - widget.min)).clamp(0.0, 1.0);
 
-    return GestureDetector(
-      onPanStart: (details) {
-        widget.onInteractionChanged?.call(true);
-        _handleUpdate(details.localPosition, context.size!);
-      },
-      onPanUpdate: (details) => _handleUpdate(details.localPosition, context.size!),
-      onPanEnd: (_) {
-        widget.onInteractionChanged?.call(false);
-        if (widget.autoCenter) _triggerCenter();
-      },
-      child: Container(
-        width: widget.orientation == RKAxis.horizontal ? widget.length : widget.thickness * 4,
-        height: widget.orientation == RKAxis.vertical ? widget.length : widget.thickness * 4,
-        color: Colors.transparent, // Capture gestures
-        child: widget.type == RKSliderType.gasPedal
-            ? _buildGasPedal(context, tokens, normalized)
-            : CustomPaint(
-                painter: _SliderPainter(
-                  normalized: normalized,
-                  zeroPos: zeroPos,
-                  tokens: tokens,
-                  orientation: widget.orientation,
-                  thickness: widget.thickness,
-                  showTicks: widget.showTicks,
-                  tickCount: widget.tickCount,
+    return Transform.rotate(
+      angle: widget.rotation,
+      child: GestureDetector(
+        onPanStart: (details) {
+          widget.onInteractionChanged?.call(true);
+          _handleUpdate(details.localPosition, context.size!);
+        },
+        onPanUpdate: (details) => _handleUpdate(details.localPosition, context.size!),
+        onPanEnd: (_) {
+          widget.onInteractionChanged?.call(false);
+          if (widget.autoCenter) _triggerCenter();
+        },
+        child: Container(
+          width: widget.orientation == RKAxis.horizontal ? widget.length : widget.thickness * 4,
+          height: widget.orientation == RKAxis.vertical ? widget.length : widget.thickness * 4,
+          color: Colors.transparent, // Capture gestures
+          child: widget.type == RKSliderType.gasPedal
+              ? _buildGasPedal(context, tokens, normalized)
+              : CustomPaint(
+                  painter: _SliderPainter(
+                    normalized: normalized,
+                    zeroPos: zeroPos,
+                    tokens: tokens,
+                    orientation: widget.orientation,
+                    thickness: widget.thickness,
+                    showTicks: widget.showTicks,
+                    tickCount: widget.tickCount,
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }

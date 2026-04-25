@@ -16,7 +16,6 @@ class RKKnob extends StatefulWidget {
     this.min = 0.0,
     this.max = 1.0,
     this.size = 100.0,
-    this.label,
     this.divisions,
     this.onInteractionChanged,
     this.minAngle = -135.0,
@@ -28,6 +27,7 @@ class RKKnob extends StatefulWidget {
     this.variant = RKKnobVariant.standard,
     this.orientation = RKAxis.vertical,
     this.centerIcon,
+    this.rotation = 0.0,
   });
 
   final IconData? centerIcon;
@@ -35,7 +35,7 @@ class RKKnob extends StatefulWidget {
   final RKAxis orientation;
 
   final RKKnobVariant variant;
-
+  final double rotation;
 
   final double value;
   final ValueChanged<double> onChanged;
@@ -45,7 +45,6 @@ class RKKnob extends StatefulWidget {
   final double min;
   final double max;
   final double size;
-  final String? label;
   final int? divisions;
 
   /// Start angle in degrees (default -135)
@@ -244,29 +243,25 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
           ],
         ],
       ),
-      if (widget.label != null) ...[
-        SizedBox(
-          height: widget.orientation == RKAxis.vertical ? 8 : 0,
-          width: widget.orientation == RKAxis.horizontal ? 12 : 0,
-        ),
-        Text(
-          widget.label!,
-          style: tokens.displayTextStyle.copyWith(fontSize: 12),
-        ),
-      ],
     ];
 
+    Widget finalContent;
     if (widget.orientation == RKAxis.horizontal) {
-      return Row(
+      finalContent = Row(
         mainAxisSize: MainAxisSize.min,
         children: content,
       );
     } else {
-      return Column(
+      finalContent = Column(
         mainAxisSize: MainAxisSize.min,
         children: content,
       );
     }
+
+    return Transform.rotate(
+      angle: widget.rotation,
+      child: finalContent,
+    );
 
   }
 }

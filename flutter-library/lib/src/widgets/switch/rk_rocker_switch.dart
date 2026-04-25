@@ -14,6 +14,7 @@ class RKRockerSwitch extends StatefulWidget {
     this.activeColor,
     this.enableHapticFeedback = true,
     this.onInteractionChanged,
+    this.rotation = 0.0,
   });
 
   final bool value;
@@ -25,6 +26,7 @@ class RKRockerSwitch extends StatefulWidget {
   final Widget? offIcon;
   final Color? activeColor;
   final bool enableHapticFeedback;
+  final double rotation;
 
   @override
   State<RKRockerSwitch> createState() => _RKRockerSwitchState();
@@ -135,7 +137,9 @@ class _RKRockerSwitchState extends State<RKRockerSwitch>
   Widget build(BuildContext context) {
     final tokens = RKTheme.of(context);
     final activeColor = widget.activeColor ?? tokens.primary;
-    return GestureDetector(
+    return Transform.rotate(
+      angle: widget.rotation,
+      child: GestureDetector(
       onTapDown: (_) => widget.onInteractionChanged?.call(true),
       onTapUp: (details) {
         widget.onInteractionChanged?.call(false);
@@ -174,6 +178,7 @@ class _RKRockerSwitchState extends State<RKRockerSwitch>
             ),
           );
         },
+      ),
       ),
     );
   }
