@@ -1,140 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:radiokit_widgets/radiokit_widgets.dart';
 import '../providers/skin_provider.dart';
 import '../theme/app_theme.dart';
-import '../theme/skin/skin_manager.dart';
-import '../theme/skin/skin_tokens.dart';
 
-/// Browser screen for viewing and applying installed skin packs.
-class SkinBrowserScreen extends StatefulWidget {
+/// Theme picker screen showing available RKTokens presets.
+class SkinBrowserScreen extends StatelessWidget {
   const SkinBrowserScreen({super.key});
-
-  @override
-  State<SkinBrowserScreen> createState() => _SkinBrowserScreenState();
-}
-
-class _SkinBrowserScreenState extends State<SkinBrowserScreen> {
-  late final SkinManager _manager;
-  List<String> _skinNames = [];
-  final Map<String, SkinManifest?> _manifests = {};
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _manager = SkinManager();
-    _loadSkins();
-  }
-
-  Future<void> _loadSkins() async {
-    _skinNames = _manager.listAvailableSkins();
-    for (final name in _skinNames) {
-      _manifests[name] = await _manager.getManifest(name);
-    }
-    if (mounted) setState(() => _loading = false);
-  }
 
   @override
   Widget build(BuildContext context) {
     final skinProvider = context.watch<SkinProvider>();
     final activeName = skinProvider.skinName;
+    final presets = skinProvider.availablePresets;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'SKIN_PACKS',
+          'THEME_GALLERY',
           style: GoogleFonts.exo2(
             fontWeight: FontWeight.w900,
             letterSpacing: 1.0,
           ),
         ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _skinNames.isEmpty
-              ? _buildEmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _skinNames.length,
-                  itemBuilder: (context, index) {
-                    final name = _skinNames[index];
-                    final manifest = _manifests[name];
-                    final isActive = name == activeName;
-                    return _SkinCard(
-                      name: name,
-                      manifest: manifest,
-                      isActive: isActive,
-                      onApply: () => skinProvider.setSkin(name),
-                    );
-                  },
-                ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await skinProvider.importSkin();
-          await _loadSkins();
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: presets.length,
+        itemBuilder: (context, index) {
+          final name = presets[index];
+          final tokens = kTokenPresets[name]!;
+          final isActive = name == activeName;
+          return _ThemeCard(
+            name: name,
+            tokens: tokens,
+            isActive: isActive,
+            onApply: () => skinProvider.setSkin(name),
+          );
         },
-        icon: const Icon(Icons.file_download_outlined),
-        label: Text(
-          'IMPORT',
-          style: GoogleFonts.changa(fontWeight: FontWeight.w700, letterSpacing: 1.0),
-        ),
-        backgroundColor: AppColors.brandOrange,
-        foregroundColor: Colors.black,
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.palette_outlined, size: 64, color: Colors.white.withValues(alpha: 0.15)),
-          const SizedBox(height: 16),
-          Text(
-            'No skin packs installed',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Import an .rkskin file to get started',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white38,
-            ),
-          ),
-        ],
       ),
     );
   }
 }
 
-class _SkinCard extends StatelessWidget {
+class _ThemeCard extends StatelessWidget {
   final String name;
-  final SkinManifest? manifest;
+  final RKTokens tokens;
   final bool isActive;
   final VoidCallback onApply;
 
-  const _SkinCard({
+  const _ThemeCard({
     required this.name,
-    required this.manifest,
+    required this.tokens,
     required this.isActive,
     required this.onApply,
   });
 
   @override
   Widget build(BuildContext context) {
-    final m = manifest;
-    final displayName = m?.name ?? name;
-    final author = m?.author ?? 'Unknown';
-    final version = m?.version ?? '—';
-    final description = m?.description;
+    // Build a preview swatch from the token colors
+    final previewColors = [
+      tokens.primary,
+      tokens.surface,
+      tokens.trackColor,
+      tokens.onSurface,
+    ];
 
-    // Preview: show color palette from tokens
-    final previewColors = m?.tokens.styles.values
-        .take(5)
-        .map((s) => s.primary)
-        .toList() ?? [];
+    final description = _presetDescription(name);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -162,19 +95,15 @@ class _SkinCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 color: Colors.black.withValues(alpha: 0.3),
               ),
-              child: previewColors.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Column(
-                        children: [
-                          for (final c in previewColors)
-                            Expanded(
-                              child: Container(color: c),
-                            ),
-                        ],
-                      ),
-                    )
-                  : const Icon(Icons.palette_outlined, color: Colors.white24),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Column(
+                  children: [
+                    for (final c in previewColors)
+                      Expanded(child: Container(color: c)),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(width: 16),
             // Metadata
@@ -185,7 +114,7 @@ class _SkinCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        displayName.toUpperCase(),
+                        name.toUpperCase(),
                         style: GoogleFonts.exo2(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -215,18 +144,11 @@ class _SkinCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$author  ·  v$version',
-                    style: const TextStyle(color: Colors.white38, fontSize: 12),
+                    description,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  if (description != null && description.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: const TextStyle(color: Colors.white54, fontSize: 12),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -250,5 +172,20 @@ class _SkinCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _presetDescription(String name) {
+    switch (name) {
+      case 'rambros':
+        return 'Industrial orange theme with mechanical aesthetics';
+      case 'neon':
+        return 'Cyberpunk cyan glow with dark surface';
+      case 'minimal':
+        return 'Monochrome wireframe with zero-decoration';
+      case 'debug':
+        return 'High-visibility green-on-black for development';
+      default:
+        return '';
+    }
   }
 }

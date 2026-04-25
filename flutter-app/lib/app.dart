@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:radiokit_widgets/radiokit_widgets.dart';
 import 'theme/app_theme.dart';
 import 'providers/ble_provider.dart';
 import 'providers/serial_provider.dart';
@@ -11,12 +12,10 @@ import 'providers/history_provider.dart';
 import 'providers/console_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/skin_provider.dart';
-import 'theme/skin/skin_manager.dart';
 import 'router.dart';
 
 class RadioKitApp extends StatefulWidget {
-  final SkinManager skinManager;
-  const RadioKitApp({super.key, required this.skinManager});
+  const RadioKitApp({super.key});
 
   @override
   State<RadioKitApp> createState() => _RadioKitAppState();
@@ -38,6 +37,7 @@ class _RadioKitAppState extends State<RadioKitApp> {
     super.initState();
 
     _skinProvider = SkinProvider();
+    _skinProvider.init(); // Restore persisted theme choice
     _bleProvider = BleProvider();
     _serialProvider = SerialProvider();
     _debugProvider = DebugProvider();
@@ -75,18 +75,21 @@ class _RadioKitAppState extends State<RadioKitApp> {
         ChangeNotifierProvider<DeviceProvider>.value(value: _deviceProvider),
         ChangeNotifierProvider<SettingsProvider>.value(value: SettingsProvider()),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return MaterialApp.router(
-            title: 'RadioKit',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.light,
-            darkTheme: AppTheme.dark,
-            themeMode: themeProvider.themeMode,
-            routerConfig: _router,
-            builder: (context, child) {
-              return ConnectionListener(child: child!);
-            },
+      child: Consumer2<ThemeProvider, SkinProvider>(
+        builder: (context, themeProvider, skinProvider, child) {
+          return RKTheme(
+            tokens: skinProvider.tokens,
+            child: MaterialApp.router(
+              title: 'RadioKit',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              themeMode: themeProvider.themeMode,
+              routerConfig: _router,
+              builder: (context, child) {
+                return ConnectionListener(child: child!);
+              },
+            ),
           );
         },
       ),

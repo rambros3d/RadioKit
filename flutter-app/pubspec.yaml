@@ -36,9 +36,10 @@ dependencies:
   # Multi-mode Rendering
   flutter_svg: ^2.0.10+1
   archive: ^4.0.0
-  flutter_joystick: ^0.2.2
-  animated_toggle_switch: ^0.8.7
-  flutter_oknob: ^0.0.5
+
+  # RadioKit Widget Library
+  radiokit_widgets:
+    path: ../flutter-library
 
 dev_dependencies:
   flutter_test:
@@ -50,35 +51,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - resources/skins/standard/
-    - resources/skins/standard/global/
-    - resources/skins/standard/button_push/
-    - resources/skins/standard/button_toggle/
-    - resources/skins/standard/slide_switch/
-    - resources/skins/standard/slider/
-    - resources/skins/standard/joystick/
-    - resources/skins/standard/knob/
-    - resources/skins/standard/led/
-    - resources/skins/standard/multiple_button/
-    - resources/skins/standard/multiple_select/
-    - resources/skins/standard/display/
-    - resources/skins/standard/sounds/
-    - resources/skins/debug/
-    - resources/skins/neon/
-    - resources/skins/neon/button_push/
-    - resources/skins/neon/button_toggle/
-    - resources/skins/neon/slide_switch/
-    - resources/skins/neon/slider/
-    - resources/skins/neon/joystick/
-    - resources/skins/neon/knob/
-    - resources/skins/neon/led/
-    - resources/skins/neon/multiple_button/
-    - resources/skins/neon/multiple_select/
-    - resources/skins/neon/display/
-    - resources/skins/neon/global/
-    - resources/skins/neon/sounds/
-    - resources/skins/neon/text/
 
 flutter_gen:
   output: lib/gen/

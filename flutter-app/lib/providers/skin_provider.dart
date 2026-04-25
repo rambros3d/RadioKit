@@ -1,49 +1,55 @@
 import 'package:flutter/material.dart';
-import '../theme/skin/skin_manager.dart';
-import '../theme/skin/skin_tokens.dart';
+import 'package:radiokit_widgets/radiokit_widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// The UI-facing provider that connects the app state to the SkinManager.
+/// Maps preset names to RKTokens instances.
+const Map<String, RKTokens> kTokenPresets = {
+  'rambros': RKTokens.rambros,
+  'neon': RKTokens.neon,
+  'minimal': RKTokens.minimal,
+  'debug': RKTokens.debug,
+};
+
+/// The UI-facing provider that manages the active RKTokens preset.
 class SkinProvider extends ChangeNotifier {
-  final SkinManager _skinManager = SkinManager();
+  static const String _prefsKey = 'active_skin';
 
-  SkinProvider() {
-    _skinManager.addListener(_onManagerUpdate);
-  }
+  String _activePreset = 'rambros';
+  RKTokens _tokens = RKTokens.rambros;
 
-  @override
-  void dispose() {
-    _skinManager.removeListener(_onManagerUpdate);
-    super.dispose();
-  }
+  SkinProvider();
 
-  void _onManagerUpdate() {
+  /// Initialize from persisted preference.
+  Future<void> init() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_prefsKey);
+      if (saved != null && kTokenPresets.containsKey(saved)) {
+        _activePreset = saved;
+        _tokens = kTokenPresets[saved]!;
+      }
+    } catch (_) {}
     notifyListeners();
   }
 
-  /// Initialized the SkinManager. Should be called at app startup.
-  Future<void> init() async {
-    await _skinManager.init();
-  }
+  /// The currently active RKTokens.
+  RKTokens get tokens => _tokens;
 
-  /// The currently active skin's manifest.
-  SkinManifest? get currentSkin => _skinManager.current;
+  /// The currently active preset name.
+  String get skinName => _activePreset;
 
-  /// The currently active skin's tokens for simple styling outside the renderer.
-  SkinTokens? get tokens => _skinManager.current?.tokens;
-  
-  /// The currently active skin's name.
-  String get skinName => _skinManager.activeSkinName;
+  /// Available preset names.
+  List<String> get availablePresets => kTokenPresets.keys.toList();
 
-  /// Switches the active skin.
-  Future<void> setSkin(String themeIdentifier) async {
-    await _skinManager.applySkin(themeIdentifier);
-  }
-
-  /// Triggers the sideload import flow.
-  Future<void> importSkin() async {
-    final success = await _skinManager.importSkin();
-    if (success) {
-      debugPrint('SkinProvider: New skin imported successfully.');
-    }
+  /// Switches the active theme preset.
+  Future<void> setSkin(String presetName) async {
+    if (!kTokenPresets.containsKey(presetName)) return;
+    _activePreset = presetName;
+    _tokens = kTokenPresets[presetName]!;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefsKey, presetName);
+    } catch (_) {}
   }
 }

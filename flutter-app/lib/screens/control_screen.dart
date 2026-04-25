@@ -5,21 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/device_provider.dart';
 import '../providers/debug_provider.dart';
+import '../providers/skin_provider.dart';
 import '../services/debug_transport.dart';
 import '../models/widget_config.dart';
 import '../models/protocol.dart';
 import '../theme/app_theme.dart';
-import '../widgets/button_widget.dart';
-import '../widgets/switch_widget.dart';
-import '../widgets/slide_switch_widget.dart';
-import '../widgets/slider_widget.dart';
-import '../widgets/joystick_widget.dart';
-import '../widgets/led_widget.dart';
-import '../widgets/text_widget.dart';
-import '../widgets/multiple_widget.dart';
-import '../widgets/knob_widget.dart';
-import '../theme/skin/skin_manager.dart';
-import '../theme/skin/skin_tokens.dart';
+import '../widgets/widget_adapter.dart';
 
 /// Dynamic widget rendering screen for the connected RadioKit device.
 class ControlScreen extends StatefulWidget {
@@ -207,6 +198,11 @@ class _ControlScreenState extends State<ControlScreen> {
     final double physicalW = canvasVW * internalScale;
     final double physicalH = canvasVH * internalScale;
 
+    // Source grid color from RKTokens
+    final skinProvider = context.watch<SkinProvider>();
+    final tokens = skinProvider.tokens;
+    final gridColor = tokens.trackColor.withValues(alpha: 0.3);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -225,23 +221,15 @@ class _ControlScreenState extends State<ControlScreen> {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  ListenableBuilder(
-                    listenable: SkinManager(),
-                    builder: (context, _) {
-                      final skin = SkinManager().current;
-                      final gridColor = skin?.colors['grid'] ?? Theme.of(context).dividerColor;
-                      
-                      return CustomPaint(
-                        size: Size(physicalW, physicalH),
-                        painter: _GridPainter(
-                          color: gridColor,
-                          style: skin?.gridStyle ?? GridStyle.lines,
-                          spacing: skin?.gridSpacing ?? 10.0,
-                          scaleX: internalScale,
-                          scaleY: internalScale,
-                        ),
-                      );
-                    },
+                  CustomPaint(
+                    size: Size(physicalW, physicalH),
+                    painter: _GridPainter(
+                      color: gridColor,
+                      style: GridStyle.lines,
+                      spacing: 10.0,
+                      scaleX: internalScale,
+                      scaleY: internalScale,
+                    ),
                   ),
                   ...deviceProvider.widgets.map((config) {
                     return _buildPositionedWidget(
@@ -280,106 +268,21 @@ class _ControlScreenState extends State<ControlScreen> {
       child: Transform.rotate(
         angle: angleRad,
         alignment: Alignment.center,
-        child: _buildWidgetForConfig(config, state, deviceProvider, scale),
+        child: WidgetAdapter.build(
+          config: config,
+          state: state,
+          onInputChanged: (values) => deviceProvider.setInputValue(config.widgetId, values),
+          scale: scale,
+        ),
       ),
     );
-  }
-
-  Widget _buildWidgetForConfig(
-      WidgetConfig config, RadioWidgetState? state, DeviceProvider dp, double scale) {
-    switch (config.typeId) {
-      case kWidgetButton:
-        final value = state?.inputValues[config.widgetId]?.first ?? 0;
-        return ButtonWidget(
-          config: config,
-          value: value,
-          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
-          scale: scale,
-        );
-
-      case kWidgetSwitch:
-        final value = state?.inputValues[config.widgetId]?.first ?? 0;
-        return SwitchWidget(
-          config: config,
-          value: value,
-          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
-          scale: scale,
-        );
-
-      case kWidgetSlideSwitch:
-        final slideValue = state?.inputValues[config.widgetId]?.first ?? 0;
-        return SlideSwitchWidget(
-          config: config,
-          value: slideValue,
-          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
-          scale: scale,
-        );
-
-      case kWidgetSlider:
-        final value = state?.inputValues[config.widgetId]?.first ?? 0;
-        return SliderWidget(
-          config: config,
-          value: value,
-          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
-          scale: scale,
-        );
-
-      case kWidgetJoystick:
-        final values = state?.inputValues[config.widgetId] ?? [0, 0];
-        return JoystickWidget(
-          config: config,
-          x: values.isNotEmpty ? values[0] : 0,
-          y: values.length > 1 ? values[1] : 0,
-          onChanged: (x, y) => dp.setInputValue(config.widgetId, [x, y]),
-          scale: scale,
-        );
-
-      case kWidgetLed:
-        final value = state?.outputValues[config.widgetId] ?? [0, 0, 0, 0];
-        return LedWidget(config: config, value: value, scale: scale);
-
-      case kWidgetText:
-        final value = state?.outputValues[config.widgetId] ?? '';
-        return TextWidget(config: config, text: value.toString(), scale: scale);
-
-      case kWidgetMultiple:
-        final value = state?.inputValues[config.widgetId]?.first ?? 0;
-        return MultipleWidget(
-          config: config,
-          value: value,
-          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
-          scale: scale,
-        );
-
-      case kWidgetKnob:
-        final knobValue = state?.inputValues[config.widgetId]?.first ?? 0;
-        return KnobWidget(
-          config: config,
-          value: knobValue,
-          onChanged: (v) => dp.setInputValue(config.widgetId, [v]),
-          scale: scale,
-        );
-
-      default:
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Theme.of(context).dividerColor),
-          ),
-          child: Center(
-            child: Text(
-              'Unknown\n${config.widgetId}',
-              style: Theme.of(context).textTheme.labelSmall,
-              textAlign: TextAlign.center,
-            ),
-          ),
-        );
-    }
   }
 }
 
 // ── Grid background painter ───────────────────────────────────────────────────
+
+/// Defines how the background grid should be rendered.
+enum GridStyle { lines, dots, none }
 
 class _GridPainter extends CustomPainter {
   final Color color;

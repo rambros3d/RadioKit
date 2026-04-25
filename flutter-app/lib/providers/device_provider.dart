@@ -351,21 +351,21 @@ class DeviceProvider extends ChangeNotifier {
         // final knobVal = (127 * math.sin(_simTime * 0.5)).toInt();
         // next = next.copyWithInput(7, [knobVal]);
 
-        // ID 10: Joystick orbiting
-        final jsx = (40 * cos(_simTime)).toInt();
-        final jsy = (40 * sin(_simTime)).toInt();
-        next = next.copyWithInput(10, [jsx, jsy]);
+        // ID 10: Joystick orbiting (Disabled)
+        // final jsx = (40 * cos(_simTime)).toInt();
+        // final jsy = (40 * sin(_simTime)).toInt();
+        // next = next.copyWithInput(10, [jsx, jsy]);
 
         // ID 11: FLAGS bitmask cycling (Disabled)
         // final mask = (1 << ((_simTime * 0.5).toInt() % 4)) - 1; // 0, 1, 3, 7
         // next = next.copyWithInput(11, [mask & 0x07]);
       } 
       else if (_configName == 'RC_CONTROLLER') {
-        // ID 1 & 2: Joysticks slow drift
-        final driftX = (10 * sin(_simTime)).toInt();
-        final driftY = (10 * cos(_simTime * 0.7)).toInt();
-        next = next.copyWithInput(1, [driftX, driftY]);
-        next = next.copyWithInput(2, [-driftY, driftX]);
+        // ID 1 & 2: Joysticks slow drift (Disabled)
+        // final driftX = (10 * sin(_simTime)).toInt();
+        // final driftY = (10 * cos(_simTime * 0.7)).toInt();
+        // next = next.copyWithInput(1, [driftX, driftY]);
+        // next = next.copyWithInput(2, [-driftY, driftX]);
         
         // ID 6: Dynamic telemetry
         if ((_simTime * 10).toInt() % 20 == 0) {

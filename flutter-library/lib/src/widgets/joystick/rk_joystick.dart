@@ -65,6 +65,7 @@ class _RKJoystickState extends State<RKJoystick> with SingleTickerProviderStateM
     super.initState();
     if (widget.value != null) {
       _knobOffset = _offsetFromValue(widget.value!);
+      _lastEmittedValue = widget.value;
     }
     _centerController = AnimationController(
       vsync: this,
@@ -118,12 +119,14 @@ class _RKJoystickState extends State<RKJoystick> with SingleTickerProviderStateM
 
         if (widget.autoCenter && isRelease) {
           // Spring back to the actual CENTER, not just the released coordinate
+          _lastEmittedValue = widget.value;
           _triggerCenter(target: centerOffset);
         } else {
           // Any other movement (active dragging of slider) stops animation and snaps
           if (_centerController.isAnimating) _centerController.stop();
           setState(() {
             _knobOffset = newOffset;
+            _lastEmittedValue = widget.value;
           });
         }
       }

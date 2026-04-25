@@ -188,6 +188,56 @@ class RKTokens {
     ),
   );
 
+  /// High-visibility debug theme tokens for development.
+  static const RKTokens debug = RKTokens(
+    primary: Color(0xFF00FF00),
+    onPrimary: Color(0xFF000000),
+    surface: Color(0xFF0A0A0A),
+    onSurface: Color(0xFF00FF00),
+    trackColor: Color(0xFF1A3A1A),
+    glowColor: Color(0x6600FF00),
+    shadowColor: Colors.transparent,
+    borderRadius: 2.0,
+    elevation: 0.0,
+    primaryGradient: LinearGradient(
+      colors: [Color(0xFF00FF00), Color(0xFF00CC00)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+    surfaceGradient: LinearGradient(
+      colors: [Color(0xFF0A1A0A), Color(0xFF0A0A0A)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+    shadows: [],
+    glows: [
+      BoxShadow(
+        color: Color(0x6600FF00),
+        blurRadius: 8,
+        spreadRadius: 1,
+      ),
+    ],
+    displayTextStyle: TextStyle(
+      color: Color(0xFF00FF00),
+      fontSize: 24,
+      fontWeight: FontWeight.bold,
+      fontFamily: 'monospace',
+      letterSpacing: 4,
+    ),
+    bodyTextStyle: TextStyle(
+      color: Color(0xFF00CC00),
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      fontFamily: 'monospace',
+    ),
+    headlineTextStyle: TextStyle(
+      color: Color(0xFF00FF00),
+      fontSize: 28,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 2,
+    ),
+  );
+
   RKTokens copyWith({
     Color? primary,
     Color? onPrimary,
