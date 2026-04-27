@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/rk_theme.dart';
+import '../rk_rotated_wrapper.dart';
 
 /// A stealth neon industrial slide switch for RadioKit.
-///
-/// Features a heavy mechanical feel with "ON/OFF" engravings,
-/// vibrant orange neon glow, and tactile grip ridges.
 class RKSlideSwitch extends StatefulWidget {
   const RKSlideSwitch({
     super.key,
@@ -22,37 +20,16 @@ class RKSlideSwitch extends StatefulWidget {
     this.label,
   });
 
-  /// Current state of the switch.
   final bool value;
-
-  /// Called when the user toggles the switch.
   final ValueChanged<bool> onChanged;
-
-  /// Called when the user starts/stops touching the switch.
   final ValueChanged<bool>? onInteractionChanged;
-
-  /// Width of the switch track.
   final double width;
-
-  /// Height of the switch track.
   final double height;
-
-  /// Color of the thumb when active. Defaults to industrial orange.
   final Color? activeColor;
-
-  /// Whether to trigger haptic feedback on state changes.
   final bool enableHapticFeedback;
-
-  /// Custom rotation of the widget.
   final double rotation;
-
-  /// Text label for the ON state.
   final String onText;
-
-  /// Text label for the OFF state.
   final String offText;
-
-  /// Optional label shown above the widget.
   final String? label;
 
   @override
@@ -119,35 +96,20 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
     final baseActiveColor = widget.activeColor ?? tokens.primary;
     final activeHSL = HSLColor.fromColor(baseActiveColor);
     
-    // Active shades
     final lightActive = activeHSL.withLightness((activeHSL.lightness + 0.15).clamp(0, 1)).toColor();
     final borderActive = activeHSL.withLightness((activeHSL.lightness + 0.2).clamp(0, 1)).toColor();
-    
-    // Muted shades for OFF state
     final mutedActive = activeHSL.withSaturation(activeHSL.saturation * 0.4).withLightness((activeHSL.lightness * 0.5).clamp(0, 1)).toColor();
     final darkerMuted = activeHSL.withSaturation(activeHSL.saturation * 0.3).withLightness((activeHSL.lightness * 0.3).clamp(0, 1)).toColor();
     final borderMuted = activeHSL.withSaturation(activeHSL.saturation * 0.4).withLightness((activeHSL.lightness * 0.4).clamp(0, 1)).toColor();
 
-    return Transform.rotate(
-      angle: widget.rotation,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.label != null && widget.label!.isNotEmpty) ...[
-            Text(
-              widget.label!.toUpperCase(),
-              style: TextStyle(
-                color: tokens.primary.withValues(alpha: 0.7),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-                fontFamily: 'monospace',
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          GestureDetector(
-            onTapDown: (_) => widget.onInteractionChanged?.call(true),
+    return RKRotatedWrapper(
+      rotation: widget.rotation,
+      label: widget.label,
+      contentWidth: outerWidth,
+      contentHeight: outerHeight,
+      labelColor: tokens.primary.withValues(alpha: 0.7),
+      child: GestureDetector(
+        onTapDown: (_) => widget.onInteractionChanged?.call(true),
         onTapUp: (_) => widget.onInteractionChanged?.call(false),
         onTapCancel: () => widget.onInteractionChanged?.call(false),
         onTap: _handleToggle,
@@ -189,7 +151,7 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
           height: outerHeight,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(outerHeight * 0.5),
-            color: tokens.surface, // Themed casing
+            color: tokens.surface,
             border: Border.all(
               color: tokens.trackColor.withValues(alpha: 0.5),
               width: 2.0,
@@ -213,7 +175,7 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
               width: trackWidth,
               height: trackHeight,
               decoration: BoxDecoration(
-                color: Color.alphaBlend(Colors.black.withValues(alpha: 0.3), tokens.surface), // Slightly darker track
+                color: Color.alphaBlend(Colors.black.withValues(alpha: 0.3), tokens.surface),
                 borderRadius: BorderRadius.circular(trackHeight * 0.5),
                 border: Border.all(color: tokens.trackColor.withValues(alpha: 0.3), width: 1.0),
                 boxShadow: const [
@@ -228,7 +190,6 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Stenciled Labels
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: trackWidth * 0.15),
                     child: Row(
@@ -239,8 +200,6 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
                       ],
                     ),
                   ),
-
-                  // Animated Thumb Slider
                   AnimatedBuilder(
                     animation: _animation,
                     builder: (context, child) {
@@ -290,9 +249,7 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
           ),
         ),
       ),
-    ],
-  ),
-);
+    );
   }
 
   Widget _buildLabel(String text, bool isOnSide, Color activeColor) {
@@ -325,7 +282,6 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
 
 class _ThumbGripTexture extends StatelessWidget {
   final bool isActive;
-  
   const _ThumbGripTexture({required this.isActive});
 
   @override
@@ -362,4 +318,3 @@ class _ThumbGripTexture extends StatelessWidget {
     );
   }
 }
-

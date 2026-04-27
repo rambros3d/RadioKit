@@ -1,6 +1,7 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../theme/rk_theme.dart';
-
+import '../rk_rotated_wrapper.dart';
 
 /// Standard axis orientation for RadioKit widgets.
 enum RKSliderType { linear, gasPedal }
@@ -140,37 +141,28 @@ class _RKSliderState extends State<RKSlider> with SingleTickerProviderStateMixin
     final normalized = ((widget.value - widget.min) / (widget.max - widget.min)).clamp(0.0, 1.0);
     final zeroPos = ((0.0 - widget.min) / (widget.max - widget.min)).clamp(0.0, 1.0);
 
-    return Transform.rotate(
-      angle: widget.rotation,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.label != null && widget.label!.isNotEmpty) ...[
-            Text(
-              widget.label!.toUpperCase(),
-              style: TextStyle(
-                color: tokens.primary.withValues(alpha: 0.7),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-                fontFamily: 'monospace',
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          GestureDetector(
-            onPanStart: (details) {
+    final double contentW = widget.orientation == RKAxis.horizontal ? widget.length : widget.thickness * 8;
+    final double contentH = widget.orientation == RKAxis.vertical ? widget.length : widget.thickness * 8;
+
+    return RKRotatedWrapper(
+      rotation: widget.rotation,
+      label: widget.label,
+      contentWidth: contentW,
+      contentHeight: contentH,
+      labelColor: tokens.primary.withValues(alpha: 0.7),
+      child: GestureDetector(
+        onPanStart: (details) {
           widget.onInteractionChanged?.call(true);
-          _handleUpdate(details.localPosition, context.size!);
+          _handleUpdate(details.localPosition, Size(contentW, contentH));
         },
-        onPanUpdate: (details) => _handleUpdate(details.localPosition, context.size!),
+        onPanUpdate: (details) => _handleUpdate(details.localPosition, Size(contentW, contentH)),
         onPanEnd: (_) {
           widget.onInteractionChanged?.call(false);
           if (widget.autoCenter) _triggerCenter();
         },
         child: Container(
-          width: widget.orientation == RKAxis.horizontal ? widget.length : widget.thickness * 4,
-          height: widget.orientation == RKAxis.vertical ? widget.length : widget.thickness * 4,
+          width: contentW,
+          height: contentH,
           color: Colors.transparent, // Capture gestures
           child: widget.type == RKSliderType.gasPedal
               ? _buildGasPedal(context, tokens, normalized)
@@ -185,9 +177,7 @@ class _RKSliderState extends State<RKSlider> with SingleTickerProviderStateMixin
                     tickCount: widget.tickCount,
                   ),
                 ),
-          ),
         ),
-      ],
       ),
     );
   }
@@ -210,7 +200,7 @@ class _RKSliderState extends State<RKSlider> with SingleTickerProviderStateMixin
           height: isHorizontal ? widget.thickness * 8 : widget.length,
           padding: EdgeInsets.symmetric(
             vertical: isHorizontal ? 10 : 20,
-            horizontal: isHorizontal ? 20 : 10,
+            horizontal: isHorizontal ? 15 : 10,
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(tokens.borderRadius * 1.5),
@@ -281,8 +271,8 @@ class _RKPedalGrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: isHorizontal ? 12 : 50,
-      height: isHorizontal ? 50 : 12,
+      width: isHorizontal ? 10 : 50,
+      height: isHorizontal ? 50 : 10,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(6),
         gradient: LinearGradient(

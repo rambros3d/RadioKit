@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/rk_theme.dart';
+import '../rk_rotated_wrapper.dart';
 
 /// A premium animated toggle switch for RadioKit.
-///
-/// Features a sliding thumb with glow effects and support for dual icons/labels.
 class RKSwitch extends StatefulWidget {
   const RKSwitch({
     super.key,
@@ -24,47 +23,21 @@ class RKSwitch extends StatefulWidget {
     this.label,
   });
 
-  /// Current state of the switch.
   final bool value;
-
-  /// Called when the user toggles the switch.
   final ValueChanged<bool> onChanged;
-
-  /// Called when the user starts/stops touching the switch.
   final ValueChanged<bool>? onInteractionChanged;
-
-  /// Width of the switch track.
   final double width;
-
-  /// Height of the switch track.
   final double height;
-
-  /// Widget displayed on the "on" side (right).
   final Widget? onChild;
-
-  /// Widget displayed on the "off" side (left).
   final Widget? offChild;
-
-  /// Optional widget to display inside the sliding thumb when "on".
   final Widget? onThumbChild;
-
-  /// Optional widget to display inside the sliding thumb when "off".
   final Widget? offThumbChild;
-
-  /// Color of the track when active. Defaults to tokens.primary.
   final Color? activeColor;
-
-  /// Color of the track when inactive. Defaults to tokens.trackColor.
   final Color? inactiveColor;
-
-  /// Whether to trigger haptic feedback on state changes.
   final bool enableHapticFeedback;
-
-  /// Custom rotation of the widget
   final double rotation;
-
-  /// Optional label shown above the widget
   final String? label;
+
   @override
   State<RKSwitch> createState() => _RKSwitchState();
 }
@@ -72,6 +45,7 @@ class RKSwitch extends StatefulWidget {
 class _RKSwitchState extends State<RKSwitch> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  bool _isDragging = false;
 
   @override
   void initState() {
@@ -105,8 +79,6 @@ class _RKSwitchState extends State<RKSwitch> with SingleTickerProviderStateMixin
     super.dispose();
   }
 
-  bool _isDragging = false;
-
   void _handleToggle() {
     if (_isDragging) return;
     if (widget.enableHapticFeedback) HapticFeedback.lightImpact();
@@ -121,159 +93,138 @@ class _RKSwitchState extends State<RKSwitch> with SingleTickerProviderStateMixin
 
     final width = widget.width;
     final height = widget.height;
-
     final thumbPadding = 4.0;
     final thumbSize = height - (thumbPadding * 2);
     final trackRadius = height / 2;
 
-    return Transform.rotate(
-      angle: widget.rotation,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.label != null && widget.label!.isNotEmpty) ...[
-            Text(
-              widget.label!.toUpperCase(),
-              style: TextStyle(
-                color: tokens.primary.withValues(alpha: 0.7),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-                fontFamily: 'monospace',
+    return RKRotatedWrapper(
+      rotation: widget.rotation,
+      label: widget.label,
+      contentWidth: width,
+      contentHeight: height,
+      labelColor: tokens.primary.withValues(alpha: 0.7),
+      child: GestureDetector(
+        onTapDown: (_) => widget.onInteractionChanged?.call(true),
+        onTapUp: (_) => widget.onInteractionChanged?.call(false),
+        onTapCancel: () => widget.onInteractionChanged?.call(false),
+        onTap: _handleToggle,
+        onHorizontalDragStart: (_) {
+          _isDragging = true;
+          widget.onInteractionChanged?.call(true);
+        },
+        onHorizontalDragUpdate: (details) {
+          final dragRange = width - thumbSize - (thumbPadding * 2);
+          _controller.value = (_controller.value + details.primaryDelta! / dragRange).clamp(0.0, 1.0);
+        },
+        onHorizontalDragEnd: (details) {
+          _isDragging = false;
+          widget.onInteractionChanged?.call(false);
+          final newValue = _controller.value >= 0.5;
+          if (newValue != widget.value) {
+            if (widget.enableHapticFeedback) HapticFeedback.lightImpact();
+            widget.onChanged(newValue);
+          } else {
+            if (widget.value) _controller.forward(); else _controller.reverse();
+          }
+        },
+        child: AnimatedBuilder(
+          animation: _animation,
+          builder: (context, child) {
+            final pos = _animation.value;
+            final currentColor = Color.lerp(inactiveColor, activeColor, pos)!;
+
+            return Container(
+              width: width,
+              height: height,
+              decoration: BoxDecoration(
+                color: tokens.surface,
+                borderRadius: BorderRadius.circular(trackRadius),
+                border: Border.all(color: tokens.trackColor, width: 1),
               ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          GestureDetector(
-            onTapDown: (_) => widget.onInteractionChanged?.call(true),
-            onTapUp: (_) => widget.onInteractionChanged?.call(false),
-            onTapCancel: () => widget.onInteractionChanged?.call(false),
-            onTap: _handleToggle,
-            onHorizontalDragStart: (_) {
-              _isDragging = true;
-              widget.onInteractionChanged?.call(true);
-            },
-            onHorizontalDragUpdate: (details) {
-              final dragRange = width - thumbSize - (thumbPadding * 2);
-              _controller.value = (_controller.value + details.primaryDelta! / dragRange).clamp(0.0, 1.0);
-            },
-            onHorizontalDragEnd: (details) {
-              _isDragging = false;
-              widget.onInteractionChanged?.call(false);
-              final newValue = _controller.value >= 0.5;
-              if (newValue != widget.value) {
-                if (widget.enableHapticFeedback) HapticFeedback.lightImpact();
-                widget.onChanged(newValue);
-              } else {
-                if (widget.value) _controller.forward(); else _controller.reverse();
-              }
-            },
-            child: AnimatedBuilder(
-              animation: _animation,
-              builder: (context, child) {
-                final pos = _animation.value;
-                final currentColor = Color.lerp(inactiveColor, activeColor, pos)!;
-
-                return Container(
-                  width: width,
-                  height: height,
-                  decoration: BoxDecoration(
-                    color: tokens.surface,
-                    borderRadius: BorderRadius.circular(trackRadius),
-                    border: Border.all(color: tokens.trackColor, width: 1),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: currentColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(trackRadius),
+                      ),
+                    ),
                   ),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      // Track Fill (Background)
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: currentColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(trackRadius),
-                          ),
+                  if (widget.offChild != null)
+                    Positioned(
+                      right: 8,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: Opacity(
+                          opacity: (1.0 - pos).clamp(0.0, 1.0),
+                          child: widget.offChild,
                         ),
                       ),
-
-                      // Labels / Icons
-                      // Track Content (Opposite to thumb position for visibility)
-                      if (widget.offChild != null)
-                        Positioned(
-                          right: 8,
-                          top: 0,
-                          bottom: 0,
-                          child: Center(
-                            child: Opacity(
-                              opacity: (1.0 - pos).clamp(0.0, 1.0),
-                              child: widget.offChild,
-                            ),
-                          ),
+                    ),
+                  if (widget.onChild != null)
+                    Positioned(
+                      left: 8,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: Opacity(
+                          opacity: pos.clamp(0.0, 1.0),
+                          child: widget.onChild,
                         ),
-                      if (widget.onChild != null)
-                        Positioned(
-                          left: 8,
-                          top: 0,
-                          bottom: 0,
-                          child: Center(
-                            child: Opacity(
-                              opacity: pos.clamp(0.0, 1.0),
-                              child: widget.onChild,
-                            ),
-                          ),
+                      ),
+                    ),
+                  Positioned(
+                    left: thumbPadding + pos * (width - thumbSize - (thumbPadding * 2)),
+                    top: thumbPadding,
+                    child: Container(
+                      width: thumbSize,
+                      height: thumbSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color.lerp(Colors.white, activeColor, pos * 0.5)!,
+                            currentColor,
+                          ],
                         ),
-
-                      // Sliding Thumb
-                      Positioned(
-                        left: thumbPadding + pos * (width - thumbSize - (thumbPadding * 2)),
-                        top: thumbPadding,
-                        child: Container(
-                          width: thumbSize,
-                          height: thumbSize,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Color.lerp(Colors.white, activeColor, pos * 0.5)!,
-                                currentColor,
-                              ],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: currentColor.withValues(alpha: 0.5 * pos + 0.2),
-                                blurRadius: 8,
-                                spreadRadius: 1,
+                        boxShadow: [
+                          BoxShadow(
+                            color: currentColor.withValues(alpha: 0.5 * pos + 0.2),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          if (widget.offThumbChild != null)
+                            Center(
+                              child: Opacity(
+                                opacity: (1.0 - pos).clamp(0.0, 1.0),
+                                child: widget.offThumbChild,
                               ),
-                            ],
-                          ),
-                          child: Stack(
-                            children: [
-                              if (widget.offThumbChild != null)
-                                Center(
-                                  child: Opacity(
-                                    opacity: (1.0 - pos).clamp(0.0, 1.0),
-                                    child: widget.offThumbChild,
-                                  ),
-                                ),
-                              if (widget.onThumbChild != null)
-                                Center(
-                                  child: Opacity(
-                                    opacity: pos.clamp(0.0, 1.0),
-                                    child: widget.onThumbChild,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
+                            ),
+                          if (widget.onThumbChild != null)
+                            Center(
+                              child: Opacity(
+                                opacity: pos.clamp(0.0, 1.0),
+                                child: widget.onThumbChild,
+                              ),
+                            ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                );
-              },
-            ),
-          ),
-        ],
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

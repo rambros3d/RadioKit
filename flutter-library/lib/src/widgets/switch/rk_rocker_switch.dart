@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/rk_theme.dart';
+import '../rk_rotated_wrapper.dart';
+
 /// A premium rocker switch widget for RadioKit.
 class RKRockerSwitch extends StatefulWidget {
   const RKRockerSwitch({
@@ -42,7 +44,6 @@ class _RKRockerSwitchState extends State<RKRockerSwitch>
   late Animation<double> _shadowAnimation;
 
   static const double _tiltAngle = 0.42;
-
   bool _isDragging = false;
 
   @override
@@ -139,69 +140,60 @@ class _RKRockerSwitchState extends State<RKRockerSwitch>
   Widget build(BuildContext context) {
     final tokens = RKTheme.of(context);
     final activeColor = widget.activeColor ?? tokens.primary;
-    return Transform.rotate(
-      angle: widget.rotation,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.label != null && widget.label!.isNotEmpty) ...[
-            Text(
-              widget.label!.toUpperCase(),
-              style: TextStyle(
-                color: tokens.primary.withValues(alpha: 0.7),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-                fontFamily: 'monospace',
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          GestureDetector(
-            onTapDown: (_) => widget.onInteractionChanged?.call(true),
-      onTapUp: (details) {
-        widget.onInteractionChanged?.call(false);
-        _handleTap(details);
-      },
-      onTapCancel: () => widget.onInteractionChanged?.call(false),
-      onVerticalDragStart: (_) {
-        _isDragging = true;
-        widget.onInteractionChanged?.call(true);
-      },
-      onVerticalDragUpdate: (details) {
-        _handleDragUpdate(details.primaryDelta!);
-      },
-      onVerticalDragEnd: (_) => _handleDragEnd(),
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          final tilt = _tiltAnimation.value;
-          final shadowOffset = _shadowAnimation.value;
+    
+    // The widget actually renders with some extra padding/shadow space.
+    final totalWidth = widget.width + 22;
+    final totalHeight = widget.height + 22;
 
-          return SizedBox(
-            width: widget.width + 22,
-            height: widget.height + 22,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                _buildBezel(tokens, widget.width, widget.height),
-                Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.0022)
-                    ..multiply(Matrix4.rotationX(tilt)),
-                  child: _buildRocker(tokens, activeColor, shadowOffset, widget.width, widget.height),
-                ),
-              ],
-            ),
-          );
+    return RKRotatedWrapper(
+      rotation: widget.rotation,
+      label: widget.label,
+      contentWidth: totalWidth,
+      contentHeight: totalHeight,
+      labelColor: tokens.primary.withValues(alpha: 0.7),
+      child: GestureDetector(
+        onTapDown: (_) => widget.onInteractionChanged?.call(true),
+        onTapUp: (details) {
+          widget.onInteractionChanged?.call(false);
+          _handleTap(details);
         },
+        onTapCancel: () => widget.onInteractionChanged?.call(false),
+        onVerticalDragStart: (_) {
+          _isDragging = true;
+          widget.onInteractionChanged?.call(true);
+        },
+        onVerticalDragUpdate: (details) {
+          _handleDragUpdate(details.primaryDelta!);
+        },
+        onVerticalDragEnd: (_) => _handleDragEnd(),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final tilt = _tiltAnimation.value;
+            final shadowOffset = _shadowAnimation.value;
+
+            return SizedBox(
+              width: totalWidth,
+              height: totalHeight,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  _buildBezel(tokens, widget.width, widget.height),
+                  Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.identity()
+                      ..setEntry(3, 2, 0.0022)
+                      ..multiply(Matrix4.rotationX(tilt)),
+                    child: _buildRocker(tokens, activeColor, shadowOffset, widget.width, widget.height),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
-    ),
-  ],
-),
-);
-}
+    );
+  }
 
   Widget _buildBezel(RKTokens tokens, double actualWidth, double actualHeight) {
     return Container(

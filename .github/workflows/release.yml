@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          cd flutter-app
+          flutter pub get
+
+      - name: Build Android APK
+        run: |
+          cd flutter-app
+          flutter build apk --release
+
+      - name: Build iOS IPA
+        run: |
+          cd flutter-app
+          flutter build ios --release --no-codesign
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r radiokit.ipa Payload
+
+      - name: Rename and Prepare Artifacts
+        run: |
+          VERSION=${GITHUB_REF_NAME}
+          
+          # Find and rename APK
+          APK_PATH=$(find . -name "app-release.apk" | grep -v "outputs/apk/release" || find . -name "app-release.apk" | head -n 1)
+          echo "Found APK at: $APK_PATH"
+          cp "$APK_PATH" "radiokit-${VERSION}.apk"
+          
+          # Find and rename IPA
+          IPA_PATH=$(find . -name "*.ipa" | head -n 1)
+          echo "Found IPA at: $IPA_PATH"
+          cp "$IPA_PATH" "radiokit-${VERSION}.ipa"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            radiokit-*.apk
+            radiokit-*.ipa
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

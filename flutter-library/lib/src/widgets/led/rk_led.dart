@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../theme/rk_theme.dart';
+import '../rk_rotated_wrapper.dart';
 
 /// Shapes available for the RKLed widget.
 enum RKLEDShape {
@@ -31,22 +32,11 @@ class RKLed extends StatefulWidget {
     this.label,
   });
 
-  /// The current state of the LED.
   final RKLEDState state;
-
-  /// The visual shape of the LED.
   final RKLEDShape shape;
-
-  /// Diameter/size of the LED.
   final double size;
-
-  /// Color of the LED when active. Defaults to theme primary.
   final Color? color;
-
-  /// Animation timing in milliseconds (for blink/breathe).
   final int timing;
-
-  /// Custom rotation of the widget
   final double rotation;
   final String? label;
 
@@ -102,67 +92,53 @@ class _RKLedState extends State<RKLed> with SingleTickerProviderStateMixin {
     final tokens = RKTheme.of(context);
     final baseColor = widget.color ?? tokens.primary;
 
-    return AnimatedBuilder(
-      animation: _opacity,
-      builder: (context, child) {
-        double currentOpacity = 1.0;
-        bool isActive = false;
+    return RKRotatedWrapper(
+      rotation: widget.rotation,
+      label: widget.label,
+      contentWidth: widget.size,
+      contentHeight: widget.size,
+      labelColor: tokens.primary.withValues(alpha: 0.7),
+      child: AnimatedBuilder(
+        animation: _opacity,
+        builder: (context, child) {
+          double currentOpacity = 1.0;
+          bool isActive = false;
 
-        switch (widget.state) {
-          case RKLEDState.off:
-            isActive = false;
-            currentOpacity = 1.0;
-            break;
-          case RKLEDState.on:
-            isActive = true;
-            currentOpacity = 1.0;
-            break;
-          case RKLEDState.blink:
-            isActive = true;
-            currentOpacity = _opacity.value > 0.5 ? 1.0 : 0.0;
-            break;
-          case RKLEDState.breathe:
-            isActive = true;
-            currentOpacity = _opacity.value;
-            break;
-        }
+          switch (widget.state) {
+            case RKLEDState.off:
+              isActive = false;
+              currentOpacity = 1.0;
+              break;
+            case RKLEDState.on:
+              isActive = true;
+              currentOpacity = 1.0;
+              break;
+            case RKLEDState.blink:
+              isActive = true;
+              currentOpacity = _opacity.value > 0.5 ? 1.0 : 0.0;
+              break;
+            case RKLEDState.breathe:
+              isActive = true;
+              currentOpacity = _opacity.value;
+              break;
+          }
 
-        final ledColor = isActive ? baseColor.withValues(alpha: currentOpacity) : tokens.trackColor;
+          final ledColor = isActive ? baseColor.withValues(alpha: currentOpacity) : tokens.trackColor;
 
-        return Transform.rotate(
-          angle: widget.rotation,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.label != null && widget.label!.isNotEmpty) ...[
-                Text(
-                  widget.label!.toUpperCase(),
-                  style: TextStyle(
-                    color: tokens.primary.withValues(alpha: 0.7),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-              SizedBox(
-                width: widget.size,
-                height: widget.size,
-                child: CustomPaint(
-                  painter: _LEDPainter(
-                    color: ledColor,
-                    shape: widget.shape,
-                    glow: isActive ? baseColor.withValues(alpha: currentOpacity * 0.4) : Colors.transparent,
-                    glowSize: widget.size * 0.4,
-                  ),
-                ),
+          return SizedBox(
+            width: widget.size,
+            height: widget.size,
+            child: CustomPaint(
+              painter: _LEDPainter(
+                color: ledColor,
+                shape: widget.shape,
+                glow: isActive ? baseColor.withValues(alpha: currentOpacity * 0.4) : Colors.transparent,
+                glowSize: widget.size * 0.4,
               ),
-            ],
-          ),
-        );
-      },
+            ),
+          );
+        },
+      ),
     );
   }
 }

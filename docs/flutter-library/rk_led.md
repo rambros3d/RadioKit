@@ -1,6 +1,6 @@
 # RKLed
 
-**LED indicator widget for RadioKit** – a simple circular light that can be turned on or off and optionally tinted.
+**LED indicator widget for RadioKit** – features multiple shapes (circle, square, diamond, star) and operating states including solid, blink, and breathe effects.
 
 ## Constructor
 ```dart

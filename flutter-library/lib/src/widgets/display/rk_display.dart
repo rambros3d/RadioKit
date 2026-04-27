@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/rk_theme.dart';
+import '../rk_rotated_wrapper.dart';
 
 /// A text display output widget for RadioKit.
 class RKDisplay extends StatelessWidget {
@@ -74,36 +75,29 @@ class RKDisplay extends StatelessWidget {
     );
 
     Widget finalContent;
+    double finalWidth;
+    double finalHeight;
+
     if (isVertical) {
       finalContent = RotatedBox(
         quarterTurns: 1,
         child: content,
       );
+      finalWidth = height;
+      finalHeight = width;
     } else {
       finalContent = content;
+      finalWidth = width;
+      finalHeight = height;
     }
 
-    return Transform.rotate(
-      angle: rotation,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (label != null && label!.isNotEmpty) ...[
-            Text(
-              label!.toUpperCase(),
-              style: TextStyle(
-                color: tokens.primary.withValues(alpha: 0.7),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-                fontFamily: 'monospace',
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          finalContent,
-        ],
-      ),
+    return RKRotatedWrapper(
+      rotation: rotation,
+      label: label,
+      contentWidth: finalWidth,
+      contentHeight: finalHeight,
+      labelColor: tokens.primary.withValues(alpha: 0.7),
+      child: finalContent,
     );
   }
 }

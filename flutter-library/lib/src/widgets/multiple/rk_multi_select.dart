@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/rk_theme.dart';
+import '../rk_rotated_wrapper.dart';
 import 'rk_multi_button.dart';
 
 /// Bitmask multi-select group for RadioKit.
-/// 
-/// Allows multiple items to be selected simultaneously using a bitmask.
-/// Uses the same premium "Tactical" look as [RKMultiButton].
 class RKMultiSelect extends StatelessWidget {
   const RKMultiSelect({
     super.key,
@@ -24,7 +22,6 @@ class RKMultiSelect extends StatelessWidget {
   });
 
   final List<RKToggleItem> items;
-  /// Bitmask where bit i corresponds to items[i].
   final int bitmask;
   final ValueChanged<int> onChanged;
   final double buttonSize;
@@ -40,50 +37,45 @@ class RKMultiSelect extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = RKTheme.of(context);
 
-    return Transform.rotate(
-      angle: rotation,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (label != null && label!.isNotEmpty) ...[
-            Text(
-              label!.toUpperCase(),
-              style: TextStyle(
-                color: tokens.primary.withValues(alpha: 0.7),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-                fontFamily: 'monospace',
+    final count = items.length;
+    final totalButtonDim = (buttonSize * count) + (spacing * (count - 1));
+    final contentWidth = orientation == RKAxis.horizontal 
+        ? totalButtonDim + (padding * 2) 
+        : buttonSize + (padding * 2);
+    final contentHeight = orientation == RKAxis.horizontal 
+        ? buttonSize + (padding * 2) 
+        : totalButtonDim + (padding * 2);
+
+    return RKRotatedWrapper(
+      rotation: rotation,
+      label: label,
+      contentWidth: contentWidth,
+      contentHeight: contentHeight,
+      labelColor: tokens.primary.withValues(alpha: 0.7),
+      child: Container(
+        padding: EdgeInsets.all(padding),
+        decoration: BoxDecoration(
+          color: tokens.surface,
+          border: Border.all(color: tokens.trackColor, width: 1),
+          borderRadius: BorderRadius.circular(tokens.borderRadius * 2.5),
+          boxShadow: tokens.shadows,
+        ),
+        child: Listener(
+          onPointerDown: (_) => onActiveChanged?.call(true),
+          onPointerUp: (_) => onActiveChanged?.call(false),
+          onPointerCancel: (_) => onActiveChanged?.call(false),
+          child: orientation == RKAxis.horizontal 
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _buildButtons(spacing),
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _buildButtons(spacing),
               ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          Container(
-            padding: EdgeInsets.all(padding),
-            decoration: BoxDecoration(
-            color: tokens.surface,
-            border: Border.all(color: tokens.trackColor, width: 1),
-            borderRadius: BorderRadius.circular(tokens.borderRadius * 2.5),
-            boxShadow: tokens.shadows,
-          ),
-          child: Listener(
-            onPointerDown: (_) => onActiveChanged?.call(true),
-            onPointerUp: (_) => onActiveChanged?.call(false),
-            onPointerCancel: (_) => onActiveChanged?.call(false),
-            child: orientation == RKAxis.horizontal 
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: _buildButtons(spacing),
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: _buildButtons(spacing),
-                ),
-          ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -99,7 +91,6 @@ class RKMultiSelect extends StatelessWidget {
           if (enableHapticFeedback) {
             HapticFeedback.selectionClick();
           }
-          // Toggle the bit at index
           onChanged(bitmask ^ (1 << index));
         },
       );
@@ -131,8 +122,6 @@ class _RKSelectButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = RKTheme.of(context);
-    
-    // Fixed shape radius based on tokens
     final double radius = tokens.borderRadius * 2.0;
 
     return Material(

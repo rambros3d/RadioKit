@@ -175,6 +175,12 @@ class InspectorPanel extends StatelessWidget {
             color: const Color(0xFF222222),
           ),
 
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+
           // ─── VALUES ───
           Padding(
             padding: const EdgeInsets.all(20),
@@ -476,32 +482,7 @@ class InspectorPanel extends StatelessWidget {
             ),
           ),
 
-          const Spacer(),
-
-          // ─── Copy code button ───
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: OutlinedButton.icon(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: tokens.primary, width: 1),
-                  foregroundColor: tokens.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                icon: const Icon(LucideIcons.copy, size: 16),
-                label: const Text(
-                  'COPY DART CODE',
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                    letterSpacing: 1,
-                  ),
-                ),
+                ],
               ),
             ),
           ),
@@ -575,7 +556,7 @@ class InspectorPanel extends StatelessWidget {
                   const SizedBox(width: 8),
                 ] else
                   const Text('NONE', style: TextStyle(color: Color(0xFF666666), fontSize: 12)),
-                const Spacer(),
+                //const Spacer(),
                 const Icon(LucideIcons.chevronDown, color: Color(0xFF666666), size: 14),
               ],
             ),
@@ -625,7 +606,7 @@ class InspectorPanel extends StatelessWidget {
                   '#${currentColor.toARGB32().toRadixString(16).toUpperCase().substring(2)}',
                   style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace'),
                 ),
-                const Spacer(),
+                //const Spacer(),
                 const Icon(LucideIcons.chevronDown, color: Color(0xFF666666), size: 14),
               ],
             ),
@@ -1687,7 +1668,7 @@ class _InspectorIconSelector extends StatelessWidget {
                   Icon(currentIcon, color: Colors.white, size: 16),
                 ] else
                   const Text('NONE', style: TextStyle(color: Color(0xFF666666), fontSize: 10)),
-                const Spacer(),
+               // const Spacer(),
                 const Icon(LucideIcons.chevronDown, color: Color(0xFF666666), size: 14),
               ],
             ),

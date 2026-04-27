@@ -230,6 +230,7 @@ class _DemoScreenState extends State<DemoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ─── Left sidebar ───
           LeftSidebar(selectedIndex: widget.selectedIndex),

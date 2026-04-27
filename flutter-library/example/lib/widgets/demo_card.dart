@@ -93,7 +93,12 @@ class DemoCard extends StatelessWidget {
                 ],
               ),
             ),
-            child: Center(child: liveWidget),
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: liveWidget,
+              ),
+            ),
           ),
           // ─── Bottom panel: INPUT + TELEMETRY ───
           Container(

@@ -1,13 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:simple_icons/simple_icons.dart';
 import '../../theme/rk_theme.dart';
+import '../rk_rotated_wrapper.dart';
 
 /// Variants for the knob.
 enum RKKnobVariant { standard, steeringWheel }
 
 /// A premium rotary knob widget for RadioKit.
-
 class RKKnob extends StatefulWidget {
   const RKKnob({
     super.key,
@@ -32,13 +31,10 @@ class RKKnob extends StatefulWidget {
   });
 
   final IconData? centerIcon;
-
   final RKAxis orientation;
-
   final RKKnobVariant variant;
   final double rotation;
   final String? label;
-
   final double value;
   final ValueChanged<double> onChanged;
   final ValueChanged<bool>? onInteractionChanged;
@@ -85,7 +81,6 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
     );
     _centerController.addListener(() {
       final val = widget.min + _centerAnimation.value * (widget.max - widget.min);
-      // Clamp to limits to prevent overshoot during elastic animation
       _emitValue(val.clamp(widget.min, widget.max));
     });
   }
@@ -129,78 +124,64 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
     _centerController.forward(from: 0);
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final tokens = RKTheme.of(context);
     final normalized = (widget.value - widget.min) / (widget.max - widget.min);
     final zeroPos = ((0.0 - widget.min) / (widget.max - widget.min)).clamp(0.0, 1.0);
     
-    // Adjust startRad such that zeroPos results in angle -pi/2 (Top Center)
     final sweepRad = (widget.maxAngle - widget.minAngle) * math.pi / 180;
     final startRad = (-math.pi / 2) - (zeroPos * sweepRad);
     final currentAngle = startRad + normalized * sweepRad;
 
-    final content = [
-      Column(
+    final double indicatorH = (widget.variant == RKKnobVariant.steeringWheel) ? 20.0 : 0.0;
+    final double contentH = widget.size + indicatorH;
+    final double contentW = widget.size;
+
+    return RKRotatedWrapper(
+      rotation: widget.rotation,
+      label: widget.label,
+      contentWidth: contentW,
+      contentHeight: contentH,
+      labelColor: tokens.primary.withValues(alpha: 0.7),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           GestureDetector(
             onPanStart: (details) {
               _centerController.stop();
               widget.onInteractionChanged?.call(true);
-
               final RenderBox box = context.findRenderObject() as RenderBox;
               final center = box.size.center(Offset.zero);
               final localPos = box.globalToLocal(details.globalPosition);
               _previousTouchAngle = math.atan2(localPos.dy - center.dy, localPos.dx - center.dx) * 180 / math.pi;
-              
-              // Initialize accumulated rotation relative to zero value at 0 degrees
               _currentAccumulatedRotation = (normalized - zeroPos) * (widget.maxAngle - widget.minAngle);
             },
             onPanUpdate: (details) {
               if (_previousTouchAngle == null) return;
-
               final RenderBox box = context.findRenderObject() as RenderBox;
               final center = box.size.center(Offset.zero);
               final localPos = box.globalToLocal(details.globalPosition);
               final currentTouchAngle = math.atan2(localPos.dy - center.dy, localPos.dx - center.dx) * 180 / math.pi;
-              
-              // Calculate delta from previous frame
               double delta = currentTouchAngle - _previousTouchAngle!;
-              
-              // Handle wrap-around
               if (delta > 180) delta -= 360;
               if (delta < -180) delta += 360;
-
               _currentAccumulatedRotation += delta;
               _previousTouchAngle = currentTouchAngle;
-
-              // Clamp to configured limits relative to zeroPos
               final minRot = (0.0 - zeroPos) * (widget.maxAngle - widget.minAngle);
               final maxRot = (1.0 - zeroPos) * (widget.maxAngle - widget.minAngle);
               final targetRotation = _currentAccumulatedRotation.clamp(minRot, maxRot);
-              
-              final normalized = (targetRotation - minRot) / (maxRot - minRot);
-              double newVal = widget.min + normalized * (widget.max - widget.min);
-              
-              // Snap to divisions
+              final norm = (targetRotation - minRot) / (maxRot - minRot);
+              double newVal = widget.min + norm * (widget.max - widget.min);
               if (widget.divisions != null && widget.divisions! > 0) {
                 final step = (widget.max - widget.min) / widget.divisions!;
                 newVal = ((newVal - widget.min) / step).round() * step + widget.min;
               }
-              
               _emitValue(newVal);
             },
             onPanEnd: (_) {
               widget.onInteractionChanged?.call(false);
-              if (widget.autoCenter) {
-                _triggerCenter();
-              }
-            },
-            onPanCancel: () {
-              widget.onInteractionChanged?.call(false);
+              if (widget.autoCenter) _triggerCenter();
             },
             child: SizedBox(
               width: widget.size,
@@ -245,44 +226,7 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
           ],
         ],
       ),
-    ];
-
-    Widget finalContent;
-    if (widget.orientation == RKAxis.horizontal) {
-      finalContent = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: content,
-      );
-    } else {
-      finalContent = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: content,
-      );
-    }
-
-    return Transform.rotate(
-      angle: widget.rotation,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.label != null && widget.label!.isNotEmpty) ...[
-            Text(
-              widget.label!.toUpperCase(),
-              style: TextStyle(
-                color: tokens.primary.withValues(alpha: 0.7),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-                fontFamily: 'monospace',
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          finalContent,
-        ],
-      ),
     );
-
   }
 }
 
@@ -309,7 +253,6 @@ class _KnobPainter extends CustomPainter {
     final radius = size.width / 2;
     final knobRadius = radius * 0.8;
 
-    // 1. Draw Outer Ring (Track)
     final trackPaint = Paint()
       ..color = tokens.trackColor
       ..style = PaintingStyle.stroke
@@ -324,7 +267,6 @@ class _KnobPainter extends CustomPainter {
       trackPaint,
     );
 
-    // 2. Draw Active Arc
     final activePaint = Paint()
       ..color = tokens.primary.withValues(alpha: 0.5)
       ..style = PaintingStyle.stroke
@@ -342,25 +284,21 @@ class _KnobPainter extends CustomPainter {
       activePaint,
     );
 
-    // 3. Draw Knob Body
     final knobPaint = Paint()
       ..color = tokens.surface
       ..style = PaintingStyle.fill;
 
-    // Shadow for depth
     canvas.drawCircle(center, knobRadius, Paint()
       ..color = tokens.shadowColor.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
     
     canvas.drawCircle(center, knobRadius, knobPaint);
 
-    // Rim
     canvas.drawCircle(center, knobRadius, Paint()
       ..color = tokens.primary.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1);
 
-    // 4. Draw Pointer (Indicator)
     final pointerPaint = Paint()
       ..color = tokens.primary
       ..style = PaintingStyle.fill;
@@ -370,7 +308,6 @@ class _KnobPainter extends CustomPainter {
       center.dy + (knobRadius - 12) * math.sin(angle),
     );
 
-    // Pointer
     canvas.drawCircle(pointerCenter, 4, pointerPaint);
   }
 
@@ -412,7 +349,7 @@ class _SteeringWheelPainter extends CustomPainter {
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
-    canvas.rotate(angle + math.pi / 2); // Adjust for knob's 0 angle
+    canvas.rotate(angle + math.pi / 2);
     canvas.translate(-center.dx, -center.dy);
 
     final fillPaint = Paint()..isAntiAlias = true;
@@ -420,9 +357,6 @@ class _SteeringWheelPainter extends CustomPainter {
       ..isAntiAlias = true
       ..style = PaintingStyle.stroke;
 
-    // Outer rim body with brushed metal look
-
-    // Outer rim body
     fillPaint.shader = LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
@@ -447,7 +381,6 @@ class _SteeringWheelPainter extends CustomPainter {
       ..close();
     canvas.drawPath(outerRim, fillPaint);
 
-    // Sharp Metallic Bevel (Outer)
     strokePaint
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
@@ -461,14 +394,12 @@ class _SteeringWheelPainter extends CustomPainter {
       ..maskFilter = null;
     canvas.drawCircle(center, w * 0.495, strokePaint);
 
-    // Inner Rim Definition (Deep Groove)
     strokePaint
       ..shader = null
       ..color = Colors.black.withValues(alpha: 0.85)
       ..strokeWidth = 2.5;
     canvas.drawCircle(center, w * 0.45, strokePaint);
 
-    // Mechanical texture (subtle grooves)
     strokePaint
       ..color = Colors.black.withValues(alpha: 0.15)
       ..strokeWidth = 1.0;
@@ -479,9 +410,6 @@ class _SteeringWheelPainter extends CustomPainter {
       canvas.drawLine(p1, p2, strokePaint);
     }
 
-    // (Removed top highlight arc as requested)
-
-    // Rim bottom shadow
     strokePaint
       ..shader = null
       ..maskFilter = null
@@ -493,8 +421,6 @@ class _SteeringWheelPainter extends CustomPainter {
       strokePaint,
     );
 
-
-    // Top bridge
     fillPaint.shader = LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
@@ -517,7 +443,6 @@ class _SteeringWheelPainter extends CustomPainter {
       ..close();
     canvas.drawPath(path, fillPaint);
 
-    // Left top arm
     fillPaint.shader = null;
     fillPaint.color = spokeDark;
     path = Path()
@@ -531,7 +456,6 @@ class _SteeringWheelPainter extends CustomPainter {
       ..close();
     canvas.drawPath(path, fillPaint);
 
-    // Right top arm
     path = Path()
       ..moveTo(w * 0.75, h * 0.45)
       ..cubicTo(w * 0.75, h * 0.45, w * 0.8, h * 0.39, w * 0.8, h * 0.39)
@@ -543,7 +467,6 @@ class _SteeringWheelPainter extends CustomPainter {
       ..close();
     canvas.drawPath(path, fillPaint);
 
-    // Left lower spoke
     path = Path()
       ..moveTo(w * 0.36, h * 0.7)
       ..cubicTo(w * 0.36, h * 0.7, w * 0.26, h * 0.71, w * 0.26, h * 0.71)
@@ -555,7 +478,6 @@ class _SteeringWheelPainter extends CustomPainter {
       ..close();
     canvas.drawPath(path, fillPaint);
 
-    // Right lower spoke
     path = Path()
       ..moveTo(w * 0.64, h * 0.7)
       ..cubicTo(w * 0.64, h * 0.7, w * 0.74, h * 0.71, w * 0.74, h * 0.71)
@@ -567,7 +489,6 @@ class _SteeringWheelPainter extends CustomPainter {
       ..close();
     canvas.drawPath(path, fillPaint);
 
-    // Hub gradient fill
     final hubRect = Rect.fromCircle(center: center, radius: w * 0.14);
     fillPaint.shader = LinearGradient(
       begin: Alignment.topLeft,
@@ -576,7 +497,6 @@ class _SteeringWheelPainter extends CustomPainter {
     ).createShader(hubRect);
     canvas.drawCircle(center, w * 0.135, fillPaint);
 
-    // Hub outer ring (Beveled)
     strokePaint
       ..shader = LinearGradient(
         begin: Alignment.topLeft,
@@ -587,7 +507,6 @@ class _SteeringWheelPainter extends CustomPainter {
       ..strokeWidth = w * 0.015;
     canvas.drawCircle(center, w * 0.145, strokePaint);
 
-    // Hub inner crisp ring
     strokePaint
       ..shader = null
       ..color = rimLight.withValues(alpha: 0.4)
@@ -618,7 +537,7 @@ class _SteeringWheelHub extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Transform.rotate(
-      angle: angle + math.pi / 2, // Match the wheel rotation
+      angle: angle + math.pi / 2,
       child: Container(
         width: 62,
         height: 62,
@@ -673,7 +592,6 @@ class _RKKnobIndicator extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(dotCount, (index) {
-        // Map normalized (0.0 -> 1.0) to progress (0.0 -> dotCount - 1)
         final progress = normalized * (dotCount - 1);
         final intensity = _getIntensity(progress, index);
         
@@ -690,11 +608,8 @@ class _RKKnobIndicator extends StatelessWidget {
 
   double _getIntensity(double progress, int index) {
     double diff = (progress - index).abs();
-    
-    // Focus effect centered at the current value
     if (diff < 1.0) return 1.0 - diff;
     if (diff < 2.0) return (2.0 - diff) * 0.3;
-    
     return 0.0;
   }
 }
