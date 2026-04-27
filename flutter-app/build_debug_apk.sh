@@ -11,7 +11,7 @@ export _JAVA_OPTIONS="-Xlog:disable"
 export CHROME_EXECUTABLE=$(which chromium-browser || which chromium)
 
 echo "🚀 Starting RadioKit Debug APK Build..."
-/home/sun/sandbox/fedora/flutter/bin/flutter build apk --debug
+flutter build apk --debug
 
 if [ $? -eq 0 ]; then
     echo "✅ Build Successful!"

@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Ensure flutter and chrome are accessible
-export PATH="$PATH:/home/sun/sandbox/fedora/flutter/bin"
-export CHROME_EXECUTABLE="/usr/bin/chromium-browser"
-
 echo "Starting RadioKit Widgets Demo..."
 echo "Target: http://127.0.0.1:8008"
 

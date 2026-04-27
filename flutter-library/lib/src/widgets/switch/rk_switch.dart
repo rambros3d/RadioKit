@@ -21,6 +21,7 @@ class RKSwitch extends StatefulWidget {
     this.enableHapticFeedback = true,
     this.onInteractionChanged,
     this.rotation = 0.0,
+    this.label,
   });
 
   /// Current state of the switch.
@@ -61,6 +62,9 @@ class RKSwitch extends StatefulWidget {
 
   /// Custom rotation of the widget
   final double rotation;
+
+  /// Optional label shown above the widget
+  final String? label;
   @override
   State<RKSwitch> createState() => _RKSwitchState();
 }
@@ -124,134 +128,152 @@ class _RKSwitchState extends State<RKSwitch> with SingleTickerProviderStateMixin
 
     return Transform.rotate(
       angle: widget.rotation,
-      child: GestureDetector(
-        onTapDown: (_) => widget.onInteractionChanged?.call(true),
-      onTapUp: (_) => widget.onInteractionChanged?.call(false),
-      onTapCancel: () => widget.onInteractionChanged?.call(false),
-      onTap: _handleToggle,
-      onHorizontalDragStart: (_) {
-        _isDragging = true;
-        widget.onInteractionChanged?.call(true);
-      },
-      onHorizontalDragUpdate: (details) {
-        final dragRange = width - thumbSize - (thumbPadding * 2);
-        _controller.value = (_controller.value + details.primaryDelta! / dragRange).clamp(0.0, 1.0);
-      },
-      onHorizontalDragEnd: (details) {
-        _isDragging = false;
-        widget.onInteractionChanged?.call(false);
-        final newValue = _controller.value >= 0.5;
-        if (newValue != widget.value) {
-          if (widget.enableHapticFeedback) HapticFeedback.lightImpact();
-          widget.onChanged(newValue);
-        } else {
-          if (widget.value) _controller.forward(); else _controller.reverse();
-        }
-      },
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          final pos = _animation.value;
-          final currentColor = Color.lerp(inactiveColor, activeColor, pos)!;
-
-          return Container(
-            width: width,
-            height: height,
-            decoration: BoxDecoration(
-              color: tokens.surface,
-              borderRadius: BorderRadius.circular(trackRadius),
-              border: Border.all(color: tokens.trackColor, width: 1),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.label != null && widget.label!.isNotEmpty) ...[
+            Text(
+              widget.label!.toUpperCase(),
+              style: TextStyle(
+                color: tokens.primary.withValues(alpha: 0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                fontFamily: 'monospace',
+              ),
             ),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Track Fill (Background)
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: currentColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(trackRadius),
-                    ),
-                  ),
-                ),
+            const SizedBox(height: 8),
+          ],
+          GestureDetector(
+            onTapDown: (_) => widget.onInteractionChanged?.call(true),
+            onTapUp: (_) => widget.onInteractionChanged?.call(false),
+            onTapCancel: () => widget.onInteractionChanged?.call(false),
+            onTap: _handleToggle,
+            onHorizontalDragStart: (_) {
+              _isDragging = true;
+              widget.onInteractionChanged?.call(true);
+            },
+            onHorizontalDragUpdate: (details) {
+              final dragRange = width - thumbSize - (thumbPadding * 2);
+              _controller.value = (_controller.value + details.primaryDelta! / dragRange).clamp(0.0, 1.0);
+            },
+            onHorizontalDragEnd: (details) {
+              _isDragging = false;
+              widget.onInteractionChanged?.call(false);
+              final newValue = _controller.value >= 0.5;
+              if (newValue != widget.value) {
+                if (widget.enableHapticFeedback) HapticFeedback.lightImpact();
+                widget.onChanged(newValue);
+              } else {
+                if (widget.value) _controller.forward(); else _controller.reverse();
+              }
+            },
+            child: AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                final pos = _animation.value;
+                final currentColor = Color.lerp(inactiveColor, activeColor, pos)!;
 
-                // Labels / Icons
-                // Track Content (Opposite to thumb position for visibility)
-                if (widget.offChild != null)
-                  Positioned(
-                    right: 8,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
-                      child: Opacity(
-                        opacity: (1.0 - pos).clamp(0.0, 1.0),
-                        child: widget.offChild,
-                      ),
-                    ),
+                return Container(
+                  width: width,
+                  height: height,
+                  decoration: BoxDecoration(
+                    color: tokens.surface,
+                    borderRadius: BorderRadius.circular(trackRadius),
+                    border: Border.all(color: tokens.trackColor, width: 1),
                   ),
-                if (widget.onChild != null)
-                  Positioned(
-                    left: 8,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
-                      child: Opacity(
-                        opacity: pos.clamp(0.0, 1.0),
-                        child: widget.onChild,
-                      ),
-                    ),
-                  ),
-
-                // Sliding Thumb
-                Positioned(
-                  left: thumbPadding + pos * (width - thumbSize - (thumbPadding * 2)),
-                  top: thumbPadding,
-                  child: Container(
-                    width: thumbSize,
-                    height: thumbSize,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color.lerp(Colors.white, activeColor, pos * 0.5)!,
-                          currentColor,
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: currentColor.withValues(alpha: 0.5 * pos + 0.2),
-                          blurRadius: 8,
-                          spreadRadius: 1,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Track Fill (Background)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: currentColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(trackRadius),
+                          ),
                         ),
-                      ],
-                    ),
-                    child: Stack(
-                      children: [
-                        if (widget.offThumbChild != null)
-                          Center(
+                      ),
+
+                      // Labels / Icons
+                      // Track Content (Opposite to thumb position for visibility)
+                      if (widget.offChild != null)
+                        Positioned(
+                          right: 8,
+                          top: 0,
+                          bottom: 0,
+                          child: Center(
                             child: Opacity(
                               opacity: (1.0 - pos).clamp(0.0, 1.0),
-                              child: widget.offThumbChild,
+                              child: widget.offChild,
                             ),
                           ),
-                        if (widget.onThumbChild != null)
-                          Center(
+                        ),
+                      if (widget.onChild != null)
+                        Positioned(
+                          left: 8,
+                          top: 0,
+                          bottom: 0,
+                          child: Center(
                             child: Opacity(
                               opacity: pos.clamp(0.0, 1.0),
-                              child: widget.onThumbChild,
+                              child: widget.onChild,
                             ),
                           ),
-                      ],
-                    ),
+                        ),
+
+                      // Sliding Thumb
+                      Positioned(
+                        left: thumbPadding + pos * (width - thumbSize - (thumbPadding * 2)),
+                        top: thumbPadding,
+                        child: Container(
+                          width: thumbSize,
+                          height: thumbSize,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color.lerp(Colors.white, activeColor, pos * 0.5)!,
+                                currentColor,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: currentColor.withValues(alpha: 0.5 * pos + 0.2),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            children: [
+                              if (widget.offThumbChild != null)
+                                Center(
+                                  child: Opacity(
+                                    opacity: (1.0 - pos).clamp(0.0, 1.0),
+                                    child: widget.offThumbChild,
+                                  ),
+                                ),
+                              if (widget.onThumbChild != null)
+                                Center(
+                                  child: Opacity(
+                                    opacity: pos.clamp(0.0, 1.0),
+                                    child: widget.onThumbChild,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
-      ),
+          ),
+        ],
       ),
     );
   }

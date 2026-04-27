@@ -27,6 +27,7 @@ class RKSlider extends StatefulWidget {
     this.tickCount = 20,
     this.type = RKSliderType.linear,
     this.rotation = 0.0,
+    this.label,
   });
 
   final double value;
@@ -46,6 +47,7 @@ class RKSlider extends StatefulWidget {
   final int tickCount;
   final RKSliderType type;
   final double rotation;
+  final String? label;
 
   @override
   State<RKSlider> createState() => _RKSliderState();
@@ -140,8 +142,24 @@ class _RKSliderState extends State<RKSlider> with SingleTickerProviderStateMixin
 
     return Transform.rotate(
       angle: widget.rotation,
-      child: GestureDetector(
-        onPanStart: (details) {
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.label != null && widget.label!.isNotEmpty) ...[
+            Text(
+              widget.label!.toUpperCase(),
+              style: TextStyle(
+                color: tokens.primary.withValues(alpha: 0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          GestureDetector(
+            onPanStart: (details) {
           widget.onInteractionChanged?.call(true);
           _handleUpdate(details.localPosition, context.size!);
         },
@@ -167,7 +185,9 @@ class _RKSliderState extends State<RKSlider> with SingleTickerProviderStateMixin
                     tickCount: widget.tickCount,
                   ),
                 ),
+          ),
         ),
+      ],
       ),
     );
   }

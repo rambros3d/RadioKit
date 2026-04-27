@@ -14,6 +14,7 @@ class RKSerialMonitor extends StatefulWidget {
     this.textColor,
     this.onInteractionChanged,
     this.rotation = 0.0,
+    this.label,
   });
 
   final List<String> messages;
@@ -24,6 +25,7 @@ class RKSerialMonitor extends StatefulWidget {
   final Color? textColor;
   final ValueChanged<bool>? onInteractionChanged;
   final double rotation;
+  final String? label;
 
   @override
   State<RKSerialMonitor> createState() => _RKSerialMonitorState();
@@ -54,39 +56,57 @@ class _RKSerialMonitorState extends State<RKSerialMonitor> {
     
     return Transform.rotate(
       angle: widget.rotation,
-      child: Listener(
-        onPointerDown: (_) => widget.onInteractionChanged?.call(true),
-      onPointerUp: (_) => widget.onInteractionChanged?.call(false),
-      onPointerCancel: (_) => widget.onInteractionChanged?.call(false),
-      child: Container(
-        width: widget.width,
-        height: widget.height,
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: tokens.surface,
-          borderRadius: BorderRadius.circular(tokens.borderRadius),
-          border: Border.all(color: tokens.trackColor, width: 1.5),
-        ),
-        child: ListView.builder(
-          reverse: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: widget.messages.length,
-          itemBuilder: (context, index) {
-            // With reverse: true, index 0 is the bottom of the list.
-            // We want the newest message (last in the list) to be at the bottom.
-            final messageIndex = widget.messages.length - 1 - index;
-            if (messageIndex < 0) return const SizedBox.shrink();
-            
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Text(
-                widget.messages[messageIndex],
-                style: textStyle,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.label != null && widget.label!.isNotEmpty) ...[
+            Text(
+              widget.label!.toUpperCase(),
+              style: TextStyle(
+                color: tokens.primary.withValues(alpha: 0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                fontFamily: 'monospace',
               ),
-            );
-          },
-        ),
-      ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          Listener(
+            onPointerDown: (_) => widget.onInteractionChanged?.call(true),
+          onPointerUp: (_) => widget.onInteractionChanged?.call(false),
+          onPointerCancel: (_) => widget.onInteractionChanged?.call(false),
+          child: Container(
+            width: widget.width,
+            height: widget.height,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: tokens.surface,
+              borderRadius: BorderRadius.circular(tokens.borderRadius),
+              border: Border.all(color: tokens.trackColor, width: 1.5),
+            ),
+            child: ListView.builder(
+              reverse: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: widget.messages.length,
+              itemBuilder: (context, index) {
+                // With reverse: true, index 0 is the bottom of the list.
+                // We want the newest message (last in the list) to be at the bottom.
+                final messageIndex = widget.messages.length - 1 - index;
+                if (messageIndex < 0) return const SizedBox.shrink();
+                
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text(
+                    widget.messages[messageIndex],
+                    style: textStyle,
+                  ),
+                );
+              },
+            ),
+          ),
+          ),
+        ],
       ),
     );
   }

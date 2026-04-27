@@ -28,6 +28,7 @@ class RKKnob extends StatefulWidget {
     this.orientation = RKAxis.vertical,
     this.centerIcon,
     this.rotation = 0.0,
+    this.label,
   });
 
   final IconData? centerIcon;
@@ -36,6 +37,7 @@ class RKKnob extends StatefulWidget {
 
   final RKKnobVariant variant;
   final double rotation;
+  final String? label;
 
   final double value;
   final ValueChanged<double> onChanged;
@@ -260,7 +262,25 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
 
     return Transform.rotate(
       angle: widget.rotation,
-      child: finalContent,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.label != null && widget.label!.isNotEmpty) ...[
+            Text(
+              widget.label!.toUpperCase(),
+              style: TextStyle(
+                color: tokens.primary.withValues(alpha: 0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          finalContent,
+        ],
+      ),
     );
 
   }

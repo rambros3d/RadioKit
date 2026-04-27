@@ -18,6 +18,7 @@ RKSwitch({
   bool enableHapticFeedback = true,
   ValueChanged<bool>? onInteractionChanged,
   double rotation = 0.0,
+  String? label,
 })
 ```
 
@@ -34,6 +35,7 @@ RKSwitch({
 | `enableHapticFeedback` | Emit a light haptic impact on state change. |
 | `onInteractionChanged` | Optional callback signalling interaction start/end. |
 | `rotation` | Visual rotation of the widget in radians. |
+| `label` | Optional text label displayed above the widget. |
 
 ## Example
 ```dart

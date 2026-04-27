@@ -15,6 +15,7 @@ class RKRockerSwitch extends StatefulWidget {
     this.enableHapticFeedback = true,
     this.onInteractionChanged,
     this.rotation = 0.0,
+    this.label,
   });
 
   final bool value;
@@ -27,6 +28,7 @@ class RKRockerSwitch extends StatefulWidget {
   final Color? activeColor;
   final bool enableHapticFeedback;
   final double rotation;
+  final String? label;
 
   @override
   State<RKRockerSwitch> createState() => _RKRockerSwitchState();
@@ -139,8 +141,24 @@ class _RKRockerSwitchState extends State<RKRockerSwitch>
     final activeColor = widget.activeColor ?? tokens.primary;
     return Transform.rotate(
       angle: widget.rotation,
-      child: GestureDetector(
-      onTapDown: (_) => widget.onInteractionChanged?.call(true),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.label != null && widget.label!.isNotEmpty) ...[
+            Text(
+              widget.label!.toUpperCase(),
+              style: TextStyle(
+                color: tokens.primary.withValues(alpha: 0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          GestureDetector(
+            onTapDown: (_) => widget.onInteractionChanged?.call(true),
       onTapUp: (details) {
         widget.onInteractionChanged?.call(false);
         _handleTap(details);
@@ -179,9 +197,11 @@ class _RKRockerSwitchState extends State<RKRockerSwitch>
           );
         },
       ),
-      ),
-    );
-  }
+    ),
+  ],
+),
+);
+}
 
   Widget _buildBezel(RKTokens tokens, double actualWidth, double actualHeight) {
     return Container(

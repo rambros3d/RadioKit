@@ -15,6 +15,7 @@ RKSlideSwitch({
   double rotation = 0.0,
   String onText = 'ON',
   String offText = 'OFF',
+  String? label,
 })
 ```
 
@@ -30,6 +31,7 @@ RKSlideSwitch({
 | `enableHapticFeedback` | Emit a medium haptic pulse on state change. |
 | `onInteractionChanged` | Callback for interaction start/end. |
 | `rotation` | Visual rotation of the widget in radians. |
+| `label` | Optional text label displayed above the widget. |
 | `onText` | Text label for the ON state (stenciled). Defaults to 'ON'. |
 | `offText` | Text label for the OFF state (stenciled). Defaults to 'OFF'. |
 

@@ -20,6 +20,7 @@ class RKMultiSelect extends StatelessWidget {
     this.onActiveChanged,
     this.orientation = RKAxis.horizontal,
     this.rotation = 0.0,
+    this.label,
   });
 
   final List<RKToggleItem> items;
@@ -33,6 +34,7 @@ class RKMultiSelect extends StatelessWidget {
   final ValueChanged<bool>? onActiveChanged;
   final RKAxis orientation;
   final double rotation;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -40,30 +42,48 @@ class RKMultiSelect extends StatelessWidget {
 
     return Transform.rotate(
       angle: rotation,
-      child: Container(
-        padding: EdgeInsets.all(padding),
-        decoration: BoxDecoration(
-        color: tokens.surface,
-        border: Border.all(color: tokens.trackColor, width: 1),
-        borderRadius: BorderRadius.circular(tokens.borderRadius * 2.5),
-        boxShadow: tokens.shadows,
-      ),
-      child: Listener(
-        onPointerDown: (_) => onActiveChanged?.call(true),
-        onPointerUp: (_) => onActiveChanged?.call(false),
-        onPointerCancel: (_) => onActiveChanged?.call(false),
-        child: orientation == RKAxis.horizontal 
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: _buildButtons(spacing),
-            )
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: _buildButtons(spacing),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (label != null && label!.isNotEmpty) ...[
+            Text(
+              label!.toUpperCase(),
+              style: TextStyle(
+                color: tokens.primary.withValues(alpha: 0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                fontFamily: 'monospace',
+              ),
             ),
-      ),
+            const SizedBox(height: 8),
+          ],
+          Container(
+            padding: EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+            color: tokens.surface,
+            border: Border.all(color: tokens.trackColor, width: 1),
+            borderRadius: BorderRadius.circular(tokens.borderRadius * 2.5),
+            boxShadow: tokens.shadows,
+          ),
+          child: Listener(
+            onPointerDown: (_) => onActiveChanged?.call(true),
+            onPointerUp: (_) => onActiveChanged?.call(false),
+            onPointerCancel: (_) => onActiveChanged?.call(false),
+            child: orientation == RKAxis.horizontal 
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: _buildButtons(spacing),
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: _buildButtons(spacing),
+                ),
+          ),
+          ),
+        ],
       ),
     );
   }

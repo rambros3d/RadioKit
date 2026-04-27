@@ -20,6 +20,7 @@ class RKButton extends StatefulWidget {
     this.enableHapticFeedback = true,
     this.onInteractionChanged,
     this.rotation = 0.0,
+    this.label,
   });
 
   final ValueChanged<bool> onChanged;
@@ -33,6 +34,7 @@ class RKButton extends StatefulWidget {
   final bool enableHapticFeedback;
   final ValueChanged<bool>? onInteractionChanged;
   final double rotation;
+  final String? label;
 
   @override
   State<RKButton> createState() => _RKButtonState();
@@ -65,114 +67,132 @@ class _RKButtonState extends State<RKButton> with SingleTickerProviderStateMixin
     final activeColor = widget.activeColor ?? tokens.primary;
     return Transform.rotate(
       angle: widget.rotation,
-      child: Listener(
-      onPointerDown: (_) => _handleDown(),
-      onPointerUp: (_) => _handleUp(),
-      onPointerCancel: (_) => _handleCancel(),
-      child: AnimatedBuilder(
-        animation: _glowController,
-        builder: (context, _) {
-          final t = Curves.easeOutCubic.transform(_glowController.value);
-          
-          return Transform.scale(
-            scale: _pressed ? 0.98 : 1.0,
-            child: Container(
-              width: widget.size,
-              height: widget.size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                  // Neon glow from the primary color
-                  BoxShadow(
-                    color: activeColor.withValues(alpha: 0.15 + (0.35 * t)),
-                    blurRadius: 10 + (12 * t),
-                    spreadRadius: 1 + (2 * t),
-                  ),
-                ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.label != null && widget.label!.isNotEmpty) ...[
+            Text(
+              widget.label!.toUpperCase(),
+              style: TextStyle(
+                color: tokens.primary.withValues(alpha: 0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                fontFamily: 'monospace',
               ),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  // The outer track ring (dark matte grey)
-                  color: const Color(0xFF222428),
-                  border: Border.all(
-                    color: const Color(0xFF1A1C1E),
-                    width: 2,
-                  ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(widget.size * 0.04), // 4% padding
-                  child: DecoratedBox(
+            ),
+            const SizedBox(height: 8),
+          ],
+          Listener(
+            onPointerDown: (_) => _handleDown(),
+            onPointerUp: (_) => _handleUp(),
+            onPointerCancel: (_) => _handleCancel(),
+            child: AnimatedBuilder(
+              animation: _glowController,
+              builder: (context, _) {
+                final t = Curves.easeOutCubic.transform(_glowController.value);
+                
+                return Transform.scale(
+                  scale: _pressed ? 0.98 : 1.0,
+                  child: Container(
+                    width: widget.size,
+                    height: widget.size,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      // The inner glowing ring section
-                      gradient: SweepGradient(
-                        colors: [
-                          Color.lerp(
-                            const Color(0xFF2A2C30),
-                            activeColor,
-                            t,
-                          )!,
-                          Color.lerp(
-                            const Color(0xFF1E2024),
-                            Color.lerp(activeColor, Colors.white, 0.3)!,
-                            t,
-                          )!,
-                          Color.lerp(
-                            const Color(0xFF2A2C30),
-                            activeColor,
-                            t,
-                          )!,
-                        ],
-                        stops: const [0.0, 0.5, 1.0],
-                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: activeColor.withValues(alpha: 0.1 + (0.4 * t)),
-                          blurRadius: 6 + (10 * t),
-                          spreadRadius: 0 + (2 * t),
+                          color: Colors.black.withValues(alpha: 0.6),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                        // Neon glow from the primary color
+                        BoxShadow(
+                          color: activeColor.withValues(alpha: 0.15 + (0.35 * t)),
+                          blurRadius: 10 + (12 * t),
+                          spreadRadius: 1 + (2 * t),
                         ),
                       ],
                     ),
-                    child: Padding(
-                      padding: EdgeInsets.all(widget.size * 0.08), // 8% padding
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          // The main center button surface (dark, flat matte)
-                          color: const Color(0xFF25272B),
-                          border: Border.all(
-                            color: const Color(0xFF1C1E22),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.4),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        // The outer track ring (dark matte grey)
+                        color: const Color(0xFF222428),
+                        border: Border.all(
+                          color: const Color(0xFF1A1C1E),
+                          width: 2,
                         ),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: _buildContent(t, activeColor),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(widget.size * 0.04), // 4% padding
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            // The inner glowing ring section
+                            gradient: SweepGradient(
+                              colors: [
+                                Color.lerp(
+                                  const Color(0xFF2A2C30),
+                                  activeColor,
+                                  t,
+                                )!,
+                                Color.lerp(
+                                  const Color(0xFF1E2024),
+                                  Color.lerp(activeColor, Colors.white, 0.3)!,
+                                  t,
+                                )!,
+                                Color.lerp(
+                                  const Color(0xFF2A2C30),
+                                  activeColor,
+                                  t,
+                                )!,
+                              ],
+                              stops: const [0.0, 0.5, 1.0],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: activeColor.withValues(alpha: 0.1 + (0.4 * t)),
+                                blurRadius: 6 + (10 * t),
+                                spreadRadius: 0 + (2 * t),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(widget.size * 0.08), // 8% padding
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                // The main center button surface (dark, flat matte)
+                                color: const Color(0xFF25272B),
+                                border: Border.all(
+                                  color: const Color(0xFF1C1E22),
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.4),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: _buildContent(t, activeColor),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
-          );
-        },
-      ),
+          ),
+        ],
       ),
     );
   }

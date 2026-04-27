@@ -15,6 +15,7 @@ RKMultiSelect({
   RKAxis orientation = RKAxis.horizontal,
   ValueChanged<bool>? onActiveChanged,
   double rotation = 0.0,
+  String? label,
 })
 ```
 
@@ -30,6 +31,7 @@ RKMultiSelect({
 | `orientation` | Horizontal or vertical layout (`RKAxis`). |
 | `onActiveChanged` | Callback when the user starts/stops touching the group. |
 | `rotation` | Visual rotation of the widget in radians. |
+| `label` | Optional text label displayed above the widget. |
 
 ## RKToggleItem
 A data model for buttons with state-specific labels and icons:

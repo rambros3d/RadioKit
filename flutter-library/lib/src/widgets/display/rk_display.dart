@@ -15,6 +15,7 @@ class RKDisplay extends StatelessWidget {
     this.orientation = RKAxis.horizontal,
     this.onInteractionChanged,
     this.rotation = 0.0,
+    this.label,
   });
 
   final String text;
@@ -26,6 +27,7 @@ class RKDisplay extends StatelessWidget {
   final RKAxis orientation;
   final ValueChanged<bool>? onInteractionChanged;
   final double rotation;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +85,25 @@ class RKDisplay extends StatelessWidget {
 
     return Transform.rotate(
       angle: rotation,
-      child: finalContent,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (label != null && label!.isNotEmpty) ...[
+            Text(
+              label!.toUpperCase(),
+              style: TextStyle(
+                color: tokens.primary.withValues(alpha: 0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          finalContent,
+        ],
+      ),
     );
   }
 }

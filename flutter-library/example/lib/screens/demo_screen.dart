@@ -41,6 +41,7 @@ class _DemoScreenState extends State<DemoScreen> {
   final _pedalActive = ValueNotifier<bool>(false);
   final _displayActive = ValueNotifier<bool>(false);
   final _serialActive = ValueNotifier<bool>(false);
+  String _widgetLabel = '';
 
   double _rotation = 0.0;
 
@@ -379,6 +380,8 @@ class _DemoScreenState extends State<DemoScreen> {
             onLEDColorChanged: (v) => setState(() => _ledColor = v),
             rotation: _rotation,
             onRotationChanged: (v) => setState(() => _rotation = v),
+            label: _widgetLabel,
+            onLabelChanged: (v) => setState(() => _widgetLabel = v),
           ),
 
         ],
@@ -442,6 +445,7 @@ class _DemoScreenState extends State<DemoScreen> {
                     onChanged: (v) => _pushState.value = v,
                     onInteractionChanged: (v) => _pushActive.value = v,
                     enableHapticFeedback: _hapticsEnabled,
+                    label: _widgetLabel,
                     rotation: _rotation * math.pi / 180,
                   ),
                   inputLabel: 'INPUT CONTROL',
@@ -483,6 +487,7 @@ class _DemoScreenState extends State<DemoScreen> {
                     enableHapticFeedback: _hapticsEnabled,
                     activeColor: tokens.primary,
                     rotation: _rotation * math.pi / 180,
+                    label: _widgetLabel,
                   ),
                   inputLabel: 'INPUT CONTROL',
                   inputWidget: _buildBooleanInput(value, (v) => _toggleState.value = v),
@@ -530,6 +535,7 @@ class _DemoScreenState extends State<DemoScreen> {
                   onChanged: (i) => setState(() => _multiButtonValue = i),
                   onActiveChanged: (active) => setState(() => _multiButtonActive = active),
                   rotation: _rotation * math.pi / 180,
+                  label: _widgetLabel,
                 ),
               ),
               inputLabel: 'INTERACTION',
@@ -569,6 +575,7 @@ class _DemoScreenState extends State<DemoScreen> {
                   }),
                   onActiveChanged: (active) => setState(() => _multiSelectActive = active),
                   rotation: _rotation * math.pi / 180,
+                  label: _widgetLabel,
                 ),
               ),
               inputLabel: 'BITMASK VALUE',
@@ -620,6 +627,7 @@ class _DemoScreenState extends State<DemoScreen> {
                     onThumbChild: _switchOnIcon != null ? Icon(_switchOnIcon, size: 16, color: Colors.white) : null,
                     offThumbChild: _switchOffIcon != null ? Icon(_switchOffIcon, size: 16, color: const Color(0xFF666666)) : null,
                     enableHapticFeedback: _hapticsEnabled,
+                    label: _widgetLabel,
                     rotation: _rotation * math.pi / 180,
                   ),
                   inputLabel: 'INPUT CONTROL',
@@ -654,6 +662,7 @@ class _DemoScreenState extends State<DemoScreen> {
                     onInteractionChanged: (active) => _slideActive.value = active,
                     enableHapticFeedback: _hapticsEnabled,
                     rotation: _rotation * math.pi / 180,
+                    label: _widgetLabel,
                     onText: _switchOnText.isNotEmpty ? _switchOnText : 'ON',
                     offText: _switchOffText.isNotEmpty ? _switchOffText : 'OFF',
                   ),
@@ -692,6 +701,7 @@ class _DemoScreenState extends State<DemoScreen> {
                     onIcon: _switchOnIcon != null ? Icon(_switchOnIcon, size: 28, color: Colors.white) : null,
                     offIcon: _switchOffIcon != null ? Icon(_switchOffIcon, size: 24, color: Colors.white.withValues(alpha: 0.5)) : null,
                     enableHapticFeedback: _hapticsEnabled,
+                    label: _widgetLabel,
                     rotation: _rotation * math.pi / 180,
                   ),
                   inputLabel: 'INPUT CONTROL',
@@ -749,6 +759,7 @@ class _DemoScreenState extends State<DemoScreen> {
                     length: isVertical ? 240 : 280,
                     type: RKSliderType.linear,
                     rotation: _rotation * math.pi / 180,
+                    label: _widgetLabel,
                   ),
                   inputLabel: 'INPUT CONTROL',
                   inputWidget: InputSlider(
@@ -887,6 +898,7 @@ class _DemoScreenState extends State<DemoScreen> {
                     size: 120,
                     variant: RKKnobVariant.standard,
                     orientation: _knobOrientation == 'horizontal' ? RKAxis.horizontal : RKAxis.vertical,
+                    label: _widgetLabel,
 
                     centerIcon: _switchOnIcon,
                     rotation: _rotation * math.pi / 180,
@@ -958,6 +970,7 @@ class _DemoScreenState extends State<DemoScreen> {
                     size: 140,
                     variant: RKKnobVariant.steeringWheel,
                     centerIcon: _switchOnIcon,
+                    label: _widgetLabel,
                     rotation: _rotation * math.pi / 180,
                   ),
 
@@ -1033,6 +1046,7 @@ class _DemoScreenState extends State<DemoScreen> {
                     springDuration: Duration(milliseconds: _joySpringDuration.toInt()),
                     onChanged: (v) => _joyState.value = v,
                     rotation: _rotation * math.pi / 180,
+                    label: _widgetLabel,
                   ),
                   inputLabel: 'INPUT CONTROL',
                   inputWidget: Column(
@@ -1120,6 +1134,7 @@ class _DemoScreenState extends State<DemoScreen> {
                     orientation: _displayOrientation == 'vertical' ? RKAxis.vertical : RKAxis.horizontal,
                     onInteractionChanged: (active) => _displayActive.value = active,
                     rotation: _rotation * math.pi / 180,
+                    label: _widgetLabel,
                   ),
                   inputLabel: 'INPUT CONTROL',
                   inputWidget: TextInput(
@@ -1154,6 +1169,7 @@ class _DemoScreenState extends State<DemoScreen> {
                 textColor: _displayColor,
                 onInteractionChanged: (active) => _serialActive.value = active,
                 rotation: _rotation * math.pi / 180,
+                label: _widgetLabel,
               ),
               inputLabel: 'INPUT CONTROL',
               inputWidget: ValueListenableBuilder<String>(
@@ -1209,6 +1225,7 @@ class _DemoScreenState extends State<DemoScreen> {
                 color: _ledColor,
                 timing: _ledTiming,
                 rotation: _rotation * math.pi / 180,
+                label: _widgetLabel,
               ),
               inputLabel: 'INPUT CONTROL',
               inputWidget: Column(

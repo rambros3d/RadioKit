@@ -22,6 +22,7 @@ RKSlider({
   bool showTicks = true,
   int tickCount = 20,
   double rotation = 0.0,
+  String? label,
 })
 ```
 
@@ -39,6 +40,7 @@ RKSlider({
 | `divisions` | If set, the slider snaps to the given number of discrete steps. |
 | `showTicks` / `tickCount` | Show minor/major tick marks along the track. |
 | `rotation` | Visual rotation of the widget in radians. |
+| `label` | Optional text label displayed above the widget. |
 
 ## Gas Pedal Variant
 The `RKSliderType.gasPedal` variant provides a 3D perspective-transformed pedal aesthetic. It uses the same logical parameters as the standard slider but renders a premium industrial pedal that tilts and glows based on input.

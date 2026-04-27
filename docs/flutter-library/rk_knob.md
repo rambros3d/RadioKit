@@ -30,7 +30,7 @@ RKKnob({
 | `value` | Normalised knob position (between `min` and `max`). |
 | `onChanged` | Called with the new value when the user drags. |
 | `size` | Diameter of the knob widget. |
-| `label` | Optional text displayed below the knob. |
+| `label` | Optional text label displayed above the widget. |
 | `divisions` | If set, the knob snaps to the specified number of steps. |
 | `onInteractionChanged` | Triggered when the user starts or stops touching the widget. |
 | `minAngle` / `maxAngle` | Angular range in degrees (default –135° to +135°). |

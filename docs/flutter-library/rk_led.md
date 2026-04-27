@@ -11,6 +11,7 @@ RKLed({
   Color? color,
   int timing = 500,
   double rotation = 0.0,
+  String? label,
 })
 ```
 
@@ -22,6 +23,7 @@ RKLed({
 | `color` | Optional colour for the active state; defaults to theme primary. |
 | `timing` | Animation speed in milliseconds for blink/breathe effects. |
 | `rotation` | Visual rotation of the widget in radians. |
+| `label` | Optional text label displayed above the widget. |
 
 ## Example
 ```dart

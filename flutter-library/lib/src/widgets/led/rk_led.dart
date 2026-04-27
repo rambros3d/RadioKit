@@ -28,6 +28,7 @@ class RKLed extends StatefulWidget {
     this.color,
     this.timing = 500,
     this.rotation = 0.0,
+    this.label,
   });
 
   /// The current state of the LED.
@@ -47,6 +48,7 @@ class RKLed extends StatefulWidget {
 
   /// Custom rotation of the widget
   final double rotation;
+  final String? label;
 
   @override
   State<RKLed> createState() => _RKLedState();
@@ -129,17 +131,35 @@ class _RKLedState extends State<RKLed> with SingleTickerProviderStateMixin {
 
         return Transform.rotate(
           angle: widget.rotation,
-          child: SizedBox(
-            width: widget.size,
-            height: widget.size,
-            child: CustomPaint(
-              painter: _LEDPainter(
-                color: ledColor,
-                shape: widget.shape,
-                glow: isActive ? baseColor.withValues(alpha: currentOpacity * 0.4) : Colors.transparent,
-                glowSize: widget.size * 0.4,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.label != null && widget.label!.isNotEmpty) ...[
+                Text(
+                  widget.label!.toUpperCase(),
+                  style: TextStyle(
+                    color: tokens.primary.withValues(alpha: 0.7),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              SizedBox(
+                width: widget.size,
+                height: widget.size,
+                child: CustomPaint(
+                  painter: _LEDPainter(
+                    color: ledColor,
+                    shape: widget.shape,
+                    glow: isActive ? baseColor.withValues(alpha: currentOpacity * 0.4) : Colors.transparent,
+                    glowSize: widget.size * 0.4,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         );
       },

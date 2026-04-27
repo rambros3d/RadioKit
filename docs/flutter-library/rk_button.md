@@ -19,6 +19,7 @@ RKButton({
   bool enableHapticFeedback = true,
   ValueChanged<bool>? onInteractionChanged,
   double rotation = 0.0,
+  String? label,
 })
 ```
 
@@ -36,6 +37,7 @@ RKButton({
 | `enableHapticFeedback` | Emit a light haptic pulse on interaction. |
 | `onInteractionChanged` | Optional callback when the user starts/stops touching the widget. |
 | `rotation` | Visual rotation of the widget in radians. |
+| `label` | Optional text label displayed above the widget. |
 
 ## Example
 ```dart

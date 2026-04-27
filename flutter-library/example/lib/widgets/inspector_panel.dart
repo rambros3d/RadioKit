@@ -61,6 +61,8 @@ class InspectorPanel extends StatelessWidget {
     this.onLEDColorChanged,
     this.rotation,
     this.onRotationChanged,
+    this.label,
+    this.onLabelChanged,
   });
 
   final int selectedIndex;
@@ -116,6 +118,8 @@ class InspectorPanel extends StatelessWidget {
   final ValueChanged<Color>? onLEDColorChanged;
   final double? rotation;
   final ValueChanged<double>? onRotationChanged;
+  final String? label;
+  final ValueChanged<String>? onLabelChanged;
 
 
 
@@ -185,6 +189,13 @@ class InspectorPanel extends StatelessWidget {
                     fontFamily: 'monospace',
                     letterSpacing: 1,
                   ),
+                ),
+                const SizedBox(height: 16),
+                _buildTextInput(
+                  tokens,
+                  'Widget Label',
+                  label ?? '',
+                  onLabelChanged ?? (_) {},
                 ),
                 const SizedBox(height: 16),
                 if (isJoystick) ...[
@@ -344,7 +355,7 @@ class InspectorPanel extends StatelessWidget {
                   ] else if (isKnob) ...[
                     _buildIconSelector(context, tokens, 'Center Icon', iconOn, onIconOnChanged ?? (_) {}),
                   ] else ...[
-                    _buildTextInput(tokens, 'Label', textOn ?? '', onTextOnChanged ?? (_) {}),
+                    _buildTextInput(tokens, 'Widget Label', label ?? '', onLabelChanged ?? (_) {}),
                   ],
 
 

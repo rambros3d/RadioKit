@@ -235,30 +235,36 @@ class _RKJoystickState extends State<RKJoystick> with SingleTickerProviderStateM
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-        GestureDetector(
-          onPanStart: _onPanStart,
-          onPanUpdate: _onPanUpdate,
-          onPanEnd: _onPanEnd,
-          child: SizedBox(
-            width: widget.size,
-            height: widget.size,
-            child: CustomPaint(
-              painter: _JoystickPainter(
-                knobOffset: _knobOffset,
-                tokens: tokens,
-                radius: radius,
+          if (widget.label != null && widget.label!.isNotEmpty) ...[
+            Text(
+              widget.label!.toUpperCase(),
+              style: TextStyle(
+                color: tokens.primary.withValues(alpha: 0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          GestureDetector(
+            onPanStart: _onPanStart,
+            onPanUpdate: _onPanUpdate,
+            onPanEnd: _onPanEnd,
+            child: SizedBox(
+              width: widget.size,
+              height: widget.size,
+              child: CustomPaint(
+                painter: _JoystickPainter(
+                  knobOffset: _knobOffset,
+                  tokens: tokens,
+                  radius: radius,
+                ),
               ),
             ),
           ),
-        ),
-        if (widget.label != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            widget.label!,
-            style: tokens.displayTextStyle.copyWith(fontSize: 12),
-          ),
         ],
-      ],
       ),
     );
   }

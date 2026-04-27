@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/rk_theme.dart';
 
 /// A stealth neon industrial slide switch for RadioKit.
 ///
@@ -18,6 +19,7 @@ class RKSlideSwitch extends StatefulWidget {
     this.rotation = 0.0,
     this.onText = 'ON',
     this.offText = 'OFF',
+    this.label,
   });
 
   /// Current state of the switch.
@@ -49,6 +51,9 @@ class RKSlideSwitch extends StatefulWidget {
 
   /// Text label for the OFF state.
   final String offText;
+
+  /// Optional label shown above the widget.
+  final String? label;
 
   @override
   State<RKSlideSwitch> createState() => _RKSlideSwitchState();
@@ -110,12 +115,39 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
     final thumbWidth = (64.0 / 190.0) * outerWidth;
     final thumbHeight = trackHeight - (thumbPadding * 2);
 
-    final baseActiveColor = widget.activeColor ?? const Color(0xFFE59834);
+    final tokens = RKTheme.of(context);
+    final baseActiveColor = widget.activeColor ?? tokens.primary;
+    final activeHSL = HSLColor.fromColor(baseActiveColor);
+    
+    // Active shades
+    final lightActive = activeHSL.withLightness((activeHSL.lightness + 0.15).clamp(0, 1)).toColor();
+    final borderActive = activeHSL.withLightness((activeHSL.lightness + 0.2).clamp(0, 1)).toColor();
+    
+    // Muted shades for OFF state
+    final mutedActive = activeHSL.withSaturation(activeHSL.saturation * 0.4).withLightness((activeHSL.lightness * 0.5).clamp(0, 1)).toColor();
+    final darkerMuted = activeHSL.withSaturation(activeHSL.saturation * 0.3).withLightness((activeHSL.lightness * 0.3).clamp(0, 1)).toColor();
+    final borderMuted = activeHSL.withSaturation(activeHSL.saturation * 0.4).withLightness((activeHSL.lightness * 0.4).clamp(0, 1)).toColor();
 
     return Transform.rotate(
       angle: widget.rotation,
-      child: GestureDetector(
-        onTapDown: (_) => widget.onInteractionChanged?.call(true),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.label != null && widget.label!.isNotEmpty) ...[
+            Text(
+              widget.label!.toUpperCase(),
+              style: TextStyle(
+                color: tokens.primary.withValues(alpha: 0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          GestureDetector(
+            onTapDown: (_) => widget.onInteractionChanged?.call(true),
         onTapUp: (_) => widget.onInteractionChanged?.call(false),
         onTapCancel: () => widget.onInteractionChanged?.call(false),
         onTap: _handleToggle,
@@ -157,9 +189,9 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
           height: outerHeight,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(outerHeight * 0.5),
-            color: const Color(0xFF1A1A1C), // Matte black casing
+            color: tokens.surface, // Themed casing
             border: Border.all(
-              color: const Color(0xFF0C0C0D),
+              color: tokens.trackColor.withValues(alpha: 0.5),
               width: 2.0,
             ),
             boxShadow: const [
@@ -181,9 +213,9 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
               width: trackWidth,
               height: trackHeight,
               decoration: BoxDecoration(
-                color: const Color(0xFF0F0F10), // Ultra dark inner track
+                color: Color.alphaBlend(Colors.black.withValues(alpha: 0.3), tokens.surface), // Slightly darker track
                 borderRadius: BorderRadius.circular(trackHeight * 0.5),
-                border: Border.all(color: const Color(0xFF222225), width: 1.0),
+                border: Border.all(color: tokens.trackColor.withValues(alpha: 0.3), width: 1.0),
                 boxShadow: const [
                   BoxShadow(
                     color: Colors.black,
@@ -226,11 +258,11 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: widget.value
-                                  ? [const Color(0xFFFFB259), baseActiveColor]
-                                  : [const Color(0xFFB5701F), const Color(0xFF995C14)],
+                                  ? [lightActive, baseActiveColor]
+                                  : [mutedActive, darkerMuted],
                             ),
                             border: Border.all(
-                              color: widget.value ? const Color(0xFFFFD099) : const Color(0xFF73420A),
+                              color: widget.value ? borderActive : borderMuted,
                               width: 1.5,
                             ),
                             boxShadow: [
@@ -258,7 +290,9 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
           ),
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 
   Widget _buildLabel(String text, bool isOnSide, Color activeColor) {
@@ -272,7 +306,7 @@ class _RKSlideSwitchState extends State<RKSlideSwitch> with SingleTickerProvider
             fontFamily: 'sans-serif',
             fontSize: 16.0,
             fontWeight: FontWeight.w800,
-            color: isLit ? activeColor : const Color(0xFF3E3E42),
+            color: isLit ? activeColor : RKTheme.of(context).onSurface.withValues(alpha: 0.3),
             shadows: isLit
                 ? [
                     Shadow(
@@ -296,6 +330,15 @@ class _ThumbGripTexture extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = RKTheme.of(context);
+    final baseColor = tokens.primary;
+    final activeHSL = HSLColor.fromColor(baseColor);
+    
+    final darkGrip = activeHSL.withLightness((activeHSL.lightness - 0.2).clamp(0, 1)).toColor();
+    final lightGrip = activeHSL.withLightness((activeHSL.lightness + 0.2).clamp(0, 1)).toColor();
+    final mutedGrip = activeHSL.withSaturation(activeHSL.saturation * 0.4).withLightness((activeHSL.lightness * 0.4).clamp(0, 1)).toColor();
+    final mutedHighlight = activeHSL.withSaturation(activeHSL.saturation * 0.4).withLightness((activeHSL.lightness * 0.5).clamp(0, 1)).toColor();
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: List.generate(3, (index) {
@@ -304,11 +347,11 @@ class _ThumbGripTexture extends StatelessWidget {
           width: 4.0,
           margin: const EdgeInsets.symmetric(vertical: 16.0),
           decoration: BoxDecoration(
-            color: isActive ? const Color(0xFFC47B22) : const Color(0xFF73420A),
+            color: isActive ? darkGrip : mutedGrip,
             borderRadius: BorderRadius.circular(2.0),
             boxShadow: [
               BoxShadow(
-                color: isActive ? const Color(0xFFFFD18C) : const Color(0xFFC78430),
+                color: isActive ? lightGrip : mutedHighlight,
                 offset: const Offset(1, 0),
                 blurRadius: 0.0,
               ),

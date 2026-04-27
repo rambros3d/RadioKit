@@ -22,6 +22,7 @@ RKRockerSwitch({
   bool enableHapticFeedback = true,
   ValueChanged<bool>? onInteractionChanged,
   double rotation = 0.0,
+  String? label,
 })
 ```
 
@@ -38,6 +39,7 @@ RKRockerSwitch({
 | `enableHapticFeedback` | Emit a medium‑impact haptic pulse on taps and drags. |
 | `onInteractionChanged` | Optional callback when the user begins/ends interaction. |
 | `rotation` | Visual rotation of the widget in radians. |
+| `label` | Optional text label displayed above the widget. |
 
 ## Example
 ```dart

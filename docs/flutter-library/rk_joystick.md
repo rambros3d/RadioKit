@@ -24,7 +24,7 @@ RKJoystick({
 | `center` | The neutral centre position (default centre). |
 | `size` | Overall diameter of the joystick area. |
 | `autoCenter` | When true, the knob returns to `center` after drag ends. |
-| `label` | Optional text displayed below the joystick. |
+| `label` | Optional text label displayed above the widget. |
 | `springCurve` / `springDuration` | Controls the spring‑back animation when auto‑centering. |
 | `rotation` | Visual rotation of the widget in radians. |
 
