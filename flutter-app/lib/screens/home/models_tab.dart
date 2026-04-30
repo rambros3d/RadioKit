@@ -64,7 +64,6 @@ class ModelsTab extends StatelessWidget {
           _ActiveLinkSection(),
           
           const SizedBox(height: 32),
-          _buildSectionTag(context, 'PAIRED_MODELS'),
           _PairedModelsList(),
           const SizedBox(height: 32),
           Consumer<SettingsProvider>(
@@ -84,28 +83,6 @@ class ModelsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTag(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            color: AppColors.brandOrange,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: AppColors.brandOrange,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _ActiveLinkSection extends StatelessWidget {
@@ -226,15 +203,20 @@ class _ActiveLinkSection extends StatelessWidget {
                       child: Divider(height: 1, color: Colors.white12),
                     ),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        const _TelemetryItem(label: 'LATENCY', value: '24', unit: 'ms'),
+                        _TelemetryItem(
+                          label: 'LATENCY', 
+                          value: deviceProvider.latencyMs?.toString() ?? '--', 
+                          unit: 'ms',
+                        ),
                         _TelemetryItem(
                           label: 'SIGNAL',
-                          value: device.rssi != 0 ? '${device.rssi}' : '--',
+                          value: (deviceProvider.rssi ?? device.rssi) != 0 
+                              ? '${deviceProvider.rssi ?? device.rssi}' 
+                              : '--',
                           unit: 'dBm',
                         ),
-                        const _TelemetryItem(label: 'BATTERY', value: '88', unit: '%', color: AppColors.connected),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -262,29 +244,29 @@ class _ActiveLinkSection extends StatelessWidget {
       ],
     );
   }
+}
 
-  Widget _buildSectionTag(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            color: AppColors.brandOrange,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: AppColors.brandOrange,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+Widget _buildSectionTag(BuildContext context, String title) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          color: AppColors.brandOrange,
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: AppColors.brandOrange,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _TelemetryItem extends StatelessWidget {
@@ -335,22 +317,21 @@ class _PairedModelsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final history = context.watch<HistoryProvider>();
-    final devices = history.pairedDevices;
+    final deviceProvider = context.watch<DeviceProvider>();
+    
+    final connectedId = deviceProvider.isConnected ? deviceProvider.connectedDevice?.id : null;
+    final allDevices = history.pairedDevices;
+    final filteredDevices = allDevices.where((d) => d.id != connectedId).toList();
 
-    if (devices.isEmpty) {
-      return Card(
-        color: Colors.white.withValues(alpha: 0.05),
-        child: const Padding(
-          padding: EdgeInsets.all(32),
-          child: Center(
-            child: Text('No saved models yet.', style: TextStyle(color: Colors.white24)),
-          ),
-        ),
-      );
+    if (filteredDevices.isEmpty) {
+      return const SizedBox.shrink();
     }
 
     return Column(
-      children: devices.map((device) {
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTag(context, 'PAIRED_MODELS'),
+        ...filteredDevices.map((device) {
         final connectionIcon = device.type == 'ble'
             ? Icons.bluetooth_rounded
             : Icons.usb_rounded;
@@ -395,8 +376,9 @@ class _PairedModelsList extends StatelessWidget {
           ),
         );
       }).toList(),
-    );
-  }
+    ],
+  );
+}
 
   Future<void> _handleReconnect(BuildContext context, PairedDevice device) async {
     final console = context.read<ConsoleProvider>();

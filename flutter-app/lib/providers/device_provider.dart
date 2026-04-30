@@ -53,12 +53,16 @@ class DeviceProvider extends ChangeNotifier {
   int                      _orientation = kOrientationLandscape;
   RadioWidgetState?        _widgetState;
   String?                  _errorMessage;
+  int?                     _rssi;
+  int?                     _latencyMs;
 
   Timer?                   _pollTimer;
   Timer?                   _pingTimer;
+  Timer?                   _telemetryTimer;
   Timer?                   _confTimeoutTimer;
   DebugLogSink?            _debugSink;
   Completer<void>?         _confCompleter;
+  DateTime?                _pingSentAt;
 
   final Map<int, _PendingUpdate> _pendingUpdates = {};
   int _nextSeq = 0;
@@ -90,6 +94,8 @@ class DeviceProvider extends ChangeNotifier {
   bool                  get isConnected      =>
       _connectionState == DeviceConnectionState.connected;
   TransportService      get currentTransport => _transport;
+  int?                  get rssi             => _rssi;
+  int?                  get latencyMs        => _latencyMs;
 
   // ── Transport swap ───────────────────────────────────────────────────────────
 
@@ -310,9 +316,23 @@ class DeviceProvider extends ChangeNotifier {
     _pingTimer = Timer.periodic(kPingInterval, (_) async {
       if (!_transport.isConnected) return;
       try {
+        _pingSentAt = DateTime.now();
         await _transport.writePacket(ProtocolService.buildPing());
       } catch (e) {
         debugPrint('RadioKit: Ping error: $e');
+      }
+    });
+
+    _telemetryTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+      if (!_transport.isConnected) return;
+      try {
+        final newRssi = await _transport.getRssi();
+        if (newRssi != null) {
+          _rssi = newRssi;
+          notifyListeners();
+        }
+      } catch (e) {
+        debugPrint('RadioKit: RSSI poll error: $e');
       }
     });
   }
@@ -320,6 +340,7 @@ class DeviceProvider extends ChangeNotifier {
   void _stopPolling() {
     _pollTimer?.cancel(); _pollTimer = null;
     _pingTimer?.cancel(); _pingTimer = null;
+    _telemetryTimer?.cancel(); _telemetryTimer = null;
     _demoTimer?.cancel(); _demoTimer = null;
   }
 
@@ -405,9 +426,18 @@ class DeviceProvider extends ChangeNotifier {
       case kCmdSetInput:  _handleSetInput(packet.payload);  break;
       case kCmdVarUpdate: _handleVarUpdate(packet.payload); break;
       case kCmdAck:       _handleAck(packet.payload);       break;
-      case kCmdPong:      break;
+      case kCmdPong:      _handlePong();                    break;
       default:
         debugPrint('RadioKit: Unknown cmd 0x${packet.cmd.toRadixString(16)}');
+    }
+  }
+
+  void _handlePong() {
+    if (_pingSentAt != null) {
+      final now = DateTime.now();
+      _latencyMs = now.difference(_pingSentAt!).inMilliseconds;
+      _pingSentAt = null;
+      notifyListeners();
     }
   }
 

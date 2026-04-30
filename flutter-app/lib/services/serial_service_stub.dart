@@ -29,4 +29,10 @@ class SerialService implements TransportService {
 
   @override
   Future<void> dispose() => disconnect();
+
+  @override
+  Future<int?> getRssi() async => null;
+
+  @override
+  Stream<String> get logStream => const Stream.empty();
 }

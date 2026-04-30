@@ -29,6 +29,9 @@ abstract class TransportService {
   /// Write a framed RadioKit packet to the transport.
   Future<void> writePacket(Uint8List data);
 
+  /// Get the current RSSI of the connected device.
+  Future<int?> getRssi();
+
   /// Release all resources (called when the provider is disposed).
   Future<void> dispose();
 }

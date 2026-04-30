@@ -80,6 +80,9 @@ class SerialService implements TransportService {
 
   @override
   Future<void> dispose() => _impl.dispose();
+
+  @override
+  Future<int?> getRssi() => _impl.getRssi();
 }
 
 /// Returned on iOS / desktop where USB Serial is not supported.
@@ -102,4 +105,7 @@ class _UnsupportedSerialService implements TransportService {
 
   @override
   Future<void> dispose() async {}
+
+  @override
+  Future<int?> getRssi() async => null;
 }

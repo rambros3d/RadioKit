@@ -162,6 +162,9 @@ class SerialService implements TransportService {
     await port.write(data);
   }
 
+  @override
+  Future<int?> getRssi() async => null;
+
   // ---------------------------------------------------------------------------
   // Disconnect / dispose
   // ---------------------------------------------------------------------------

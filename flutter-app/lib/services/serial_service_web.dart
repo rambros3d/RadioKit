@@ -41,6 +41,12 @@ class SerialService implements TransportService {
   @override
   bool get isConnected => _connected;
 
+  @override
+  Stream<String> get logStream => const Stream.empty();
+
+  @override
+  Future<int?> getRssi() async => null;
+
   bool get isSupported {
     try {
       return serial.isDefinedAndNotNull;

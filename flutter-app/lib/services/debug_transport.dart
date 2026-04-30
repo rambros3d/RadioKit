@@ -78,6 +78,9 @@ class DebugTransport implements TransportService {
   @override
   Future<void> dispose() => _inner.dispose();
 
+  @override
+  Future<int?> getRssi() => _inner.getRssi();
+
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------

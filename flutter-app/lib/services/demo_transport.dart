@@ -37,4 +37,7 @@ class DemoTransport implements TransportService {
   Future<void> dispose() async {
     _connected = false;
   }
+
+  @override
+  Future<int?> getRssi() async => -55;
 }

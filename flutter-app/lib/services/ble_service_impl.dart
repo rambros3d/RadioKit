@@ -192,8 +192,14 @@ class BleService implements TransportService {
       await UniversalBle.connect(deviceId);
       _connectedDeviceId = deviceId;
 
-      // MTU negotiation is automatic in universal_ble, but we can't easily query it.
-      
+      // Try to request a larger MTU (default is 23, we want at least 128 for 102 byte payloads)
+      try {
+        _log('Requesting MTU of 256...');
+        await UniversalBle.requestMtu(deviceId, 256);
+      } catch (e) {
+        _log('MTU request failed (ignoring): $e');
+      }
+
       // Discover services
       _log('Discovering services...');
       final services = await UniversalBle.discoverServices(deviceId);
@@ -282,6 +288,19 @@ class BleService implements TransportService {
       data,
       withoutResponse: true,
     );
+  }
+
+  @override
+  Future<int?> getRssi() async {
+    if (_isMockConnected) return -42;
+    final id = _connectedDeviceId;
+    if (id == null) return null;
+    try {
+      return await UniversalBle.readRssi(id);
+    } catch (e) {
+      debugPrint('BLE_SERVICE: getRssi error: $e');
+      return null;
+    }
   }
 
   void _processBuffer() {

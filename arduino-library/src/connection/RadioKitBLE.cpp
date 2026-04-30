@@ -92,16 +92,26 @@ void RadioKitBLE::sendPacket(const uint8_t* buf, uint16_t len) {
         Serial.printf("BLE: Cannot send (connected=%d, char=%p)\n", _connected, _characteristic);
         return;
     }
-    Serial.printf("BLE: Sending packet, total len %d...\n", len);
+    
+    uint16_t mtu = RK_BLE_MTU;
+    if (_server) {
+        std::vector<uint16_t> peers = _server->getPeerDevices();
+        if (!peers.empty()) {
+            mtu = _server->getPeerMTU(peers[0]) - 3; // Subtract 3 for ATT header
+            if (mtu < 20) mtu = 20;
+        }
+    }
+
+    Serial.printf("BLE: Sending packet, total len %d, using MTU %d...\n", len, mtu);
     uint16_t offset = 0;
     while (offset < len) {
         uint16_t chunk = len - offset;
-        if (chunk > RK_BLE_MTU) chunk = RK_BLE_MTU;
-        _characteristic->setValue(buf + offset, chunk);
-        bool success = _characteristic->notify();
+        if (chunk > mtu) chunk = mtu;
+        bool success = _characteristic->notify(buf + offset, chunk);
         Serial.printf("  Chunk offset %d, size %d, notify=%d\n", offset, chunk, success);
         offset += chunk;
-        if (offset < len) delay(10); // Small delay to prevent saturation
+        if (offset < len && !success) delay(50); // Delay if queue is full
+        else if (offset < len) delay(20); // Normal pacing
     }
 }
 
