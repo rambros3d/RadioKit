@@ -58,6 +58,9 @@ class SerialService implements TransportService {
   @override
   bool get isConnected => _impl.isConnected;
 
+  @override
+  Stream<String> get logStream => _impl.logStream;
+
   /// List available serial ports. Returns an empty stream on unsupported platforms.
   Stream<DeviceInfo> listPorts() {
     final impl = _impl;
@@ -84,6 +87,7 @@ class _UnsupportedSerialService implements TransportService {
   @override PacketReceivedCallback? onPacketReceived;
   @override ConnectionLostCallback? onConnectionLost;
   @override bool get isConnected => false;
+  @override Stream<String> get logStream => const Stream.empty();
 
   @override
   Future<void> connect(String _, {int baudRate = 115200}) async =>

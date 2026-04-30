@@ -8,6 +8,9 @@ class DemoTransport implements TransportService {
   @override
   ConnectionLostCallback? onConnectionLost;
 
+  @override
+  Stream<String> get logStream => const Stream.empty();
+
   bool _connected = false;
 
   @override

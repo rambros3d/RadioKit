@@ -64,7 +64,13 @@ class _PairTabState extends State<PairTab> {
     await bleProvider.stopScan();
     if (!mounted) return;
 
-    deviceProvider.setTransport(bleProvider.bleService);
+    // Wire up logs from the BLE service to our UI console
+    final bleService = bleProvider.bleService;
+    bleService.logStream.listen((msg) {
+      console.log('BLE: $msg', level: ConsoleLogLevel.info);
+    });
+
+    deviceProvider.setTransport(bleService);
     final success = await _connect(device, deviceProvider, console);
 
     if (success) {

@@ -12,6 +12,7 @@ typedef ConnectionLostCallback = void Function(String reason);
 abstract class TransportService {
   PacketReceivedCallback? onPacketReceived;
   ConnectionLostCallback? onConnectionLost;
+  Stream<String> get logStream;
 
   /// True while a peer session is active.
   bool get isConnected;

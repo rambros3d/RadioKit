@@ -17,6 +17,9 @@ class DebugTransport implements TransportService {
   DebugTransport({required TransportService inner, required this.sink})
       : _inner = inner;
 
+  @override
+  Stream<String> get logStream => _inner.logStream;
+
   // ---------------------------------------------------------------------------
   // Delegate callbacks — intercept RX
   // ---------------------------------------------------------------------------

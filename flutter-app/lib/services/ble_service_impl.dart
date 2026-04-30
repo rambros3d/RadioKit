@@ -26,6 +26,15 @@ class BleService implements TransportService {
   @override
   ConnectionLostCallback? onConnectionLost;
 
+  final _logController = StreamController<String>.broadcast();
+  @override
+  Stream<String> get logStream => _logController.stream;
+
+  void _log(String msg) {
+    debugPrint('BLE_SERVICE: $msg');
+    _logController.add(msg);
+  }
+
   String? _connectedDeviceId;
   bool _isMockConnected = false;
   final List<int> _receiveBuffer = [];
@@ -98,8 +107,14 @@ class BleService implements TransportService {
     };
 
     UniversalBle.onValueChange = (String deviceId, String characteristicId, Uint8List value, int? timestamp) {
-      if (deviceId == _connectedDeviceId &&
-          characteristicId.toLowerCase() == kRadioKitCharUuid.toLowerCase()) {
+      final charId = characteristicId.toLowerCase();
+      final targetId = kRadioKitCharUuid.toLowerCase();
+      
+      // Log ALL incoming data from ANY characteristic
+      _log('RAW RX from $characteristicId: ${value.map((b) => b.toRadixString(16).padLeft(2, "0")).join(" ")}');
+
+      if (deviceId == _connectedDeviceId && charId.contains(targetId)) {
+        _log('MATCH! Appending ${value.length} bytes to buffer.');
         _receiveBuffer.addAll(value);
         _processBuffer();
       }
@@ -118,12 +133,20 @@ class BleService implements TransportService {
     final seen = <String>{};
 
     UniversalBle.onScanResult = (BleDevice result) {
-      if (!seen.contains(result.deviceId)) {
-        seen.add(result.deviceId);
-        debugPrint('BLE_SERVICE: Found device: ${result.name} (${result.deviceId})');
+      final id = result.deviceId;
+      final name = result.name ?? 'Unknown';
+      
+      // Manual filter for RadioKit device by name or service UUID (if available)
+      bool isRadioKit = name.toLowerCase().contains('radiokit') || 
+                        name.toLowerCase().contains('lightswitch') || // User's custom name
+                        result.services.any((s) => s.toLowerCase() == kRadioKitServiceUuid.toLowerCase());
+
+      if (isRadioKit && !seen.contains(id)) {
+        seen.add(id);
+        debugPrint('BLE_SERVICE: Found RadioKit device: $name ($id)');
         final info = DeviceInfo(
-          id: result.deviceId,
-          name: result.name ?? 'Unknown Device',
+          id: id,
+          name: name,
           rssi: result.rssi ?? -100,
         );
         if (!controller.isClosed) {
@@ -133,9 +156,7 @@ class BleService implements TransportService {
     };
 
     UniversalBle.startScan(
-      scanFilter: ScanFilter(
-        withServices: [kRadioKitServiceUuid.toLowerCase()],
-      ),
+      scanFilter: ScanFilter(), // No hardware filter, we filter in code
     ).then((_) {
       debugPrint('BLE_SERVICE: UniversalBle.startScan success');
     }).catchError((error) {
@@ -167,20 +188,52 @@ class BleService implements TransportService {
     }
 
     try {
+      _log('Connecting to $deviceId...');
       await UniversalBle.connect(deviceId);
       _connectedDeviceId = deviceId;
 
-      // Discover services and enable notifications
-      await UniversalBle.discoverServices(deviceId);
+      // MTU negotiation is automatic in universal_ble, but we can't easily query it.
       
-      await UniversalBle.subscribeNotifications(
-        deviceId,
-        kRadioKitServiceUuid.toLowerCase(),
-        kRadioKitCharUuid.toLowerCase(),
-      );
+      // Discover services
+      _log('Discovering services...');
+      final services = await UniversalBle.discoverServices(deviceId);
+      for (var s in services) {
+        _log('Found Service: ${s.uuid}');
+        for (var c in s.characteristics) {
+          _log('  -> Characteristic: ${c.uuid} (Notify: ${c.properties.contains(CharacteristicProperty.notify)})');
+        }
+      }
+      
+      final serviceUuid = kRadioKitServiceUuid.toLowerCase();
+      final charUuid = kRadioKitCharUuid.toLowerCase();
+
+      // Find the actual service/char IDs from the discovery result to be safe
+      String? actualServiceId;
+      String? actualCharId;
+
+      for (var s in services) {
+        if (s.uuid.toLowerCase().contains(serviceUuid)) {
+          actualServiceId = s.uuid;
+          for (var c in s.characteristics) {
+            if (c.uuid.toLowerCase().contains(charUuid)) {
+              actualCharId = c.uuid;
+              break;
+            }
+          }
+        }
+      }
+
+      if (actualServiceId != null && actualCharId != null) {
+        _log('Subscribing to $actualCharId...');
+        await UniversalBle.subscribeNotifications(deviceId, actualServiceId, actualCharId);
+        _log('Subscription SUCCESS');
+      } else {
+        _log('ERROR - Could not find RadioKit characteristic in discovery!');
+      }
 
       _receiveBuffer.clear();
     } catch (e) {
+      _log('Connection ERROR: $e');
       _connectedDeviceId = null;
       throw Exception('Failed to connect: $e');
     }
@@ -252,7 +305,8 @@ class BleService implements TransportService {
       }
       if (_receiveBuffer.length < length) return;
 
-      final packetBytes = _receiveBuffer.sublist(0, length);
+      _log('Found packet candidate, length $length. Buffer size: ${_receiveBuffer.length}');
+      final packetBytes = Uint8List.fromList(_receiveBuffer.sublist(0, length));
       _receiveBuffer.removeRange(0, length);
 
       final packet = ProtocolService.parsePacket(Uint8List.fromList(packetBytes));

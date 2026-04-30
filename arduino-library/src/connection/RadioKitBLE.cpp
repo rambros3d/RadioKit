@@ -7,6 +7,11 @@
 #include "../RadioKitProtocol.h"
 #include <NimBLEDevice.h>
 
+#define RK_BLE_SERVICE_UUID        "0000FFE0-0000-1000-8000-00805F9B34FB"
+#define RK_BLE_CHARACTERISTIC_UUID "0000FFE1-0000-1000-8000-00805F9B34FB"
+
+#define RK_BLE_MTU 20
+
 RadioKitBLE RadioKitBLEInstance;
 
 // ── Static Callback Instances (Avoids heap allocation/fragmentation) ──
@@ -26,6 +31,9 @@ public:
         NimBLEAttValue value = pChar->getValue();
         if (value.length() > 0)
             RadioKitBLEInstance._onWrite(value.data(), value.length());
+    }
+    void onSubscribe(NimBLECharacteristic* pChar, NimBLEConnInfo& connInfo, uint16_t subValue) override {
+        Serial.printf("BLE: Client subscribed (subValue=%d)\n", subValue);
     }
 };
 
@@ -61,9 +69,12 @@ void RadioKitBLE::begin(const char* deviceName, RK_PacketCallback cb) {
     Serial.println("BLE: Creating characteristic...");
     _characteristic = pService->createCharacteristic(
         RK_BLE_CHARACTERISTIC_UUID,
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY
+        NIMBLE_PROPERTY::WRITE_NR | 
+        NIMBLE_PROPERTY::NOTIFY |
+        NIMBLE_PROPERTY::INDICATE
     );
     _characteristic->setCallbacks(&s_charCallbacks);
+
 
     Serial.println("BLE: Starting advertising...");
     NimBLEAdvertising* pAdv = NimBLEDevice::getAdvertising();
@@ -77,15 +88,20 @@ void RadioKitBLE::begin(const char* deviceName, RK_PacketCallback cb) {
 }
 
 void RadioKitBLE::sendPacket(const uint8_t* buf, uint16_t len) {
-    if (!_connected || !_characteristic) return;
+    if (!_connected || !_characteristic) {
+        Serial.printf("BLE: Cannot send (connected=%d, char=%p)\n", _connected, _characteristic);
+        return;
+    }
+    Serial.printf("BLE: Sending packet, total len %d...\n", len);
     uint16_t offset = 0;
     while (offset < len) {
         uint16_t chunk = len - offset;
         if (chunk > RK_BLE_MTU) chunk = RK_BLE_MTU;
         _characteristic->setValue(buf + offset, chunk);
-        _characteristic->notify();
+        bool success = _characteristic->notify();
+        Serial.printf("  Chunk offset %d, size %d, notify=%d\n", offset, chunk, success);
         offset += chunk;
-        if (offset < len) delay(5);
+        if (offset < len) delay(10); // Small delay to prevent saturation
     }
 }
 
@@ -102,8 +118,18 @@ void RadioKitBLE::_onDisconnect() { _connected = false; _needRestartAdv = true; 
 
 void RadioKitBLE::_onWrite(const uint8_t* data, size_t len) {
     if (!_packetCallback) return;
+    
+    Serial.print("BLE RX: ");
+    for (size_t i = 0; i < len; i++) {
+        Serial.printf("%02X ", data[i]);
+    }
+    Serial.println();
+
     uint8_t cmd; const uint8_t* payload; uint16_t payloadLen;
-    for (size_t i = 0; i < len; i++)
-        if (rk_rxFeedByte(data[i], cmd, payload, payloadLen))
+    for (size_t i = 0; i < len; i++) {
+        if (rk_rxFeedByte(data[i], cmd, payload, payloadLen)) {
+            Serial.printf("BLE CMD: 0x%02X, payloadLen: %d\n", cmd, payloadLen);
             _packetCallback(cmd, payload, payloadLen);
+        }
+    }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:usb_serial/usb_serial.dart';
 import '../models/device_info.dart';
 import 'protocol_service.dart';
@@ -21,6 +22,14 @@ class SerialService implements TransportService {
 
   @override PacketReceivedCallback? onPacketReceived;
   @override ConnectionLostCallback? onConnectionLost;
+  
+  final _logController = StreamController<String>.broadcast();
+  @override Stream<String> get logStream => _logController.stream;
+
+  void _log(String msg) {
+    debugPrint('SERIAL_SERVICE: $msg');
+    _logController.add(msg);
+  }
 
   UsbPort? _port;
   StreamSubscription<Uint8List>? _rxSub;

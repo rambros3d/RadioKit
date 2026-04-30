@@ -84,6 +84,7 @@ class BleProvider extends ChangeNotifier {
 
     _scanSubscription = _bleService.startScan().listen(
       (device) {
+        debugPrint('BLE_PROVIDER: Discovery event for ${device.name} (${device.id})');
         final idx = _devices.indexWhere((d) => d.id == device.id);
         if (idx >= 0) {
           _devices[idx] = device;

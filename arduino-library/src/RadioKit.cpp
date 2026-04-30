@@ -126,6 +126,7 @@ void RadioKitClass::_onPacket(uint8_t cmd,
                               uint16_t payloadLen)
 {
     if (!s_instance) return;
+    Serial.printf("RK: Dispatching CMD 0x%02X, len %d\n", cmd, payloadLen);
     switch (cmd) {
         case RK_CMD_GET_CONF:  s_instance->_handleGetConf();                      break;
         case RK_CMD_GET_VARS:  s_instance->_handleGetVars();                      break;
@@ -133,14 +134,19 @@ void RadioKitClass::_onPacket(uint8_t cmd,
         case RK_CMD_PING:      s_instance->_handlePing();                         break;
         case RK_CMD_ACK:       s_instance->_handleAck(payload, payloadLen);       break;
         case RK_CMD_VAR_UPDATE:s_instance->_handleVarUpdate(payload, payloadLen); break;
-        default: break;
+        default: 
+            Serial.printf("RK: Unknown CMD 0x%02X\n", cmd);
+            break;
     }
 }
 
 void RadioKitClass::_handleGetConf() {
-    uint16_t payloadLen = _buildConfPayload(&_txBuf[RK_HEADER_SIZE],
+    uint8_t* payloadPtr = &_txBuf[RK_HEADER_SIZE];
+    uint16_t payloadLen = _buildConfPayload(payloadPtr,
                                             RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE);
-    uint16_t totalLen = rk_buildPacket(_txBuf, RK_CMD_CONF_DATA, nullptr, payloadLen);
+    Serial.printf("RK: _handleGetConf: payloadLen = %d\n", payloadLen);
+    uint16_t totalLen = rk_buildPacket(_txBuf, RK_CMD_CONF_DATA, payloadPtr, payloadLen);
+    Serial.printf("RK: _handleGetConf: totalLen = %d, sending...\n", totalLen);
     if (_transport) _transport->sendPacket(_txBuf, totalLen);
 }
 
