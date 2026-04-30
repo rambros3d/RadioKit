@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:convert';
 import 'package:universal_ble/universal_ble.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter/foundation.dart';
 import '../models/protocol.dart';
 import '../models/device_info.dart';
 import 'protocol_service.dart';
@@ -30,6 +31,8 @@ class BleService implements TransportService {
   final List<int> _receiveBuffer = [];
 
   StreamController<DeviceInfo>? _scanController;
+  final _availabilityController = StreamController<AvailabilityState>.broadcast();
+  Stream<AvailabilityState> get availabilityStream => _availabilityController.stream;
 
   @override
   bool get isConnected => _isMockConnected || _connectedDeviceId != null;
@@ -46,7 +49,48 @@ class BleService implements TransportService {
     return state == AvailabilityState.poweredOn;
   }
 
+  /// Returns true if Location Services are enabled (required for Android < 12).
+  Future<bool> get isLocationServiceEnabled async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return await Geolocator.isLocationServiceEnabled();
+    }
+    return true;
+  }
+
+  /// Returns the current Bluetooth availability state.
+  Future<AvailabilityState> getAvailability() async {
+    return await UniversalBle.getBluetoothAvailabilityState();
+  }
+
+  /// Requests necessary Bluetooth permissions.
+  Future<void> requestPermissions() async {
+    try {
+      debugPrint('BLE_SERVICE: Requesting permissions...');
+      await UniversalBle.requestPermissions(
+        withAndroidFineLocation: true, // Required for reliable BLE scanning on many Android devices
+      );
+      debugPrint('BLE_SERVICE: Permissions request completed.');
+    } catch (e) {
+      debugPrint('BLE_SERVICE: Error requesting BLE permissions: $e');
+    }
+  }
+
+  /// Prompts user to enable Bluetooth (Android only).
+  Future<void> enableBluetooth() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        await UniversalBle.enableBluetooth();
+      } catch (e) {
+        debugPrint('Error enabling Bluetooth: $e');
+      }
+    }
+  }
+
   void _setupListeners() {
+    UniversalBle.onAvailabilityChange = (state) {
+      _availabilityController.add(state);
+    };
+
     UniversalBle.onConnectionChange = (String deviceId, bool isConnected, String? error) {
       if (deviceId == _connectedDeviceId && !isConnected) {
         _handleDisconnect(error ?? 'Connection lost');
@@ -67,6 +111,7 @@ class BleService implements TransportService {
   // ---------------------------------------------------------------------------
 
   Stream<DeviceInfo> startScan() {
+    debugPrint('BLE_SERVICE: startScan() called');
     _scanController?.close();
     final controller = StreamController<DeviceInfo>.broadcast();
     _scanController = controller;
@@ -75,6 +120,7 @@ class BleService implements TransportService {
     UniversalBle.onScanResult = (BleDevice result) {
       if (!seen.contains(result.deviceId)) {
         seen.add(result.deviceId);
+        debugPrint('BLE_SERVICE: Found device: ${result.name} (${result.deviceId})');
         final info = DeviceInfo(
           id: result.deviceId,
           name: result.name ?? 'Unknown Device',
@@ -90,7 +136,10 @@ class BleService implements TransportService {
       scanFilter: ScanFilter(
         withServices: [kRadioKitServiceUuid.toLowerCase()],
       ),
-    ).catchError((error) {
+    ).then((_) {
+      debugPrint('BLE_SERVICE: UniversalBle.startScan success');
+    }).catchError((error) {
+      debugPrint('BLE_SERVICE: UniversalBle.startScan ERROR: $error');
       if (!controller.isClosed) {
         controller.addError(error);
       }
@@ -315,5 +364,6 @@ class BleService implements TransportService {
   Future<void> dispose() async {
     await stopScan();
     await disconnect();
+    await _availabilityController.close();
   }
 }

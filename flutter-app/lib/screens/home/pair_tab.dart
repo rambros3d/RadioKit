@@ -34,17 +34,23 @@ class _PairTabState extends State<PairTab> {
     }
   }
 
-  void _startScan() {
+  Future<void> _startScan() async {
+    final console = context.read<ConsoleProvider>();
     if (_selectedTransportIndex == 0) {
       final ble = context.read<BleProvider>();
-      final console = context.read<ConsoleProvider>();
       console.log('INITIALIZING BLE_SCANNER...', level: ConsoleLogLevel.info);
-      ble.startScan();
+      console.log('STEP 1: REQUESTING PERMISSIONS', level: ConsoleLogLevel.info);
+      await ble.startScan();
+      if (ble.errorMessage != null) {
+        console.log('FAILED: ${ble.errorMessage}', level: ConsoleLogLevel.error);
+      } else {
+        console.log('SUCCESS: SCANNER_ACTIVE', level: ConsoleLogLevel.info);
+      }
     } else {
       final serial = context.read<SerialProvider>();
-      final console = context.read<ConsoleProvider>();
       console.log('SCANNING SERIAL_PORTS...', level: ConsoleLogLevel.info);
-      serial.startScan();
+      await serial.startScan();
+      console.log('SERIAL_SCAN_COMPLETE', level: ConsoleLogLevel.info);
     }
   }
 

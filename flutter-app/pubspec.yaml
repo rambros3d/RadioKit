@@ -40,6 +40,7 @@ dependencies:
   # RadioKit Widget Library
   radiokit_widgets:
     path: ../flutter-library
+  geolocator: ^13.0.0
 
 dev_dependencies:
   flutter_test:

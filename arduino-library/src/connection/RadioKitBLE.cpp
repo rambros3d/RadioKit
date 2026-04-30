@@ -9,11 +9,15 @@
 
 RadioKitBLE RadioKitBLEInstance;
 
-// ─────────────────────────────────────────────
+// ── Static Callback Instances (Avoids heap allocation/fragmentation) ──
 class RKServerCallbacks : public NimBLEServerCallbacks {
 public:
-    void onConnect(NimBLEServer*)    override { RadioKitBLEInstance._onConnect();    }
-    void onDisconnect(NimBLEServer*) override { RadioKitBLEInstance._onDisconnect(); }
+    void onConnect(NimBLEServer* pServer) override { 
+        RadioKitBLEInstance._onConnect();
+    }
+    void onDisconnect(NimBLEServer* pServer) override { 
+        RadioKitBLEInstance._onDisconnect(); 
+    }
 };
 
 class RKCharCallbacks : public NimBLECharacteristicCallbacks {
@@ -24,6 +28,9 @@ public:
             RadioKitBLEInstance._onWrite(value.data(), value.length());
     }
 };
+
+static RKServerCallbacks s_serverCallbacks;
+static RKCharCallbacks   s_charCallbacks;
 
 // ─────────────────────────────────────────────
 RadioKitBLE::RadioKitBLE()
@@ -36,27 +43,41 @@ void RadioKitBLE::begin(const char* deviceName, RK_PacketCallback cb) {
     _connected      = false;
     _needRestartAdv = false;
 
-    NimBLEDevice::init(deviceName);
+    // Pulse the LED to show we reached begin()
+    pinMode(7, OUTPUT);
+    digitalWrite(7, HIGH); delay(100); digitalWrite(7, LOW); delay(100);
+    digitalWrite(7, HIGH); delay(100); digitalWrite(7, LOW);
 
+    Serial.println("BLE: Initializing stack...");
+    NimBLEDevice::init(deviceName ? deviceName : "RadioKit");
+    
+    Serial.println("BLE: Creating server...");
     _server = NimBLEDevice::createServer();
-    _server->setCallbacks(new RKServerCallbacks());
+    _server->setCallbacks(&s_serverCallbacks);
 
+    Serial.println("BLE: Creating service...");
     NimBLEService* pService = _server->createService(RK_BLE_SERVICE_UUID);
 
+    Serial.println("BLE: Creating characteristic...");
     _characteristic = pService->createCharacteristic(
         RK_BLE_CHARACTERISTIC_UUID,
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY
     );
-    _characteristic->setCallbacks(new RKCharCallbacks());
+    _characteristic->setCallbacks(&s_charCallbacks);
 
+    Serial.println("BLE: Starting service...");
     pService->start();
 
+    Serial.println("BLE: Starting advertising...");
     NimBLEAdvertising* pAdv = NimBLEDevice::getAdvertising();
     pAdv->addServiceUUID(RK_BLE_SERVICE_UUID);
     pAdv->setScanResponse(true);
+    pAdv->setName(deviceName ? deviceName : "RadioKit");
     pAdv->setMinPreferred(0x06);
-    pAdv->setMinPreferred(0x12);
+    pAdv->setMaxPreferred(0x12);
     pAdv->start();
+    
+    Serial.println("BLE: System ready.");
 }
 
 void RadioKitBLE::sendPacket(const uint8_t* buf, uint16_t len) {
