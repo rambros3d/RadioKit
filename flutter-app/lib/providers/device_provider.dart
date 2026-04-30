@@ -157,16 +157,16 @@ class DeviceProvider extends ChangeNotifier {
       _widgets = [
         const WidgetConfig(typeId: kWidgetButton,      widgetId: 1, x: 25, y: 75, height: 10, label: 'PUSH', icon: 'zap', onText: 'ACTIVE', offText: 'IDLE', strMask: kStrMaskLabel | kStrMaskIcon | kStrMaskOnText | kStrMaskOffText),
         const WidgetConfig(typeId: kWidgetButton,      widgetId: 2, x: 25, y: 50, height: 10, variant: 1, label: 'TOGGLE', icon: 'power', onText: 'ON', offText: 'OFF', strMask: kStrMaskLabel | kStrMaskIcon | kStrMaskOnText | kStrMaskOffText),
-        const WidgetConfig(typeId: kWidgetSlideSwitch, widgetId: 3, x: 25, y: 25, height: 10, label: 'SLIDE', icon: 'sliders', onText: 'HI', offText: 'LO', strMask: kStrMaskLabel | kStrMaskIcon | kStrMaskOnText | kStrMaskOffText),
+        const WidgetConfig(typeId: kWidgetSlideSwitch, widgetId: 3, x: 25, y: 25,  rotation: 10,height: 10, label: 'SLIDE', icon: 'sliders', onText: 'ON', offText: 'OFF', strMask: kStrMaskLabel | kStrMaskIcon | kStrMaskOnText | kStrMaskOffText),
         
         const WidgetConfig(typeId: kWidgetText,        widgetId: 4, x: 100, y: 92, width: 14, height: 10, label: 'WIDGETS_TEST', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetSlider,      widgetId: 5, x: 100, y: 75, width: 60, height: 10,  label: 'SLIDER', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetSlider,      widgetId: 5, x: 100, y: 70, rotation: 10, width: 60, height: 10,  label: 'SLIDER', strMask: kStrMaskLabel),
         const WidgetConfig(typeId: kWidgetMultiple,    widgetId: 11, x: 100, y: 50,  height: 10, variant: 1,  label: 'MULTI', content: 'WiFi:wifi|BT:bluetooth|GPS:map-pin', strMask: kStrMaskLabel | kStrMaskContent),
         const WidgetConfig(typeId: kWidgetMultiple,    widgetId: 8, x: 100,  y: 25,  height: 10, variant: 0, label: 'MODES', content: 'Auto:cpu|Man:mouse|Night:moon|Eco:leaf', strMask: kStrMaskLabel | kStrMaskContent),
         
         const WidgetConfig(typeId: kWidgetKnob,        widgetId: 7, x: 170, y: 80, height: 10, label: 'PAN', icon: 'rotate-cw', strMask: kStrMaskLabel | kStrMaskIcon),
         const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 10,x: 170, y: 50, height: 10, variant: kCenterMid, label: 'STICK', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetLed,         widgetId: 9, x: 170, y: 25, height: 10, label: 'ALIVE', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetLed,         widgetId: 9, x: 170, y: 25, height: 5, label: 'ALIVE', strMask: kStrMaskLabel),
       ];
       _orientation = kOrientationLandscape;
     } 

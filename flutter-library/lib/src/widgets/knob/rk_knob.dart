@@ -67,6 +67,13 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
   double? _lastEmittedValue;
   double? _previousTouchAngle;
   double _currentAccumulatedRotation = 0;
+  bool _isInteracting = false;
+  final List<double> _echoBuffer = [];
+
+  void _addToHistory(double val) {
+    _echoBuffer.add(val);
+    if (_echoBuffer.length > 20) _echoBuffer.removeAt(0);
+  }
 
   @override
   void initState() {
@@ -91,6 +98,26 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
     if (widget.springDuration != oldWidget.springDuration) {
       _centerController.duration = widget.springDuration;
     }
+    if (widget.value != oldWidget.value) {
+      if (_isInteracting) return;
+      
+      final range = (widget.max - widget.min).abs();
+      // Ignore stale echoes found in history
+      final isEcho = _echoBuffer.any((v) => (v - widget.value).abs() < range * 0.03);
+      if (isEcho) return;
+      
+      // If animating, ignore updates that are close to current animation position
+      if (_centerController.isAnimating) {
+        final currentNorm = _centerAnimation.value;
+        final currentVal = widget.min + currentNorm * (widget.max - widget.min);
+        final diff = (widget.value - currentVal).abs();
+        if (diff < range * 0.15) return;
+      }
+
+      _lastEmittedValue = widget.value;
+      if (_centerController.isAnimating) _centerController.stop();
+    }
+
     if ((widget.autoCenter && !oldWidget.autoCenter) || 
         (widget.autoCenter && widget.center != oldWidget.center)) {
       _triggerCenter();
@@ -106,7 +133,10 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
   void _emitValue(double val) {
     if (val != _lastEmittedValue) {
       _lastEmittedValue = val;
-      widget.onChanged(val);
+      _addToHistory(val);
+      // Use a microtask to avoid "setState() or markNeedsBuild() called during build" 
+      // if this is triggered during a widget update cycle.
+      Future.microtask(() => widget.onChanged(val));
     }
   }
 
@@ -150,6 +180,7 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
           GestureDetector(
             onPanStart: (details) {
               _centerController.stop();
+              setState(() => _isInteracting = true);
               widget.onInteractionChanged?.call(true);
               final RenderBox box = context.findRenderObject() as RenderBox;
               final center = box.size.center(Offset.zero);
@@ -180,6 +211,7 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
               _emitValue(newVal);
             },
             onPanEnd: (_) {
+              setState(() => _isInteracting = false);
               widget.onInteractionChanged?.call(false);
               if (widget.autoCenter) _triggerCenter();
             },

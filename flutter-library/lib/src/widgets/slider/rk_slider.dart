@@ -57,6 +57,14 @@ class RKSlider extends StatefulWidget {
 class _RKSliderState extends State<RKSlider> with SingleTickerProviderStateMixin {
   late AnimationController _centerController;
   late Animation<double> _centerAnimation;
+  double? _lastEmittedValue;
+  final List<double> _echoBuffer = [];
+  bool _isInteracting = false;
+
+  void _addToHistory(double val) {
+    _echoBuffer.add(val);
+    if (_echoBuffer.length > 20) _echoBuffer.removeAt(0);
+  }
 
   @override
   void initState() {
@@ -71,7 +79,12 @@ class _RKSliderState extends State<RKSlider> with SingleTickerProviderStateMixin
     );
 
     _centerController.addListener(() {
-      widget.onChanged(_centerAnimation.value);
+      final val = _centerAnimation.value;
+      if (val != _lastEmittedValue) {
+        _lastEmittedValue = val;
+        _addToHistory(val);
+        Future.microtask(() => widget.onChanged(val));
+      }
     });
   }
 
@@ -80,6 +93,25 @@ class _RKSliderState extends State<RKSlider> with SingleTickerProviderStateMixin
     super.didUpdateWidget(oldWidget);
     if (widget.springDuration != oldWidget.springDuration) {
       _centerController.duration = widget.springDuration;
+    }
+    
+    // MASTER-SLAVE Logic: If the user is actively interacting with the slider,
+    // we ignore all external value updates.
+    if (_isInteracting) return;
+
+    if (widget.value != oldWidget.value) {
+      final range = (widget.max - widget.min).abs();
+      
+      // ECHO FILTER: Ignore updates that match our recent emission history.
+      final isEcho = _echoBuffer.any((v) => (v - widget.value).abs() < range * 0.03);
+      if (isEcho) return;
+      
+      // Since we have the echo buffer, we can use a tighter threshold for real external updates.
+      final diff = (widget.value - (_lastEmittedValue ?? -999)).abs();
+      if (diff > range * 0.05) {
+        _lastEmittedValue = widget.value;
+        if (_centerController.isAnimating) _centerController.stop();
+      }
     }
     
     if (widget.autoCenter && (widget.autoCenter != oldWidget.autoCenter || widget.center != oldWidget.center)) {
@@ -132,7 +164,13 @@ class _RKSliderState extends State<RKSlider> with SingleTickerProviderStateMixin
       newVal = ((newVal - widget.min) / step).round() * step + widget.min;
     }
     
-    widget.onChanged(newVal);
+    if (newVal != _lastEmittedValue) {
+      _lastEmittedValue = newVal;
+      
+      _addToHistory(newVal);
+
+      Future.microtask(() => widget.onChanged(newVal));
+    }
   }
 
   @override
@@ -152,11 +190,13 @@ class _RKSliderState extends State<RKSlider> with SingleTickerProviderStateMixin
       labelColor: tokens.primary.withValues(alpha: 0.7),
       child: GestureDetector(
         onPanStart: (details) {
+          setState(() => _isInteracting = true);
           widget.onInteractionChanged?.call(true);
           _handleUpdate(details.localPosition, Size(contentW, contentH));
         },
         onPanUpdate: (details) => _handleUpdate(details.localPosition, Size(contentW, contentH)),
         onPanEnd: (_) {
+          setState(() => _isInteracting = false);
           widget.onInteractionChanged?.call(false);
           if (widget.autoCenter) _triggerCenter();
         },

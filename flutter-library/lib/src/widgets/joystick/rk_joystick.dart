@@ -12,6 +12,13 @@ class RKJoystickValue {
   /// True when the widget is being actively interacted with (e.g. dragged)
   final bool isActive;
 
+  /// Returns true if the position (x, y) is nearly identical.
+  /// Useful for ignoring protocol echoes that might have rounding errors.
+  bool isSamePosition(RKJoystickValue? other) {
+    if (other == null) return false;
+    return (x - other.x).abs() < 0.03 && (y - other.y).abs() < 0.03;
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -22,7 +29,7 @@ class RKJoystickValue {
           isActive == other.isActive;
 
   @override
-  int get hashCode => x.hashCode ^ y.hashCode ^ isActive.hashCode;
+  int get hashCode => Object.hash(x, y, isActive);
 }
 
 /// A premium 2-axis joystick widget for RadioKit.
@@ -59,7 +66,13 @@ class _RKJoystickState extends State<RKJoystick> with SingleTickerProviderStateM
   late AnimationController _centerController;
   late Animation<Offset> _centerAnimation;
   RKJoystickValue? _lastEmittedValue;
+  final List<RKJoystickValue> _echoBuffer = [];
   bool _isInteracting = false;
+
+  void _addToHistory(RKJoystickValue val) {
+    _echoBuffer.add(val);
+    if (_echoBuffer.length > 20) _echoBuffer.removeAt(0);
+  }
 
   @override
   void initState() {
@@ -102,19 +115,33 @@ class _RKJoystickState extends State<RKJoystick> with SingleTickerProviderStateM
       _centerController.duration = widget.springDuration;
     }
     
+    // MASTER-SLAVE Logic: If the user is actively interacting with the joystick,
+    // we ignore all external value updates. The local user is the "Master".
+    if (_isInteracting) return;
+
     if (widget.value != null && widget.value != oldWidget.value) {
+      // ECHO FILTER: Ignore updates that match our recent emission history.
+      // This solves the lagged loopback problem in WIDGETS_DEMO.
+      final isEcho = _echoBuffer.any((v) => v.isSamePosition(widget.value));
+      if (isEcho) return;
+
       final newOffset = _offsetFromValue(widget.value!);
-      final isExternalUpdate = (newOffset - _knobOffset).distance > 0.001;
+      final distance = (newOffset - _knobOffset).distance;
+      // Since we have the echo buffer, we can use a much tighter threshold for real external updates.
+      final isExternalUpdate = distance > 0.05;
 
       if (isExternalUpdate) {
         final centerOffset = _offsetFromValue(widget.center);
-        final isRelease = (newOffset.dx == centerOffset.dx && _knobOffset.dx != centerOffset.dx) || 
-                          (newOffset.dy == centerOffset.dy && _knobOffset.dy != centerOffset.dy);
+        
+        // If the external update is exactly the center, treat it as a command to center (release)
+        final isCenterValue = (newOffset.dx - centerOffset.dx).abs() < 0.001 && 
+                             (newOffset.dy - centerOffset.dy).abs() < 0.001;
 
-        if (widget.autoCenter && isRelease) {
+        if (widget.autoCenter && isCenterValue) {
           _lastEmittedValue = widget.value;
           _triggerCenter(target: centerOffset);
         } else {
+          // Hard jump to external value
           if (_centerController.isAnimating) _centerController.stop();
           setState(() {
             _knobOffset = newOffset;
@@ -177,7 +204,13 @@ class _RKJoystickState extends State<RKJoystick> with SingleTickerProviderStateM
 
     if (newValue != _lastEmittedValue) {
       _lastEmittedValue = newValue;
-      widget.onChanged(newValue);
+      
+      // Add to echo buffer to ignore lagged loopback updates
+      _addToHistory(newValue);
+
+      // We use a microtask only if we are currently in a build phase (e.g. from listener during build)
+      // otherwise we emit synchronously to satisfy the "synchronous data flow" requirement.
+      Future.microtask(() => widget.onChanged(newValue));
     }
   }
 
