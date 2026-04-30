@@ -284,7 +284,7 @@ class _DebugScreenState extends State<DebugScreen>
       child: Row(
         children: [
           Text(
-            '${dp.entries.length} / ${dp.totalCount} packets'
+            'Showing ${dp.entries.length} / Buffer: ${dp.totalCount} / Total: ${dp.totalTransferred}'
             '${dp.paused ? '  ⏸ PAUSED' : ''}',
             style: Theme.of(context)
                 .textTheme
@@ -548,12 +548,23 @@ class _LogRow extends StatelessWidget {
                     child: TextButton.icon(
                       icon: const Icon(Icons.copy_rounded, size: 14),
                       label:
-                          const Text('Copy hex', style: TextStyle(fontSize: 11)),
+                          const Text('Copy', style: TextStyle(fontSize: 11)),
                       onPressed: () {
-                        Clipboard.setData(ClipboardData(text: entry.hexDump));
+                        final summary = [
+                          'Time: ${entry.timeLabel}',
+                          'Dir:  ${entry.dirLabel}',
+                          'Cmd:  ${entry.cmdName}',
+                          'Size: ${entry.bytes.length} B',
+                          if (entry.crcOk != null) 'CRC:  ${entry.crcOk! ? 'OK' : 'INVALID'}',
+                          'Hex:  ${entry.hexDump}',
+                          if (entry.payloadHex.isNotEmpty) 'Data: ${entry.payloadHex}',
+                          'Text: ${entry.asciiDump}',
+                        ].join('\n');
+                        
+                        Clipboard.setData(ClipboardData(text: summary));
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Copied'),
+                            content: Text('Packet details copied'),
                             duration: Duration(seconds: 1),
                           ),
                         );
@@ -612,7 +623,7 @@ class _DirFilterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<PacketDirection?>(
+    return PopupMenuButton<String>(
       tooltip: 'Filter direction',
       icon: Icon(
         Icons.filter_list_rounded,
@@ -621,11 +632,17 @@ class _DirFilterButton extends StatelessWidget {
             ? Theme.of(context).colorScheme.primary
             : null,
       ),
-      onSelected: dp.setDirFilter,
+      onSelected: (value) {
+        switch (value) {
+          case 'rx':  dp.setDirFilter(PacketDirection.rx); break;
+          case 'tx':  dp.setDirFilter(PacketDirection.tx); break;
+          default:    dp.setDirFilter(null);               break;
+        }
+      },
       itemBuilder: (_) => [
-        const PopupMenuItem(value: null,              child: Text('All')),
-        const PopupMenuItem(value: PacketDirection.rx, child: Text('RX only')),
-        const PopupMenuItem(value: PacketDirection.tx, child: Text('TX only')),
+        const PopupMenuItem(value: 'all', child: Text('All')),
+        const PopupMenuItem(value: 'rx',  child: Text('RX only')),
+        const PopupMenuItem(value: 'tx',  child: Text('TX only')),
       ],
     );
   }

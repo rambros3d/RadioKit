@@ -62,6 +62,7 @@ class DeviceProvider extends ChangeNotifier {
   Timer?                   _confTimeoutTimer;
   DebugLogSink?            _debugSink;
   Completer<void>?         _confCompleter;
+  Completer<void>?         _varDataCompleter;
   DateTime?                _pingSentAt;
 
   final Map<int, _PendingUpdate> _pendingUpdates = {};
@@ -304,14 +305,7 @@ class DeviceProvider extends ChangeNotifier {
       _startDemoSimulation();
     }
 
-    _pollTimer = Timer.periodic(kGetVarsInterval, (_) async {
-      if (!_transport.isConnected) return;
-      try {
-        await _transport.writePacket(ProtocolService.buildGetVars());
-      } catch (e) {
-        _log('POLL ERROR: $e', level: ConsoleLogLevel.warning);
-      }
-    });
+    _runPollingLoop();
 
     _pingTimer = Timer.periodic(kPingInterval, (_) async {
       if (!_transport.isConnected) return;
@@ -323,18 +317,35 @@ class DeviceProvider extends ChangeNotifier {
       }
     });
 
-    _telemetryTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
-      if (!_transport.isConnected) return;
+  }
+
+  /// Responsive polling loop: sends GET_VARS and waits for VAR_DATA (or timeout)
+  /// before scheduling the next poll. This ensures TX/RX interleaving and
+  /// prevents link flooding.
+  Future<void> _runPollingLoop() async {
+    while (_connectionState == DeviceConnectionState.connected && _transport.isConnected) {
+      final startTime = DateTime.now();
+      _varDataCompleter = Completer<void>();
+
       try {
-        final newRssi = await _transport.getRssi();
-        if (newRssi != null) {
-          _rssi = newRssi;
-          notifyListeners();
-        }
+        await _transport.writePacket(ProtocolService.buildGetVars());
+        // Wait for device response or 400ms timeout
+        await _varDataCompleter!.future.timeout(const Duration(milliseconds: 400)).catchError((_) => null);
       } catch (e) {
-        debugPrint('RadioKit: RSSI poll error: $e');
+        debugPrint('RadioKit: Poll write error: $e');
+      } finally {
+        _varDataCompleter = null;
       }
-    });
+
+      // Maintain the target frequency (e.g. 250ms)
+      final elapsed = DateTime.now().difference(startTime);
+      final remaining = kGetVarsInterval - elapsed;
+      if (remaining > Duration.zero) {
+        await Future.delayed(remaining);
+      } else {
+        await Future.delayed(const Duration(milliseconds: 10)); // Yield
+      }
+    }
   }
 
   void _stopPolling() {
@@ -470,6 +481,10 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   void _handleVarData(List<int> payload) {
+    // Resolve any pending poll wait
+    _varDataCompleter?.complete();
+    _varDataCompleter = null;
+
     final current = _widgetState;
     if (current == null) return;
     final next = ProtocolService.parseVarData(payload, _widgets, current);

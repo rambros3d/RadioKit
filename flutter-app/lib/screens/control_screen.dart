@@ -1,11 +1,13 @@
 import 'dart:math' show pi;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/device_provider.dart';
 import '../providers/debug_provider.dart';
 import '../providers/skin_provider.dart';
+import '../providers/settings_provider.dart';
 import '../services/debug_transport.dart';
 import '../models/widget_config.dart';
 import '../models/protocol.dart';
@@ -22,6 +24,26 @@ class ControlScreen extends StatefulWidget {
 
 class _ControlScreenState extends State<ControlScreen> {
   bool _debugWrapped = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _applyFullscreen();
+  }
+
+  void _applyFullscreen() {
+    final settings = context.read<SettingsProvider>();
+    if (settings.useFullscreen) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    }
+  }
+
+  @override
+  void dispose() {
+    // Restore system UI when leaving the controller
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
 
   Future<void> _disconnect() async {
     final dp = context.read<DeviceProvider>();
@@ -49,6 +71,15 @@ class _ControlScreenState extends State<ControlScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+    
+    // Update system UI mode based on setting, but keep the App's UI (AppBar) visible
+    if (settings.useFullscreen) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+    } else {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
+
     return Consumer<DeviceProvider>(
       builder: (context, deviceProvider, _) {
         final device      = deviceProvider.connectedDevice;
@@ -90,6 +121,11 @@ class _ControlScreenState extends State<ControlScreen> {
               ],
             ),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.home_rounded),
+                tooltip: 'Back to Models',
+                onPressed: () => context.go('/models'),
+              ),
               if (kDebugMode)
                 IconButton(
                   icon: const Icon(Icons.bug_report_rounded),
@@ -98,17 +134,10 @@ class _ControlScreenState extends State<ControlScreen> {
                 ),
               TextButton.icon(
                 icon: const Icon(Icons.bluetooth_disabled_rounded, size: 18),
-                label: const Text('Disconnect'),
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error,
-                ),
+                label: const Text('DISCONNECT'),
                 onPressed: _disconnect,
               ),
-              IconButton(
-                icon: const Icon(Icons.palette_outlined),
-                tooltip: 'Theme Gallery',
-                onPressed: () => context.push('/skins'),
-              ),
+              const SizedBox(width: 8),
             ],
           ),
           body: _buildBody(deviceProvider),

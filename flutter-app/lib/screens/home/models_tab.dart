@@ -98,7 +98,7 @@ class _ActiveLinkSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTag(context, 'ACTIVE_LINK'),
+        _buildSectionTag(context, 'ACTIVE_LINKS'),
         Card(
           clipBehavior: Clip.antiAlias,
           color: Colors.white.withValues(alpha: 0.05),
@@ -375,7 +375,7 @@ class _PairedModelsList extends StatelessWidget {
             onTap: () => _handleReconnect(context, device),
           ),
         );
-      }).toList(),
+      }),
     ],
   );
 }
@@ -395,7 +395,41 @@ class _PairedModelsList extends StatelessWidget {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Reconnecting to ${device.name}...')),
+      SnackBar(content: Text('Checking availability for ${device.name}...')),
+    );
+
+    bool isLive = false;
+    if (device.type == 'ble') {
+      // Always perform a fresh scan to ensure the device is currently live
+      await ble.startScan();
+      await Future.delayed(const Duration(milliseconds: 2500));
+      await ble.stopScan();
+      isLive = ble.devices.any((d) => d.id == device.id);
+    } else if (device.type == 'serial') {
+      // On serial, we can just refresh the list
+      await serial.startScan();
+      isLive = serial.ports.any((p) => p.id == device.id);
+    } else {
+      // For demo/debug, always live
+      isLive = true;
+    }
+
+    if (!isLive) {
+      if (!context.mounted) return;
+      console.log('RECONNECT FAILED: Device "${device.name}" is not reachable.', level: ConsoleLogLevel.error);
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Device is offline or out of range.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Connecting to ${device.name}...')),
     );
 
     try {

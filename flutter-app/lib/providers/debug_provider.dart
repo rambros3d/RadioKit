@@ -7,7 +7,7 @@ import '../services/transport_service.dart';
 import '../services/protocol_service.dart';
 
 /// Maximum number of entries kept in the ring-buffer.
-const int kDebugLogMaxEntries = 500;
+const int kDebugLogMaxEntries = 5000;
 
 /// Manages the debug packet log.
 ///
@@ -21,6 +21,7 @@ class DebugProvider extends ChangeNotifier implements DebugLogSink {
   String _searchTerm = '';
   PacketDirection? _dirFilter; // null = show both
   bool _debugMode = false;
+  int _totalTransferred = 0;
 
   // The raw transport used when sending manual packets
   TransportService? _transport;
@@ -31,6 +32,7 @@ class DebugProvider extends ChangeNotifier implements DebugLogSink {
   PacketDirection? get dirFilter => _dirFilter;
   bool get debugMode => _debugMode;
   TransportService? get transport => _transport;
+  int get totalTransferred => _totalTransferred;
 
   /// Attach (or replace) the transport so the Send panel can write packets.
   void attachTransport(TransportService t) {
@@ -44,6 +46,7 @@ class DebugProvider extends ChangeNotifier implements DebugLogSink {
   @override
   void addEntry(DebugLogEntry entry) {
     if (_paused) return;
+    _totalTransferred++;
     if (_all.length >= kDebugLogMaxEntries) _all.removeAt(0);
     _all.add(entry);
     notifyListeners();
@@ -89,6 +92,7 @@ class DebugProvider extends ChangeNotifier implements DebugLogSink {
 
   void clearLog() {
     _all.clear();
+    _totalTransferred = 0;
     notifyListeners();
   }
 

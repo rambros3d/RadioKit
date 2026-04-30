@@ -191,12 +191,28 @@ class SystemTab extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Expanded(
-                  child: _SettingLabel(label: 'ENABLE_DEMO', value: 'Show interactive examples'),
+                  child: _SettingLabel(label: 'ENABLE_DEMO', value: 'Show Demo examples'),
                 ),
                 Consumer<SettingsProvider>(
                   builder: (context, settings, _) => Switch(
                     value: settings.showDemo,
                     onChanged: (v) => settings.setShowDemo(v),
+                    activeColor: AppColors.brandOrange,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 32, color: Colors.white10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  child: _SettingLabel(label: 'USE_FULLSCREEN', value: 'Immersive mode for controller'),
+                ),
+                Consumer<SettingsProvider>(
+                  builder: (context, settings, _) => Switch(
+                    value: settings.useFullscreen,
+                    onChanged: (v) => settings.setUseFullscreen(v),
                     activeColor: AppColors.brandOrange,
                   ),
                 ),
