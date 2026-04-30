@@ -150,6 +150,7 @@ class DebugTransport implements TransportService {
       case kCmdPing:     return 'PING';
       case kCmdPong:     return 'PONG';
       case kCmdAck:      return 'ACK';
+      case kCmdVarUpdate: return 'VAR_UPDATE';
       default: return '0x${cmd.toRadixString(16).padLeft(2, '0').toUpperCase()}';
     }
   }
