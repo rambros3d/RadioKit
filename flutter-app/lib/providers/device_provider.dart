@@ -12,6 +12,7 @@ import '../services/demo_transport.dart';
 
 import '../providers/console_provider.dart';
 import '../providers/skin_provider.dart';
+import '../providers/debug_provider.dart';
 import '../models/console_entry.dart';
 
 enum DeviceConnectionState {
@@ -62,21 +63,29 @@ class DeviceProvider extends ChangeNotifier {
   Timer?                   _confTimeoutTimer;
   DebugLogSink?            _debugSink;
   Completer<void>?         _confCompleter;
-  Completer<void>?         _varDataCompleter;
+  Completer<void>?         _activePollCompleter;
   DateTime?                _pingSentAt;
 
   final Map<int, _PendingUpdate> _pendingUpdates = {};
   int _nextSeq = 0;
+  int _pollingSessionId = 0;
 
   DeviceProvider({
     required TransportService transport,
     DebugLogSink? debugSink,
     ConsoleProvider? console,
     SkinProvider? skinProvider,
-  })  : _transport = transport,
-        _debugSink = debugSink,
+  })  : _debugSink = debugSink,
         _console = console,
-        _skinProvider = skinProvider;
+        _skinProvider = skinProvider,
+        _transport = transport {
+    // Use the robust setTransport logic even in constructor
+    setTransport(transport);
+    
+    if (debugSink is DebugProvider) {
+      debugSink.attachTransport(_transport);
+    }
+  }
 
   void _log(String message, {ConsoleLogLevel level = ConsoleLogLevel.info}) {
     _console?.log(message, level: level);
@@ -101,11 +110,27 @@ class DeviceProvider extends ChangeNotifier {
   // ── Transport swap ───────────────────────────────────────────────────────────
 
   void setTransport(TransportService transport) {
-    var next = transport;
-    if (_debugSink != null) {
-      next = DebugTransport(inner: transport, sink: _debugSink!);
+    // Recursively determine the base transport (strip all debug wrappers)
+    TransportService base = transport;
+    while (base is DebugTransport) {
+      base = base.inner;
     }
-    if (identical(_transport, next)) return;
+    
+    TransportService next = base;
+    if (_debugSink != null) {
+      next = DebugTransport(inner: base, sink: _debugSink!);
+    }
+    
+    // We can't use identical() here because a new DebugTransport instance 
+    // is created. Instead, check if the inner transport is the same.
+    final currentBase = (_transport is DebugTransport) 
+        ? (_transport as DebugTransport).inner 
+        : _transport;
+        
+    if (identical(currentBase, base) && _transport is DebugTransport == (_debugSink != null)) {
+      return;
+    }
+
     _transport = next;
     _transport.onPacketReceived = _handlePacket;
     _transport.onConnectionLost = _handleConnectionLost;
@@ -122,6 +147,7 @@ class DeviceProvider extends ChangeNotifier {
     _transport.onPacketReceived = _handlePacket;
     _transport.onConnectionLost = _handleConnectionLost;
 
+    // Ensure we are wrapped for debugging if a sink is provided
     if (_debugSink != null && _transport is! DebugTransport) {
       _transport = DebugTransport(inner: _transport, sink: _debugSink!);
       _transport.onPacketReceived = _handlePacket;
@@ -305,7 +331,8 @@ class DeviceProvider extends ChangeNotifier {
       _startDemoSimulation();
     }
 
-    _runPollingLoop();
+    _pollingSessionId++;
+    _runPollingLoop(_pollingSessionId);
 
     _pingTimer = Timer.periodic(kPingInterval, (_) async {
       if (!_transport.isConnected) return;
@@ -319,23 +346,32 @@ class DeviceProvider extends ChangeNotifier {
 
   }
 
-  /// Responsive polling loop: sends GET_VARS and waits for VAR_DATA (or timeout)
-  /// before scheduling the next poll. This ensures TX/RX interleaving and
   /// prevents link flooding.
-  Future<void> _runPollingLoop() async {
-    while (_connectionState == DeviceConnectionState.connected && _transport.isConnected) {
+  Future<void> _runPollingLoop(int sessionId) async {
+    // Debounce: Yield to let any rapid sequential _startPolling calls finish
+    await Future.delayed(Duration.zero);
+    if (sessionId != _pollingSessionId) return;
+
+    while (sessionId == _pollingSessionId && 
+           _connectionState == DeviceConnectionState.connected && 
+           _transport.isConnected) {
       final startTime = DateTime.now();
-      _varDataCompleter = Completer<void>();
+      final completer = Completer<void>();
+      _activePollCompleter = completer;
 
       try {
         await _transport.writePacket(ProtocolService.buildGetVars());
         // Wait for device response or 400ms timeout
-        await _varDataCompleter!.future.timeout(const Duration(milliseconds: 400)).catchError((_) => null);
+        await completer.future.timeout(const Duration(milliseconds: 400)).catchError((_) => null);
       } catch (e) {
         debugPrint('RadioKit: Poll write error: $e');
       } finally {
-        _varDataCompleter = null;
+        if (_activePollCompleter == completer) {
+          _activePollCompleter = null;
+        }
       }
+
+      if (sessionId != _pollingSessionId) return;
 
       // Maintain the target frequency (e.g. 250ms)
       final elapsed = DateTime.now().difference(startTime);
@@ -353,6 +389,7 @@ class DeviceProvider extends ChangeNotifier {
     _pingTimer?.cancel(); _pingTimer = null;
     _telemetryTimer?.cancel(); _telemetryTimer = null;
     _demoTimer?.cancel(); _demoTimer = null;
+    _pollingSessionId++; // Stop any active polling loop
   }
 
   // ── Simulation Logic ────────────────────────────────────────────────────────
@@ -482,8 +519,8 @@ class DeviceProvider extends ChangeNotifier {
 
   void _handleVarData(List<int> payload) {
     // Resolve any pending poll wait
-    _varDataCompleter?.complete();
-    _varDataCompleter = null;
+    _activePollCompleter?.complete();
+    _activePollCompleter = null;
 
     final current = _widgetState;
     if (current == null) return;

@@ -56,13 +56,9 @@ class _ControlScreenState extends State<ControlScreen> {
     if (!mounted) return;
     final debugP = context.read<DebugProvider>();
 
-    if (!_debugWrapped) {
-      final inner   = dp.currentTransport;
-      final wrapped = DebugTransport(inner: inner, sink: debugP);
-      dp.setTransport(wrapped);
-      debugP.attachTransport(wrapped);
-      _debugWrapped = true;
-    }
+    // No need to wrap here, DeviceProvider handles it robustly.
+    // We just ensure the DebugProvider knows about the current transport for manual sends.
+    debugP.attachTransport(dp.currentTransport);
 
     if (mounted) {
       context.push('/debug');
