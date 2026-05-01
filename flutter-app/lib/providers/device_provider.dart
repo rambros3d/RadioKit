@@ -63,12 +63,10 @@ class DeviceProvider extends ChangeNotifier {
   Timer?                   _confTimeoutTimer;
   DebugLogSink?            _debugSink;
   Completer<void>?         _confCompleter;
-  Completer<void>?         _activePollCompleter;
   DateTime?                _pingSentAt;
 
   final Map<int, _PendingUpdate> _pendingUpdates = {};
   int _nextSeq = 0;
-  int _pollingSessionId = 0;
 
   DeviceProvider({
     required TransportService transport,
@@ -79,12 +77,7 @@ class DeviceProvider extends ChangeNotifier {
         _console = console,
         _skinProvider = skinProvider,
         _transport = transport {
-    // Use the robust setTransport logic even in constructor
     setTransport(transport);
-    
-    if (debugSink is DebugProvider) {
-      debugSink.attachTransport(_transport);
-    }
   }
 
   void _log(String message, {ConsoleLogLevel level = ConsoleLogLevel.info}) {
@@ -110,30 +103,50 @@ class DeviceProvider extends ChangeNotifier {
   // ── Transport swap ───────────────────────────────────────────────────────────
 
   void setTransport(TransportService transport) {
-    // Recursively determine the base transport (strip all debug wrappers)
+    // 1. Strip all existing DebugTransport wrappers to find the true base transport
     TransportService base = transport;
     while (base is DebugTransport) {
-      base = base.inner;
+      base = (base as DebugTransport).inner;
     }
     
+    // 2. Identify current true base
+    TransportService currentBase = _transport;
+    while (currentBase is DebugTransport) {
+      currentBase = (currentBase as DebugTransport).inner;
+    }
+        
+    // 3. Check if we have exactly the right number of wrapper layers
+    bool hasCorrectLayers = false;
+    if (_debugSink != null) {
+      hasCorrectLayers = (_transport is DebugTransport) && 
+                         ((_transport as DebugTransport).inner == currentBase);
+    } else {
+      hasCorrectLayers = identical(_transport, currentBase);
+    }
+
+    // 4. If base is same AND layers are correct, only update callbacks
+    if (identical(currentBase, base) && hasCorrectLayers) {
+      _transport.onPacketReceived = _handlePacket;
+      _transport.onConnectionLost = _handleConnectionLost;
+      return;
+    }
+
+    // 5. Build exactly one layer of wrapper if sink is available
     TransportService next = base;
     if (_debugSink != null) {
       next = DebugTransport(inner: base, sink: _debugSink!);
     }
     
-    // We can't use identical() here because a new DebugTransport instance 
-    // is created. Instead, check if the inner transport is the same.
-    final currentBase = (_transport is DebugTransport) 
-        ? (_transport as DebugTransport).inner 
-        : _transport;
-        
-    if (identical(currentBase, base) && _transport is DebugTransport == (_debugSink != null)) {
-      return;
-    }
-
     _transport = next;
+
+    // 6. Always ensure callbacks are assigned to the current transport instance
     _transport.onPacketReceived = _handlePacket;
     _transport.onConnectionLost = _handleConnectionLost;
+
+    // 7. Synchronize DebugProvider if it's our sink
+    if (_debugSink is DebugProvider) {
+      (_debugSink as DebugProvider).attachTransport(_transport);
+    }
   }
 
   // ── Connection ─────────────────────────────────────────────────────────────
@@ -143,16 +156,6 @@ class DeviceProvider extends ChangeNotifier {
     _connectedDevice = device;
     _errorMessage    = null;
     notifyListeners();
-
-    _transport.onPacketReceived = _handlePacket;
-    _transport.onConnectionLost = _handleConnectionLost;
-
-    // Ensure we are wrapped for debugging if a sink is provided
-    if (_debugSink != null && _transport is! DebugTransport) {
-      _transport = DebugTransport(inner: _transport, sink: _debugSink!);
-      _transport.onPacketReceived = _handlePacket;
-      _transport.onConnectionLost = _handleConnectionLost;
-    }
 
     _log('CONNECTING TO: ${device.name} (${device.id})');
     try {
@@ -322,8 +325,10 @@ class DeviceProvider extends ChangeNotifier {
     // This is the single safe entry point — never call twice concurrently.
     _pollTimer?.cancel();
     _pingTimer?.cancel();
+    _telemetryTimer?.cancel();
     _pollTimer = null;
     _pingTimer = null;
+    _telemetryTimer = null;
     _demoTimer?.cancel();
     _demoTimer = null;
 
@@ -331,8 +336,12 @@ class DeviceProvider extends ChangeNotifier {
       _startDemoSimulation();
     }
 
-    _pollingSessionId++;
-    _runPollingLoop(_pollingSessionId);
+    // Request initial telemetry immediately on connection
+    if (_transport.isConnected) {
+      _transport.writePacket(ProtocolService.buildGetTelemetry()).catchError((e) {
+        debugPrint('RadioKit: Initial telemetry error: $e');
+      });
+    }
 
     _pingTimer = Timer.periodic(kPingInterval, (_) async {
       if (!_transport.isConnected) return;
@@ -344,44 +353,15 @@ class DeviceProvider extends ChangeNotifier {
       }
     });
 
-  }
-
-  /// prevents link flooding.
-  Future<void> _runPollingLoop(int sessionId) async {
-    // Debounce: Yield to let any rapid sequential _startPolling calls finish
-    await Future.delayed(Duration.zero);
-    if (sessionId != _pollingSessionId) return;
-
-    while (sessionId == _pollingSessionId && 
-           _connectionState == DeviceConnectionState.connected && 
-           _transport.isConnected) {
-      final startTime = DateTime.now();
-      final completer = Completer<void>();
-      _activePollCompleter = completer;
-
+    _telemetryTimer = Timer.periodic(kTelemetryInterval, (_) async {
+      if (!_transport.isConnected) return;
       try {
-        await _transport.writePacket(ProtocolService.buildGetVars());
-        // Wait for device response or 400ms timeout
-        await completer.future.timeout(const Duration(milliseconds: 400)).catchError((_) => null);
+        await _transport.writePacket(ProtocolService.buildGetTelemetry());
       } catch (e) {
-        debugPrint('RadioKit: Poll write error: $e');
-      } finally {
-        if (_activePollCompleter == completer) {
-          _activePollCompleter = null;
-        }
+        debugPrint('RadioKit: Telemetry poll error: $e');
       }
+    });
 
-      if (sessionId != _pollingSessionId) return;
-
-      // Maintain the target frequency (e.g. 250ms)
-      final elapsed = DateTime.now().difference(startTime);
-      final remaining = kGetVarsInterval - elapsed;
-      if (remaining > Duration.zero) {
-        await Future.delayed(remaining);
-      } else {
-        await Future.delayed(const Duration(milliseconds: 10)); // Yield
-      }
-    }
   }
 
   void _stopPolling() {
@@ -389,7 +369,6 @@ class DeviceProvider extends ChangeNotifier {
     _pingTimer?.cancel(); _pingTimer = null;
     _telemetryTimer?.cancel(); _telemetryTimer = null;
     _demoTimer?.cancel(); _demoTimer = null;
-    _pollingSessionId++; // Stop any active polling loop
   }
 
   // ── Simulation Logic ────────────────────────────────────────────────────────
@@ -473,8 +452,11 @@ class DeviceProvider extends ChangeNotifier {
       case kCmdVarData:   _handleVarData(packet.payload);   break;
       case kCmdSetInput:  _handleSetInput(packet.payload);  break;
       case kCmdVarUpdate: _handleVarUpdate(packet.payload); break;
+      case kCmdMetaData:  _handleMetaData(packet.payload);  break;
+      case kCmdMetaUpdate: _handleMetaUpdate(packet.payload); break;
       case kCmdAck:       _handleAck(packet.payload);       break;
       case kCmdPong:      _handlePong();                    break;
+      case kCmdTelemetryData: _handleTelemetryData(packet.payload); break;
       default:
         debugPrint('RadioKit: Unknown cmd 0x${packet.cmd.toRadixString(16)}');
     }
@@ -485,6 +467,14 @@ class DeviceProvider extends ChangeNotifier {
       final now = DateTime.now();
       _latencyMs = now.difference(_pingSentAt!).inMilliseconds;
       _pingSentAt = null;
+      notifyListeners();
+    }
+  }
+
+  void _handleTelemetryData(List<int> payload) {
+    if (payload.isNotEmpty) {
+      final rawRssi = payload[0];
+      _rssi = rawRssi > 127 ? rawRssi - 256 : rawRssi;
       notifyListeners();
     }
   }
@@ -510,6 +500,12 @@ class DeviceProvider extends ChangeNotifier {
     _skinProvider?.setSkin(conf.theme);
 
     _startPolling();
+    
+    // Request initial variable states immediately after config is processed
+    if (_transport.isConnected) {
+      _transport.writePacket(ProtocolService.buildGetVars()).catchError((_) {});
+    }
+
     notifyListeners();
     final completer = _confCompleter;
     if (completer != null && !completer.isCompleted) {
@@ -518,10 +514,6 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   void _handleVarData(List<int> payload) {
-    // Resolve any pending poll wait
-    _activePollCompleter?.complete();
-    _activePollCompleter = null;
-
     final current = _widgetState;
     if (current == null) return;
     final next = ProtocolService.parseVarData(payload, _widgets, current);
@@ -600,6 +592,30 @@ class DeviceProvider extends ChangeNotifier {
 
     if (widget.hasOutput) {
         _log('RX <- VAR_UPDATE (wid:$widgetId, seq:$seq)');
+    }
+
+    _transport.writePacket(ProtocolService.buildAck(seq)).catchError((_) {});
+  }
+
+  void _handleMetaData(List<int> payload) {
+    final updated = ProtocolService.parseMetaData(payload, _widgets);
+    if (updated != null) {
+      _widgets = updated;
+      _log('RX <- META_DATA (${_widgets.length} widgets updated)');
+      notifyListeners();
+    }
+  }
+
+  void _handleMetaUpdate(List<int> payload) {
+    final result = ProtocolService.parseMetaUpdate(payload, _widgets);
+    if (result == null) return;
+    final (widgetId, seq, updatedWidget) = result;
+
+    final idx = _widgets.indexWhere((w) => w.widgetId == widgetId);
+    if (idx != -1) {
+      _widgets[idx] = updatedWidget;
+      _log('RX <- META_UPDATE (wid:$widgetId, label:"${updatedWidget.label}")');
+      notifyListeners();
     }
 
     _transport.writePacket(ProtocolService.buildAck(seq)).catchError((_) {});

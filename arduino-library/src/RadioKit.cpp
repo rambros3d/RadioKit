@@ -6,6 +6,9 @@
 #include "RadioKit.h"
 #include <string.h>
 
+// ── CONF_DATA / META_DATA payload buffer sizes ──────────────────────────
+#define RK_STR_BUF_SIZE 640
+
 RadioKitClass RadioKit;
 static RadioKitClass* s_instance = nullptr;
 
@@ -100,6 +103,8 @@ void RadioKitClass::update() {
                 // Drop and move on.
                 _pendingUpdatesMask &= ~(1UL << _varUpdateId);
                 _varUpdateRetries = 0;
+                // Fallback to full sync if ACK fails
+                _handleGetVars();
             } else {
                 RadioKit_Widget* w = _widgets[_varUpdateId];
                 uint8_t inSz = w->inputSize();
@@ -172,6 +177,7 @@ void RadioKitClass::_onPacket(uint8_t cmd,
         case RK_CMD_GET_VARS:  s_instance->_handleGetVars();                      break;
         case RK_CMD_GET_META:  s_instance->_handleGetMeta();                      break;
         case RK_CMD_SET_INPUT: s_instance->_handleSetInput(payload, payloadLen);  break;
+        case RK_CMD_GET_TELEMETRY: s_instance->_handleGetTelemetry();             break;
         case RK_CMD_PING:      s_instance->_handlePing();                         break;
         case RK_CMD_ACK:       s_instance->_handleAck(payload, payloadLen);       break;
         case RK_CMD_VAR_UPDATE:s_instance->_handleVarUpdate(payload, payloadLen); break;
@@ -180,6 +186,24 @@ void RadioKitClass::_onPacket(uint8_t cmd,
             Serial.printf("RK: Unknown CMD 0x%02X\n", cmd);
             break;
     }
+}
+
+int8_t RadioKitClass::getRssi() {
+    if (_transport) return _transport->getRssi();
+    return 0;
+}
+
+void RadioKitClass::_handleGetTelemetry() {
+    if (!_transport) return;
+    
+    uint8_t payload[4];
+    payload[0] = (uint8_t)getRssi();
+    payload[1] = 0; // Reserved for latency
+    payload[2] = 0;
+    payload[3] = 0;
+
+    uint16_t len = rk_buildPacket(_txBuf, RK_CMD_TELEMETRY_DATA, payload, 1); // just RSSI for now
+    _transport->sendPacket(_txBuf, len);
 }
 
 void RadioKitClass::_handleGetConf() {
@@ -246,14 +270,15 @@ void RadioKitClass::_handleVarUpdate(const uint8_t* payload, uint16_t len) {
     if (widgetId >= _widgetCount) return;
 
     RadioKit_Widget* w = _widgets[widgetId];
-    uint8_t sz = w->outputSize();
-    if (sz > 0 && 2 + sz <= len) {
+    uint8_t inSz = w->inputSize();
+    uint8_t outSz = w->outputSize();
+    if (inSz > 0 && 2 + inSz <= len) {
         w->deserializeInput(&payload[2]);
-        if (sz <= 4) {
-            memcpy(_shadowInput[widgetId], &payload[2], sz);
+        if (inSz <= 4) {
+            memcpy(_shadowInput[widgetId], &payload[2], inSz);
         }
     }
-    
+
     // Ack back to sender
     uint16_t pkt = rk_buildAck(_txBuf, seq);
     if (_transport) _transport->sendPacket(_txBuf, pkt);
@@ -286,7 +311,6 @@ void RadioKitClass::_handleMetaUpdate(const uint8_t* payload, uint16_t len) {
 //   + content: len(1) + RADIOKIT_MAX_ITEMS*(RADIOKIT_MAX_LABEL+RADIOKIT_MAX_ICON+2) pipes
 //            = 1 + 8*(32+24+2) = 1 + 464 = 465  (Multiple widget worst case)
 // Total worst case = 1+33+25+33+33+465 = 590 bytes → use 640 to be safe.
-#define RK_STR_BUF_SIZE 640
 
 uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
     uint16_t out = 0;
@@ -346,10 +370,16 @@ uint16_t RadioKitClass::_buildVarPayload(uint8_t* buf, uint16_t bufSize) {
     uint16_t out = 0;
     for (uint8_t i = 0; i < _widgetCount; i++) {
         RadioKit_Widget* w = _widgets[i];
-        uint8_t sz = w->outputSize();
+        uint8_t inSz = w->inputSize();
+        uint8_t outSz = w->outputSize();
+        uint8_t sz = (outSz > 0) ? outSz : inSz;
+        
         if (sz == 0) continue;
         if (out + sz > bufSize) break;
-        w->serializeOutput(&buf[out]);
+        
+        if (outSz > 0) w->serializeOutput(&buf[out]);
+        else w->serializeInput(&buf[out]);
+        
         out += sz;
     }
     return out;

@@ -9,15 +9,20 @@ const String kRadioKitCharUuid    = '0000FFE1-0000-1000-8000-00805F9B34FB';
 const int kStartByte = 0x55;
 
 // Command identifiers  (must match RadioKitProtocol.h exactly)
-const int kCmdGetConf   = 0x01;  // App → Device : request config
-const int kCmdConfData  = 0x02;  // Device → App : config payload
-const int kCmdPing      = 0x03;  // App → Device : keep-alive ping
-const int kCmdPong      = 0x04;  // Device → App : pong
-const int kCmdAck       = 0x05;  // Both         : acknowledge
-const int kCmdGetVars   = 0x06;  // App → Device : request variables
-const int kCmdVarData   = 0x07;  // Device → App : variable state response
-const int kCmdVarUpdate = 0x08;  // Both         : precise partial update
-const int kCmdSetInput  = 0x09;  // Device → App : firmware-originated physical input sync
+const int kCmdGetConf     = 0x01;
+const int kCmdConfData    = 0x02;
+const int kCmdPing        = 0x03;
+const int kCmdPong        = 0x04;
+const int kCmdAck         = 0x05;
+const int kCmdGetVars     = 0x06;
+const int kCmdVarData     = 0x07;
+const int kCmdVarUpdate   = 0x08;
+const int kCmdGetMeta     = 0x09;
+const int kCmdMetaData    = 0x0A;
+const int kCmdMetaUpdate  = 0x0B;
+const int kCmdSetInput    = 0x0C;
+const int kCmdGetTelemetry = 0x0D;
+const int kCmdTelemetryData = 0x0E;
 
 // Widget type identifiers
 const int kWidgetButton      = 0x01;
@@ -86,6 +91,7 @@ const double kCanvasPortraitH  = 200.0;
 // Poll intervals
 const Duration kGetVarsInterval = Duration(milliseconds: 250);
 const Duration kPingInterval    = Duration(seconds: 2);
+const Duration kTelemetryInterval = Duration(seconds: 2);
 // Increased to 8 s to handle slow USB CDC enumeration on some boards
 const Duration kConfTimeout     = Duration(seconds: 8);
 

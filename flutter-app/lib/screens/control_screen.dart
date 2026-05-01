@@ -107,11 +107,33 @@ class _ControlScreenState extends State<ControlScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
                 Flexible(
-                  child: Text(
-                    device?.displayName ?? 'RadioKit Device',
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        device?.displayName ?? 'RadioKit Device',
+                        style: const TextStyle(fontSize: 16),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (isConnected)
+                        Row(
+                          children: [
+                            if (deviceProvider.rssi != null) ...[
+                              const Icon(Icons.wifi_rounded, size: 12, color: Colors.white70),
+                              const SizedBox(width: 4),
+                              Text('${deviceProvider.rssi} dBm', style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 12),
+                            ],
+                            if (deviceProvider.latencyMs != null) ...[
+                              const Icon(Icons.timer_rounded, size: 12, color: Colors.white70),
+                              const SizedBox(width: 4),
+                              Text('${deviceProvider.latencyMs}ms', style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold)),
+                            ],
+                          ],
+                        ),
+                    ],
                   ),
                 ),
               ],

@@ -40,6 +40,7 @@ public:
     void update()                                      override;
     void sendPacket(const uint8_t* buf, uint16_t len)  override;
     bool isConnected() const                           override;
+    int8_t getRssi()                                   override;
 
     /// ms since last valid packet before isConnected() returns false.
     static constexpr uint32_t TIMEOUT_MS = 3000;

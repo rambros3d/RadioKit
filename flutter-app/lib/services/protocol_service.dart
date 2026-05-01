@@ -60,6 +60,7 @@ class ProtocolService {
   static Uint8List buildGetConf()  => buildPacket(kCmdGetConf);
   static Uint8List buildGetVars()  => buildPacket(kCmdGetVars);
   static Uint8List buildPing()     => buildPacket(kCmdPing);
+  static Uint8List buildGetTelemetry() => buildPacket(kCmdGetTelemetry);
 
   /// Build an ACK packet acknowledging a VAR_UPDATE with [seq].
   static Uint8List buildAck(int seq) => buildPacket(kCmdAck, [seq & 0xFF]);
@@ -314,6 +315,76 @@ class ProtocolService {
     final seq      = payload[1];
     final values   = payload.sublist(2);
     return (widgetId, seq, values);
+  }
+
+  /// Parse a full META_DATA payload.
+  static List<WidgetConfig>? parseMetaData(
+      List<int> payload, List<WidgetConfig> currentWidgets) {
+    int offset = 0;
+    final results = <WidgetConfig>[];
+    for (final w in currentWidgets) {
+      if (offset >= payload.length) break;
+      final (updated, nextOffset) = _readStrings(w, payload, offset);
+      results.add(updated);
+      offset = nextOffset;
+    }
+    return results;
+  }
+
+  /// Parse a partial META_UPDATE payload: [WIDGET_ID(1)] [SEQ(1)] [STRINGS...]
+  static (int, int, WidgetConfig)? parseMetaUpdate(
+      List<int> payload, List<WidgetConfig> currentWidgets) {
+    if (payload.length < 2) return null;
+    final widgetId = payload[0];
+    final seq = payload[1];
+    final widget = currentWidgets.firstWhere((w) => w.widgetId == widgetId,
+        orElse: () => WidgetConfig(
+            typeId: 0, widgetId: widgetId, x: 0, y: 0, width: 0, height: 0));
+    final (updated, _) = _readStrings(widget, payload, 2);
+    return (widgetId, seq, updated);
+  }
+
+  /// Helper to read the string section [MASK(1)] [LEN(1)][STR...] into a WidgetConfig.
+  static (WidgetConfig, int) _readStrings(
+      WidgetConfig w, List<int> payload, int offset) {
+    if (offset >= payload.length) return (w, offset);
+    final strMask = payload[offset++];
+    String label = w.label,
+        icon = w.icon,
+        onText = w.onText,
+        offText = w.offText,
+        content = w.content;
+
+    int current = offset;
+    String readNext() {
+      if (current >= payload.length) return '';
+      final len = payload[current++];
+      if (len == 0) return '';
+      if (current + len > payload.length) {
+        current = payload.length;
+        return '';
+      }
+      final s = utf8.decode(payload.sublist(current, current + len),
+          allowMalformed: true);
+      current += len;
+      return s;
+    }
+
+    if ((strMask & kStrMaskLabel) != 0) label = readNext();
+    if ((strMask & kStrMaskIcon) != 0) icon = readNext();
+    if ((strMask & kStrMaskOnText) != 0) onText = readNext();
+    if ((strMask & kStrMaskOffText) != 0) offText = readNext();
+    if ((strMask & kStrMaskContent) != 0) content = readNext();
+
+    final updated = w.copyWith(
+      label: label,
+      icon: icon,
+      onText: onText,
+      offText: offText,
+      content: content,
+      strMask: strMask,
+    );
+    return (updated, current);
   }
 
   static int _signed(int byte) {

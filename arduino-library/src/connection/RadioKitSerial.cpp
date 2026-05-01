@@ -60,3 +60,7 @@ bool RadioKitSerialTransport::isConnected() const {
     if (!_everReceived) return false;
     return (millis() - _lastPacketMs) < TIMEOUT_MS;
 }
+
+int8_t RadioKitSerialTransport::getRssi() {
+    return 0; // RSSI is not applicable for USB Serial
+}

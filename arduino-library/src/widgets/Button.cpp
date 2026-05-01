@@ -1,4 +1,5 @@
 #include "Button.h"
+#include "../RadioKit.h"
 #include <string.h>
 
 void RadioKit_Button::_initFromProps(const RK_ButtonProps& p, uint8_t tid) {
@@ -6,6 +7,11 @@ void RadioKit_Button::_initFromProps(const RK_ButtonProps& p, uint8_t tid) {
     typeId = tid;
     _init(p.label, p.x, p.y, p.scale, 0.0f, p.style, 0,
           p.icon, p.onText, p.offText, p.rotation);
+}
+
+void RadioKit_Button::set(bool val) {
+    props.state = val;
+    RadioKit.pushUpdate(widgetId);
 }
 
 void RadioKit_Button::serializeInput(uint8_t* buf) const {
@@ -30,6 +36,7 @@ void RadioKit_Button::setIcon(const char* val) {
     } else {
         _icon[0] = '\0';
     }
+    RadioKit.pushMetaUpdate(widgetId);
 }
 
 RK_PushButton::RK_PushButton(RK_ButtonProps p) {

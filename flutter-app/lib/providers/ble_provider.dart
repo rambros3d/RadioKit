@@ -73,6 +73,7 @@ class BleProvider extends ChangeNotifier {
       debugPrint('BLE_PROVIDER: FAILED - Location services disabled');
       _errorMessage = 'Location Services must be enabled for scanning.';
       notifyListeners();
+      await _bleService.enableLocationServices();
       return;
     }
 

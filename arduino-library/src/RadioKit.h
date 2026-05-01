@@ -73,8 +73,15 @@ public:
      */
     void pushUpdate(uint8_t widgetId);
 
+    /**
+     * Enqueues a reliable META_UPDATE broadcast for the specified widget.
+     * Use this when you change a label, icon, or other metadata at runtime.
+     */
+    void pushMetaUpdate(uint8_t widgetId);
+
     // ── Status ───────────────────────────────────────────────
     bool    isConnected() const;
+    int8_t  getRssi();
     uint8_t widgetCount() const { return _widgetCount; }
 
     // ── Internal ─────────────────────────────────────────────
@@ -91,6 +98,13 @@ private:
     uint8_t _varUpdateId;
     uint8_t _varUpdateRetries;
     uint32_t _varUpdateSentAt;
+
+    // META_UPDATE reliability
+    uint32_t _pendingMetaMask;
+    uint8_t _metaUpdateSeq;
+    uint8_t _metaUpdateId;
+    uint8_t _metaUpdateRetries;
+    uint32_t _metaUpdateSentAt;
     
     // Shadow state to track implicit input changes by firmware
     uint8_t _shadowInput[RADIOKIT_MAX_WIDGETS][4];
@@ -101,13 +115,17 @@ private:
 
     void _handleGetConf();
     void _handleGetVars();
+    void _handleGetMeta();
     void _handleSetInput(const uint8_t* payload, uint16_t len);
     void _handlePing();
     void _handleAck(const uint8_t* payload, uint16_t len);
     void _handleVarUpdate(const uint8_t* payload, uint16_t len);
+    void _handleMetaUpdate(const uint8_t* payload, uint16_t len);
+    void _handleGetTelemetry();
 
     uint16_t _buildConfPayload(uint8_t* buf, uint16_t bufSize);
     uint16_t _buildVarPayload(uint8_t* buf, uint16_t bufSize);
+    uint16_t _buildMetaPayload(uint8_t* buf, uint16_t bufSize);
 };
 
 extern RadioKitClass RadioKit;

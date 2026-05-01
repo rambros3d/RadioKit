@@ -1,10 +1,21 @@
 #include "LED.h"
+#include "../RadioKit.h"
 #include <string.h>
 
 RK_LED::RK_LED(RK_LEDProps p) : props(p) {
     typeId = RK_TYPE_LED;
     _init(p.label, p.x, p.y, p.scale, 0.0f, p.style, 0,
           p.icon, nullptr, nullptr, p.rotation);
+}
+
+void RK_LED::on() {
+    props.state = true;
+    RadioKit.pushUpdate(widgetId);
+}
+
+void RK_LED::off() {
+    props.state = false;
+    RadioKit.pushUpdate(widgetId);
 }
 
 void RK_LED::serializeOutput(uint8_t* buf) const {
@@ -33,6 +44,7 @@ void RK_LED::setColor(const char* hex) {
         props.blue    = (val >>  8) & 0xFF;
         props.opacity =  val        & 0xFF;
     }
+    RadioKit.pushUpdate(widgetId);
 }
 
 void RK_LED::setColor(uint32_t rgba) {
@@ -40,6 +52,27 @@ void RK_LED::setColor(uint32_t rgba) {
     props.green   = (rgba >> 16) & 0xFF;
     props.blue    = (rgba >>  8) & 0xFF;
     props.opacity =  rgba        & 0xFF;
+    RadioKit.pushUpdate(widgetId);
+}
+
+void RK_LED::setOpacity(uint8_t val) {
+    props.opacity = val;
+    RadioKit.pushUpdate(widgetId);
+}
+
+void RK_LED::setRed(uint8_t val) {
+    props.red = val;
+    RadioKit.pushUpdate(widgetId);
+}
+
+void RK_LED::setGreen(uint8_t val) {
+    props.green = val;
+    RadioKit.pushUpdate(widgetId);
+}
+
+void RK_LED::setBlue(uint8_t val) {
+    props.blue = val;
+    RadioKit.pushUpdate(widgetId);
 }
 
 void RK_LED::setIcon(const char* val) {
@@ -50,4 +83,5 @@ void RK_LED::setIcon(const char* val) {
     } else {
         _icon[0] = '\0';
     }
+    RadioKit.pushMetaUpdate(widgetId);
 }

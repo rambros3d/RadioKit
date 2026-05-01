@@ -26,7 +26,7 @@ public:
     RK_Text(RK_TextProps p);
 
     uint8_t inputSize()  const override { return 0; }
-    uint8_t outputSize() const override { return (uint8_t)strlen(_text) + 1; }
+    uint8_t outputSize() const override;
     void serializeInput(uint8_t*)           const override;
     void serializeOutput(uint8_t* buf)         const override;
     void deserializeInput(const uint8_t*)            override {}

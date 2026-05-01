@@ -37,6 +37,8 @@
 #define RK_CMD_META_DATA 0x0A   // Arduino → App: metadata of all widgets
 #define RK_CMD_META_UPDATE 0x0B // Both: metadata of partial widgets
 #define RK_CMD_SET_INPUT 0x0C   // Arduino → App: force sync input widget
+#define RK_CMD_GET_TELEMETRY 0x0D // App → Arduino: request RSSI/Latency
+#define RK_CMD_TELEMETRY_DATA 0x0E // Arduino → App: telemetry values
 
 // ─────────────────────────────────────────────
 //  Protocol version (v3)

@@ -38,6 +38,9 @@ public:
 
     /** Returns true if a remote peer is currently connected/active. */
     virtual bool isConnected() const = 0;
+
+    /** Returns the current signal strength in dBm, or 0 if unknown/unsupported. */
+    virtual int8_t getRssi() = 0;
 };
 
 #endif // RADIOKIT_TRANSPORT_H

@@ -35,15 +35,15 @@ public:
     void serializeOutput(uint8_t* buf)         const override;
     void deserializeInput(const uint8_t*)            override {}
 
-    void on()  { props.state = true;  }
-    void off() { props.state = false; }
+    void on();
+    void off();
 
     void setColor(const char* hex);
     void setColor(uint32_t rgba);
-    void setOpacity(uint8_t val)  { props.opacity = val; }
-    void setRed(uint8_t val)      { props.red     = val; }
-    void setGreen(uint8_t val)    { props.green   = val; }
-    void setBlue(uint8_t val)     { props.blue    = val; }
+    void setOpacity(uint8_t val);
+    void setRed(uint8_t val);
+    void setGreen(uint8_t val);
+    void setBlue(uint8_t val);
     void setIcon(const char* val);
 
     RK_LEDProps props;

@@ -419,8 +419,8 @@ class _PairedModelsList extends StatelessWidget {
       console.log('RECONNECT FAILED: Device "${device.name}" is not reachable.', level: ConsoleLogLevel.error);
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Device is offline or out of range.'),
+        SnackBar(
+          content: Text(ble.errorMessage ?? 'Device is offline or out of range.'),
           backgroundColor: Colors.redAccent,
         ),
       );

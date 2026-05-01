@@ -144,6 +144,42 @@ class WidgetConfig {
     this.rotation = 0,
   });
 
+  WidgetConfig copyWith({
+    int? typeId,
+    int? widgetId,
+    double? x,
+    double? y,
+    int? width,
+    int? height,
+    int? style,
+    int? variant,
+    int? strMask,
+    String? label,
+    String? icon,
+    String? onText,
+    String? offText,
+    String? content,
+    int? rotation,
+  }) {
+    return WidgetConfig(
+      typeId:   typeId   ?? this.typeId,
+      widgetId: widgetId ?? this.widgetId,
+      x:        x        ?? this.x,
+      y:        y        ?? this.y,
+      width:    width    ?? this.width,
+      height:   height   ?? this.height,
+      style:    style    ?? this.style,
+      variant:  variant  ?? this.variant,
+      strMask:  strMask  ?? this.strMask,
+      label:    label    ?? this.label,
+      icon:     icon     ?? this.icon,
+      onText:   onText   ?? this.onText,
+      offText:  offText  ?? this.offText,
+      content:  content  ?? this.content,
+      rotation: rotation ?? this.rotation,
+    );
+  }
+
   int get inputSize  => kWidgetInputSize[typeId]  ?? 0;
   int get outputSize => kWidgetOutputSize[typeId] ?? 0;
   bool get hasInput  => inputSize > 0;

@@ -5,6 +5,7 @@
 
 #include "RadioKitBLE.h"
 #include "../RadioKitProtocol.h"
+#include "../RadioKit.h"
 #include <NimBLEDevice.h>
 
 #define RK_BLE_SERVICE_UUID        "0000FFE0-0000-1000-8000-00805F9B34FB"
@@ -142,4 +143,16 @@ void RadioKitBLE::_onWrite(const uint8_t* data, size_t len) {
             _packetCallback(cmd, payload, payloadLen);
         }
     }
+}
+
+int8_t RadioKitBLE::getRssi() {
+    if (!_connected || !_server) return 0;
+    if (_server->getConnectedCount() == 0) return 0;
+    
+    NimBLEConnInfo connInfo = _server->getPeerInfo(0);
+    int8_t rssi = 0;
+    if (ble_gap_conn_rssi(connInfo.getConnHandle(), &rssi) == 0) {
+        return rssi;
+    }
+    return 0;
 }

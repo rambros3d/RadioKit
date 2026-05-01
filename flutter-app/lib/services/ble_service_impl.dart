@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:universal_ble/universal_ble.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/foundation.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import '../models/protocol.dart';
 import '../models/device_info.dart';
 import 'protocol_service.dart';
@@ -61,7 +62,14 @@ class BleService implements TransportService {
   /// Returns true if Location Services are enabled (required for Android < 12).
   Future<bool> get isLocationServiceEnabled async {
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return await Geolocator.isLocationServiceEnabled();
+      // Only require location services for Android < 12 (SDK < 31)
+      // On Android 12+, BLUETOOTH_SCAN permission with neverForLocation flag
+      // does not require location services to be enabled
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      if (androidInfo.version.sdkInt < 31) {
+        return await Geolocator.isLocationServiceEnabled();
+      }
+      return true;
     }
     return true;
   }
@@ -91,6 +99,17 @@ class BleService implements TransportService {
         await UniversalBle.enableBluetooth();
       } catch (e) {
         debugPrint('Error enabling Bluetooth: $e');
+      }
+    }
+  }
+
+  /// Prompts user to enable Location Services (Android only).
+  Future<void> enableLocationServices() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        await Geolocator.openLocationSettings();
+      } catch (e) {
+        debugPrint('Error opening location settings: $e');
       }
     }
   }

@@ -28,6 +28,7 @@ public:
     void update()                                            override;
     void sendPacket(const uint8_t* buf, uint16_t len)       override;
     bool isConnected() const                                override { return _connected; }
+    int8_t getRssi()                                        override;
 
     // Internal callbacks invoked by NimBLE event handlers
     void _onConnect();

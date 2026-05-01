@@ -14,6 +14,9 @@ dependencies:
   # BLE: Unified (All platforms)
   universal_ble: ^1.2.0
 
+  # Device info (for Android SDK version detection)
+  device_info_plus: ^10.1.0
+
   # Serial: native Android USB-CDC (FTDI, CDC, CP210x, CH340 …)
   usb_serial: ^0.5.2
 

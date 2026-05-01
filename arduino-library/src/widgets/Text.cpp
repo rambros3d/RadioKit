@@ -1,4 +1,5 @@
 #include "Text.h"
+#include "../RadioKit.h"
 #include <string.h>
 
 RK_Text::RK_Text(RK_TextProps p)
@@ -18,6 +19,7 @@ void RK_Text::set(const char* text) {
     strncpy(_text, text, RADIOKIT_TEXT_LEN - 1);
     _text[RADIOKIT_TEXT_LEN - 1] = '\0';
     props.text = _text;
+    RadioKit.pushUpdate(widgetId);
 }
 
 void RK_Text::setIcon(const char* val) {
@@ -28,6 +30,7 @@ void RK_Text::setIcon(const char* val) {
     } else {
         _icon[0] = '\0';
     }
+    RadioKit.pushMetaUpdate(widgetId);
 }
 
 void RK_Text::serializeInput(uint8_t* buf) const {
@@ -35,9 +38,13 @@ void RK_Text::serializeInput(uint8_t* buf) const {
 }
 
 void RK_Text::serializeOutput(uint8_t* buf) const {
-    uint8_t len = (uint8_t)strlen(_text);
-    buf[0] = len;
-    if (len > 0) {
-        memcpy(buf + 1, _text, len);
-    }
+  uint8_t len = (uint8_t)strlen(_text);
+  buf[0] = len;
+  if (len > 0) {
+    memcpy(buf + 1, _text, len);
+  }
+}
+
+uint8_t RK_Text::outputSize() const {
+  return RADIOKIT_TEXT_LEN;
 }

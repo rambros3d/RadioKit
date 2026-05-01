@@ -36,7 +36,7 @@ public:
     void deserializeInput(const uint8_t* buf)        override;
 
     bool get() const { return props.state; }
-    void set(bool val) { props.state = val; }
+    void set(bool val);
     void setIcon(const char* val);
 
     RK_ButtonProps props;
