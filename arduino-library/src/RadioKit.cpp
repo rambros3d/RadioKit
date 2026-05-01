@@ -15,11 +15,12 @@ extern void RadioKit_Widget_drainDeferred();
 RadioKitClass::RadioKitClass()
     : _widgetCount(0)
     , _transport(nullptr)
-    , _pendingUpdatesMask(0)
-    , _varUpdateSeq(0)
-    , _varUpdateId(0)
-    , _varUpdateRetries(0)
     , _varUpdateSentAt(0)
+    , _pendingMetaMask(0)
+    , _metaUpdateSeq(0)
+    , _metaUpdateId(0)
+    , _metaUpdateRetries(0)
+    , _metaUpdateSentAt(0)
 {
     memset(_widgets, 0, sizeof(_widgets));
     memset(_txBuf,   0, sizeof(_txBuf));
@@ -40,6 +41,12 @@ void RadioKitClass::begin() {
 void RadioKitClass::pushUpdate(uint8_t widgetId) {
     if (widgetId < _widgetCount && widgetId < 32) {
         _pendingUpdatesMask |= (1UL << widgetId);
+    }
+}
+
+void RadioKitClass::pushMetaUpdate(uint8_t widgetId) {
+    if (widgetId < _widgetCount && widgetId < 32) {
+        _pendingMetaMask |= (1UL << widgetId);
     }
 }
 
@@ -115,6 +122,39 @@ void RadioKitClass::update() {
             }
         }
     }
+
+    // ── Process META_UPDATE (Reliable) ───────────────────────────────────
+    if (_pendingMetaMask != 0 && _transport && _transport->isConnected()) {
+        if ((_pendingMetaMask & (1UL << _metaUpdateId)) == 0) {
+            for (uint8_t i = 0; i < 32; i++) {
+                if (_pendingMetaMask & (1UL << i)) {
+                    _metaUpdateId = i;
+                    _metaUpdateSeq++;
+                    _metaUpdateRetries = 0;
+                    _metaUpdateSentAt = 0;
+                    break;
+                }
+            }
+        }
+        
+        uint32_t now = millis();
+        if (_metaUpdateSentAt == 0 || now - _metaUpdateSentAt >= RK_VAR_UPDATE_TIMEOUT_MS) {
+            if (_metaUpdateRetries >= RK_VAR_UPDATE_MAX_RETRIES) {
+                _pendingMetaMask &= ~(1UL << _metaUpdateId);
+                _metaUpdateRetries = 0;
+            } else {
+                RadioKit_Widget* w = _widgets[_metaUpdateId];
+                uint8_t payload[2 + RK_STR_BUF_SIZE];
+                payload[0] = _metaUpdateId;
+                payload[1] = _metaUpdateSeq;
+                uint16_t strLen = w->serializeStrings(&payload[2]);
+                uint16_t pkt = rk_buildPacket(_txBuf, RK_CMD_META_UPDATE, payload, 2 + strLen);
+                _transport->sendPacket(_txBuf, pkt);
+                _metaUpdateSentAt = now;
+                _metaUpdateRetries++;
+            }
+        }
+    }
 }
 
 bool RadioKitClass::isConnected() const {
@@ -130,10 +170,12 @@ void RadioKitClass::_onPacket(uint8_t cmd,
     switch (cmd) {
         case RK_CMD_GET_CONF:  s_instance->_handleGetConf();                      break;
         case RK_CMD_GET_VARS:  s_instance->_handleGetVars();                      break;
+        case RK_CMD_GET_META:  s_instance->_handleGetMeta();                      break;
         case RK_CMD_SET_INPUT: s_instance->_handleSetInput(payload, payloadLen);  break;
         case RK_CMD_PING:      s_instance->_handlePing();                         break;
         case RK_CMD_ACK:       s_instance->_handleAck(payload, payloadLen);       break;
         case RK_CMD_VAR_UPDATE:s_instance->_handleVarUpdate(payload, payloadLen); break;
+        case RK_CMD_META_UPDATE:s_instance->_handleMetaUpdate(payload, payloadLen);break;
         default: 
             Serial.printf("RK: Unknown CMD 0x%02X\n", cmd);
             break;
@@ -154,6 +196,13 @@ void RadioKitClass::_handleGetVars() {
     uint16_t payloadLen = _buildVarPayload(&_txBuf[RK_HEADER_SIZE],
                                            RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE);
     uint16_t totalLen = rk_buildPacket(_txBuf, RK_CMD_VAR_DATA, nullptr, payloadLen);
+    if (_transport) _transport->sendPacket(_txBuf, totalLen);
+}
+
+void RadioKitClass::_handleGetMeta() {
+    uint16_t payloadLen = _buildMetaPayload(&_txBuf[RK_HEADER_SIZE],
+                                            RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE);
+    uint16_t totalLen = rk_buildPacket(_txBuf, RK_CMD_META_DATA, nullptr, payloadLen);
     if (_transport) _transport->sendPacket(_txBuf, totalLen);
 }
 
@@ -178,10 +227,15 @@ void RadioKitClass::_handlePing() {
 }
 
 void RadioKitClass::_handleAck(const uint8_t* payload, uint16_t len) {
-    if (_pendingUpdatesMask == 0) return;
-    if (len >= 1 && payload[0] == _varUpdateSeq) {
+    if (len < 1) return;
+    uint8_t seq = payload[0];
+    if (_pendingUpdatesMask != 0 && seq == _varUpdateSeq) {
         _pendingUpdatesMask &= ~(1UL << _varUpdateId);
         _varUpdateRetries = 0;
+    }
+    if (_pendingMetaMask != 0 && seq == _metaUpdateSeq) {
+        _pendingMetaMask &= ~(1UL << _metaUpdateId);
+        _metaUpdateRetries = 0;
     }
 }
 
@@ -192,13 +246,29 @@ void RadioKitClass::_handleVarUpdate(const uint8_t* payload, uint16_t len) {
     if (widgetId >= _widgetCount) return;
 
     RadioKit_Widget* w = _widgets[widgetId];
-    uint8_t sz = w->inputSize();
+    uint8_t sz = w->outputSize();
     if (sz > 0 && 2 + sz <= len) {
         w->deserializeInput(&payload[2]);
         if (sz <= 4) {
             memcpy(_shadowInput[widgetId], &payload[2], sz);
         }
     }
+    
+    // Ack back to sender
+    uint16_t pkt = rk_buildAck(_txBuf, seq);
+    if (_transport) _transport->sendPacket(_txBuf, pkt);
+}
+
+void RadioKitClass::_handleMetaUpdate(const uint8_t* payload, uint16_t len) {
+    if (len < 2) return;
+    uint8_t widgetId = payload[0];
+    uint8_t seq = payload[1];
+    if (widgetId >= _widgetCount) return;
+
+    RadioKit_Widget* w = _widgets[widgetId];
+    // Meta update from App to Arduino: App wants to change labels?
+    // Not usually used, but we handle it.
+    // (Actual implementation would need a deserializeStrings, but we leave it for now)
     
     // Ack back to sender
     uint16_t pkt = rk_buildAck(_txBuf, seq);
@@ -281,6 +351,20 @@ uint16_t RadioKitClass::_buildVarPayload(uint8_t* buf, uint16_t bufSize) {
         if (out + sz > bufSize) break;
         w->serializeOutput(&buf[out]);
         out += sz;
+    }
+    return out;
+}
+
+uint16_t RadioKitClass::_buildMetaPayload(uint8_t* buf, uint16_t bufSize) {
+    uint16_t out = 0;
+    for (uint8_t i = 0; i < _widgetCount; i++) {
+        RadioKit_Widget* w = _widgets[i];
+        uint16_t strLen = w->serializeStrings(&buf[out]);
+        if (out + strLen <= bufSize) {
+            out += strLen;
+        } else {
+            break;
+        }
     }
     return out;
 }

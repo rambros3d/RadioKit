@@ -35,9 +35,9 @@ void RK_Text::serializeInput(uint8_t* buf) const {
 }
 
 void RK_Text::serializeOutput(uint8_t* buf) const {
-    memset(buf, 0, RADIOKIT_TEXT_LEN);
-    if (_text[0] != '\0') {
-        strncpy((char*)buf, _text, RADIOKIT_TEXT_LEN - 1);
-        buf[RADIOKIT_TEXT_LEN - 1] = '\0';
+    uint8_t len = (uint8_t)strlen(_text);
+    buf[0] = len;
+    if (len > 0) {
+        memcpy(buf + 1, _text, len);
     }
 }

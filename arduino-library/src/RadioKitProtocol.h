@@ -17,23 +17,26 @@
 // ─────────────────────────────────────────────
 //  Packet framing
 // ─────────────────────────────────────────────
-#define RK_START_BYTE   0x55
-#define RK_HEADER_SIZE  4       // START + LENGTH_LO + LENGTH_HI + CMD
-#define RK_CRC_SIZE     2
-#define RK_MIN_PACKET   6       // header(4) + crc(2)
+#define RK_START_BYTE 0x55
+#define RK_HEADER_SIZE 4 // START + LENGTH_LO + LENGTH_HI + CMD
+#define RK_CRC_SIZE 2
+#define RK_MIN_PACKET 6 // header(4) + crc(2)
 
 // ─────────────────────────────────────────────
 //  Command IDs (Protocol v3)
 // ─────────────────────────────────────────────
-#define RK_CMD_GET_CONF   0x01   // App → Arduino: request config
-#define RK_CMD_CONF_DATA  0x02   // Arduino → App: config payload
-#define RK_CMD_GET_VARS   0x03   // App → Arduino: request variables
-#define RK_CMD_VAR_DATA   0x04   // Arduino → App: variable values (full sync)
-#define RK_CMD_SET_INPUT  0x05   // Device → App: force sync physical input override
-#define RK_CMD_ACK        0x06   // Both: acknowledge SET_INPUT or VAR_UPDATE
-#define RK_CMD_PING       0x07   // App → Arduino: keep-alive ping
-#define RK_CMD_PONG       0x08   // Arduino → App: pong
-#define RK_CMD_VAR_UPDATE 0x09   // Arduino → App: reliable push of single widget
+#define RK_CMD_GET_CONF 0x01    // App → Arduino: request config
+#define RK_CMD_CONF_DATA 0x02   // Arduino → App: config payload
+#define RK_CMD_PING 0x03        // App → Arduino: keep-alive ping
+#define RK_CMD_PONG 0x04        // Arduino → App: pong
+#define RK_CMD_ACK 0x05         // Both: acknowledge SET_INPUT or VAR_UPDATE
+#define RK_CMD_GET_VARS 0x06    // App → Arduino: request all variables
+#define RK_CMD_VAR_DATA 0x07    // Arduino → App: variable values (full sync)
+#define RK_CMD_VAR_UPDATE 0x08  // Both: partial update of few variables
+#define RK_CMD_GET_META 0x09    // App → Arduino: request all metadata
+#define RK_CMD_META_DATA 0x0A   // Arduino → App: metadata of all widgets
+#define RK_CMD_META_UPDATE 0x0B // Both: metadata of partial widgets
+#define RK_CMD_SET_INPUT 0x0C   // Arduino → App: force sync input widget
 
 // ─────────────────────────────────────────────
 //  Protocol version (v3)
@@ -43,38 +46,34 @@
 // ─────────────────────────────────────────────
 //  VAR_UPDATE reliability parameters
 // ─────────────────────────────────────────────
-#define RK_VAR_UPDATE_TIMEOUT_MS   200
-#define RK_VAR_UPDATE_MAX_RETRIES  5
+#define RK_VAR_UPDATE_TIMEOUT_MS 200
+#define RK_VAR_UPDATE_MAX_RETRIES 5
 
 // ─────────────────────────────────────────────
 //  Buffer sizes
 // ─────────────────────────────────────────────
-#define RK_MAX_PACKET_SIZE   768
-#define RK_RX_BUFFER_SIZE    768
+#define RK_MAX_PACKET_SIZE 768
+#define RK_RX_BUFFER_SIZE 768
 
 // ─────────────────────────────────────────────
 //  CRC-16/CCITT-FALSE
 // ─────────────────────────────────────────────
-uint16_t rk_crc16(const uint8_t* data, uint16_t len);
+uint16_t rk_crc16(const uint8_t *data, uint16_t len);
 
 // ─────────────────────────────────────────────
 //  Packet builder helpers
 // ─────────────────────────────────────────────
-uint16_t rk_buildPacket(uint8_t* outBuf,
-                        uint8_t  cmd,
-                        const uint8_t* payload,
+uint16_t rk_buildPacket(uint8_t *outBuf, uint8_t cmd, const uint8_t *payload,
                         uint16_t payloadLen);
 
-uint16_t rk_buildPong(uint8_t* outBuf);
-uint16_t rk_buildAck(uint8_t* outBuf, uint8_t seq);
+uint16_t rk_buildPong(uint8_t *outBuf);
+uint16_t rk_buildAck(uint8_t *outBuf, uint8_t seq);
 
 // ─────────────────────────────────────────────
 //  Incoming packet parser state machine
 // ─────────────────────────────────────────────
-bool rk_rxFeedByte(uint8_t byte,
-                   uint8_t& outCmd,
-                   const uint8_t*& outPayload,
-                   uint16_t& outPayloadLen);
+bool rk_rxFeedByte(uint8_t byte, uint8_t &outCmd, const uint8_t *&outPayload,
+                   uint16_t &outPayloadLen);
 
 void rk_rxReset();
 

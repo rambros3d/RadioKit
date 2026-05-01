@@ -284,14 +284,13 @@ class ProtocolService {
 
     for (final widget in outputWidgets) {
       if (widget.typeId == kWidgetText) {
-        if (offset + 32 > payload.length) break;
-        final raw     = payload.sublist(offset, offset + 32);
-        final nullIdx = raw.indexOf(0);
-        final text    = utf8.decode(
-            nullIdx >= 0 ? raw.sublist(0, nullIdx) : raw,
-            allowMalformed: true);
+        if (offset >= payload.length) break;
+        final len = payload[offset];
+        if (offset + 1 + len > payload.length) break;
+        final raw = payload.sublist(offset + 1, offset + 1 + len);
+        final text = utf8.decode(raw, allowMalformed: true);
         state = state.copyWithOutput(widget.widgetId, text);
-        offset += 32;
+        offset += 1 + len;
       } else if (widget.typeId == kWidgetLed) {
         // v3: LED output = 5 bytes [STATE, R, G, B, OPACITY]
         if (offset + 5 > payload.length) break;

@@ -9,15 +9,15 @@ const String kRadioKitCharUuid    = '0000FFE1-0000-1000-8000-00805F9B34FB';
 const int kStartByte = 0x55;
 
 // Command identifiers  (must match RadioKitProtocol.h exactly)
-const int kCmdGetConf  = 0x01;  // App → Device : request config
-const int kCmdConfData = 0x02;  // Device → App : config payload
-const int kCmdGetVars  = 0x03;  // App → Device : request variables
-const int kCmdVarData  = 0x04;  // Device → App : variable state response
-const int kCmdSetInput = 0x05;  // Device → App : firmare-originated physical input sync
-const int kCmdAck      = 0x06;  // Both         : acknowledge
-const int kCmdPing     = 0x07;  // App → Device : keep-alive ping
-const int kCmdPong     = 0x08;  // Device → App : pong
-const int kCmdVarUpdate = 0x09; // Both         : precise partial update
+const int kCmdGetConf   = 0x01;  // App → Device : request config
+const int kCmdConfData  = 0x02;  // Device → App : config payload
+const int kCmdPing      = 0x03;  // App → Device : keep-alive ping
+const int kCmdPong      = 0x04;  // Device → App : pong
+const int kCmdAck       = 0x05;  // Both         : acknowledge
+const int kCmdGetVars   = 0x06;  // App → Device : request variables
+const int kCmdVarData   = 0x07;  // Device → App : variable state response
+const int kCmdVarUpdate = 0x08;  // Both         : precise partial update
+const int kCmdSetInput  = 0x09;  // Device → App : firmware-originated physical input sync
 
 // Widget type identifiers
 const int kWidgetButton      = 0x01;

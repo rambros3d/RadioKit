@@ -582,9 +582,9 @@ class DeviceProvider extends ChangeNotifier {
         // v3: [STATE, R, G, B, OPACITY]
         next = current.copyWithOutput(widgetId, List<int>.from(values.take(5)));
       } else if (widget.typeId == kWidgetText) {
-        final nullIdx = values.indexOf(0);
+        final len = values.isNotEmpty ? values[0] : 0;
         final text = utf8Decode(
-            nullIdx >= 0 ? values.sublist(0, nullIdx) : values);
+            values.length > 1 ? values.sublist(1, 1 + len) : []);
         next = current.copyWithOutput(widgetId, text);
       } else {
         next = current.copyWithOutput(
