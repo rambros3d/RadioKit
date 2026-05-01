@@ -11,4 +11,4 @@ echo "🚀 Starting RadioKit Documentation Preview..."
 echo "Open http://localhost:3000 in your browser"
 
 # Use npx to run docsify-cli serve without needing global installation
-npx docsify-cli serve .
+npx docsify-cli serve . --port 3000

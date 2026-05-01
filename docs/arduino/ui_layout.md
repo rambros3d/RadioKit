@@ -1,119 +1,234 @@
 # RadioKit UI & Layout
 
-This document describes the coordinate system, scaling model, and visual theme engine used by RadioKit.
+This document describes the coordinate system, scaling model, and visual theme engine used by RadioKit v2.0.
 
 ---
 
 ## 1. Coordinate System
 
-RadioKit uses a virtual coordinate system which is independent of the actual screen size of the device. The default canvas size is 200x100 for landscape and 100x200 for portrait.
+RadioKit uses a virtual coordinate system which is independent of the actual screen size of the device. The default canvas size is 200×200 (landscape) or 200×200 (portrait — same virtual space, rotated).
 
 ```
-(0, RK_HEIGHT) ┌──────────────────────────┐ (RK_WIDTH, RK_HEIGHT)
-               │                          │
-               │  Coord system (0-250)    │
-               │                          │
-         (0,0) └──────────────────────────┘ (RK_WIDTH, 0)
+(0,200) ┌──────────────────────────┐ (200,200)
+        │                          │
+        │  Coord system (0-200)    │
+        │                          │
+  (0,0) └──────────────────────────┘ (200,0)
 ```
 
-- **Origin**: `(0,0)` is the bottom-left corner.
+- **Origin**: `(0,0)` is the **bottom-left** corner.
 - **Anchor**: `x`, `y` coordinates refer to the **center** of the widget.
-- **Canvas Range**: `0`–`250` on both axes. Values set higher are clamped to 250.
-- **Rotation**: $0\dots 360$ degrees. Positive is **clockwise**.
+- **Canvas Range**: `0`–`200` on both axes. Values outside this range are clamped.
+- **Rotation**: `0`–`360` degrees. Positive is **clockwise**.
 
 ---
 
 ## 2. Layout Model
 
-RadioKit uses a **Default Size + Scale + Aspect** model. Each widget has a default size, which can be scaled and have its aspect ratio changed. Using a scale factor of 1.0 and an aspect ratio of 1.0 will result in the default size and aspect ratio of the widget. Likewise, n aspect ratio of 0.5 will result in a widget that is twice as tall and half as wide as the default size and aspect ratio.
+RadioKit uses a **Baseline × Scale** model. Each widget has a baseline size (at `scale = 1.0`), and the final size is computed by multiplying by the scale factor.
+
+### Size Calculation
 
 ```
-height = base_height × scale_height
-width  = (base_height × aspect) × scale_height × extra_width_scale
+finalHeight = baseHeight × scale
+finalWidth  = (baseHeight × aspect) × scale
 ```
 
-*For fixed-aspect widgets, `scale_width` is locked to `scale_height` and `base_width` is derived as `base_height × aspect`.*
+- **`scale`** — Controls overall size (default `1.0`).
+- **`aspect`** — Controls width relative to height (default varies by widget type).
+  - Slider: `aspect = 5.0` (5× wider than tall)
+  - Button: `aspect = 1.0` (square)
+  - Knob: `aspect = 1.0` (circular)
 
-| Float (User) | Wire Encoding | Result |
-| ------------ | -------------- | -------------- |
-| 1.0          | 10             | 1.0× (Default) |
-| 2.5          | 25             | 2.5×           |
+### Example
+
+```cpp
+RK_Slider slider({
+    .label = "Throttle",
+    .x = 100, .y = 50,
+    .scale = 1.5f,    // 1.5× taller
+    .aspect = 8.0f    // 8× wider than tall
+});
+```
+
+Result: A wide, tall slider.
 
 ---
 
-## 3. Orientation & Dimensions
+## 3. Widget Positioning
 
-Layout settings are managed through the global `RadioKit.config` object in `setup()`.
+All widgets share these common parameters in their `Props` struct:
 
-### Setup Example
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `x`, `y` | `uint8` | Center position (0–200) | 100, 100 |
+| `scale` | `float` | Size multiplier | 1.0 |
+| `rotation` | `int16` | Rotation in degrees (clockwise) | 0 |
+| `label` | `const char*` | Text label above widget | `nullptr` |
+| `icon` | `const char*` | Icon name from skin | `nullptr` |
+| `style` | `uint8` | Visual style (0–4) | 0 |
+
+### Coordinate Examples
+
+```cpp
+// Top-left corner
+RK_Button btn1({.x = 20, .y = 180, .label = "TL"});
+
+// Center
+RK_Button btn2({.x = 100, .y = 100, .label = "Center"});
+
+// Bottom-right
+RK_Button btn3({.x = 180, .y = 20, .label = "BR"});
+```
+
+---
+
+## 4. Orientation & Canvas Size
+
+Layout settings are managed through `RadioKit.config` in `setup()`.
+
+### Configuration
+
 ```cpp
 void setup() {
-    RadioKit.config.name = "B-52 Stratofort";
-    RadioKit.config.password = "1234"; // Optional security password to prevent accidental connections
-    RadioKit.config.theme = "futuristic"; // Controller skin
-    RadioKit.config.orientation = RK_LANDSCAPE;
-    
-    RadioKit.begin();
+  RadioKit.config.name = "MyRobot";
+  RadioKit.config.description = "Robot Controller";
+  RadioKit.config.theme = RK_DEFAULT;
+  RadioKit.config.orientation = RK_LANDSCAPE;  // or RK_PORTRAIT
+  RadioKit.config.width = 200;   // 0 = auto (default)
+  RadioKit.config.height = 200;  // 0 = auto (default)
+  
+  RadioKit.begin();
+  RadioKit.startBLE("MyRobot");
 }
 ```
 
-| Parameter | Default | description |
-|---|---|---|
-| `orientation` | `RK_LANDSCAPE` | `RK_LANDSCAPE` (200x100) or `RK_PORTRAIT` (100x200). |
-| `width`       | `200` | Custom canvas width (0-250). |
-| `height`      | `100` | Custom canvas height (0-250). |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `orientation` | `RK_LANDSCAPE` | `RK_LANDSCAPE` or `RK_PORTRAIT` (affects default aspect) |
+| `width` | `0` (auto) | Canvas width in virtual units (0–200) |
+| `height` | `0` (auto) | Canvas height in virtual units (0–200) |
+
+**Note:** Setting `width` and `height` to `0` enables auto-sizing based on widget positions.
 
 ---
 
-## 4. Skins & Icons
+## 5. Visual Styling
 
-RadioKit delegates complex rendering to the mobile application. So Arduino only needs to send the widget data and the mobile app will render the widget.
+### Themes
 
-### Controller UI Skins
+Set via `RadioKit.config.theme`:
 
-Setting `RadioKit.config.theme` changes the aesthetic of the entire controller interface. RadioKit supports built-in skins, sideloaded packs, and automatic GitHub synchronization.
+| Theme | Description |
+|-------|-------------|
+| `RK_DEFAULT` | Light blue, modern (default) |
+| `RK_DARK` | Dark mode |
+| `RK_RETRO` | CRT green phosphor |
+| `RK_NEON` | Cyberpunk neon |
+| `RK_MINIMAL` | Flat, minimal |
+| `"custom-url"` | Custom skin from GitHub |
 
-**Resolution Priority:**
-1.  Built-in (e.g., `"default"`, `"debug"`)
-2.  Sideloaded/Local Library (e.g., `"custom-gold"`)
+### Widget Styles
 
-> [!TIP]
-> For a full list of available skins and instructions on creating custom skin packs, see the **[UI Skins Documentation](ui_skin.md)**.
+The `style` parameter applies semantic meaning, mapped to theme colors:
 
-### Semantic Styles
-Use the `style` field to define the **purpose** of a widget. The app automatically maps these to theme-appropriate color palettes (Success, Warning, Danger, etc.).
+| Style | Constant | Use Case |
+|-------|----------|----------|
+| `0` | `RK_PRIMARY` | Primary action (default) |
+| `1` | `RK_DIM` | Inactive/secondary |
+| `2` | `RK_SUCCESS` | Positive state (green) |
+| `3` | `RK_WARNING` | Warning state (yellow) |
+| `4` | `RK_DANGER` | Danger state (red) |
 
-### Icon Engine
-Icons are passed as simple strings. Using standard names ensures compatibility across all app-side icon packs:
-- Inputs: `"power"`, `"wifi"`, `"settings"`.
-- Actions: `"flame"`, `"target"`, `"camera"`.
+**Example:**
 
-> [!TIP]
-> **Implementation Details**: To apply these layout and visual principles in code, see the **[Common Variables](widgets.md#common-variables)** and **[Widget Reference](widgets.md#2-widget-class-reference)** in the Functions documentation.
+```cpp
+RK_PushButton fire({
+    .label = "FIRE",
+    .x = 20, .y = 60,
+    .style = RK_DANGER,  // Red button
+    .icon = "flame"
+});
+```
 
 ---
 
-## 5. Mutator Methods (Runtime)
+## 6. Icons
 
-Use these methods to update widgets dynamically during the `loop()`.
+Icons are referenced by string name. Standard names ensure cross-theme compatibility:
 
-### `setPosition()`
+| Category | Icons |
+|----------|-------|
+| **Power** | `"power"`, `"power-off"`, `"battery"` |
+| **Connectivity** | `"wifi"`, `"bluetooth"`, `"usb"`, `"antenna"` |
+| **Actions** | `"play"`, `"pause"`, `"stop"`, `"record"` |
+| **Sensors** | `"temperature"`, `"pressure"`, `"gyro"` |
+| **Navigation** | `"arrow-up"`, `"arrow-down"`, `"home"` |
+| **Generic** | `"settings"`, `"menu"`, `"info"`, `"warning"` |
+
+**Example:**
+
 ```cpp
-void setPosition(uint8_t x, uint8_t y);
-void setPosition(uint8_t x, uint8_t y, int16_t rotation);
+RK_Button btn({
+    .label = "WiFi",
+    .icon = "wifi",
+    .x = 50, .y = 50
+});
 ```
 
-### `setScale()`
+---
+
+## 7. Runtime Mutators
+
+Widgets can be modified at runtime via their `props` interface:
+
 ```cpp
-void setScale(float scale);
-void setScale(float scale, float aspectRatio);
+void loop() {
+  RadioKit.update();
+  
+  // Change label dynamically
+  status.props.label = "ALERT!";
+  RadioKit.pushMetaUpdate(status.getId());
+  
+  // Change position
+  slider.props.x = newX;
+  slider.props.y = newY;
+  
+  // Change style
+  led.props.style = RK_SUCCESS;
+  
+  // Update value
+  slider.props.value = 50;
+  RadioKit.pushUpdate(slider.getId());
+}
 ```
 
-### `setIcon()` / `setStyle()`
-```cpp
-void setIcon(const char* iconName);
-void setStyle(uint8_t styleIndex);
-```
+### Available Mutators
 
-### `enable()` / `disable()`
-Disabled widgets are hidden across the system and **excluded from protocol traffic** to save bandwidth.
+| Method | Description |
+|--------|-------------|
+| `widget.props.label = "..."` | Update label text |
+| `widget.props.icon = "..."` | Update icon name |
+| `widget.props.x/y` | Update position |
+| `widget.props.scale` | Update size |
+| `widget.props.rotation` | Update rotation |
+| `widget.props.style` | Update visual style |
+| `widget.props.value` | Update current value |
+
+---
+
+## 8. Best Practices
+
+1. **Use consistent spacing** — Maintain 10–20 unit gaps between widgets.
+2. **Group related controls** — Place related widgets near each other.
+3. **Respect safe zones** — Keep critical controls away from edges (10–20 unit margin).
+4. **Use appropriate scale** — Buttons: 1.5–2.0×, Sliders: 1.0–1.5×.
+5. **Leverage aspect ratio** — Make sliders wide, knobs square.
+6. **Use semantic styles** — Apply `RK_SUCCESS`, `RK_DANGER` appropriately.
+7. **Test on different screens** — Virtual coordinates ensure consistency.
+
+## See Also
+
+- **[Widgets Reference](widgets.md)** — Complete widget API
+- **[Protocol Specification](protocol.md)** — Binary packet format
+- **[Getting Started](setup.md)** — Installation and first sketch
