@@ -371,7 +371,7 @@ class _ControlScreenState extends State<ControlScreen> {
                 left: 0,
                 child: IgnorePointer(
                   child: Text(
-                    'V:${config.variant}',
+                    config.debugLabel,
                     style: const TextStyle(
                       fontSize: 8,
                       color: Colors.grey,

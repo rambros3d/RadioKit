@@ -187,6 +187,7 @@ class WidgetAdapter {
     else if (centerMode == kCenterRight) centerPos = 1.0;
 
     final size = config.h * scale;
+    final knobVariant = config.variant == 1 ? RKKnobVariant.steeringWheel : RKKnobVariant.standard;
 
     return RKKnob(
       key: ValueKey('kn_${config.widgetId}'),
@@ -194,6 +195,7 @@ class WidgetAdapter {
       min: 0.0,
       max: 1.0,
       size: size,
+      variant: knobVariant,
       autoCenter: autoCenter,
       center: centerPos,
       divisions: detents > 1 ? detents : null,
@@ -305,7 +307,7 @@ class WidgetAdapter {
   ) {
     final value = state?.inputValues[config.widgetId]?.first ?? 0;
     final items = config.multipleItems;
-    final isBitmask = config.variant >= 128;
+    final isBitmask = config.variant == 1;
 
     // Convert MultipleItem → RKToggleItem
     final rkItems = items.map((mi) {

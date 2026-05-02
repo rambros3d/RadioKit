@@ -99,6 +99,14 @@ class WidgetConfig {
   /// Whether this widget supports independent width/height control.
   bool get isResizable => typeId == kWidgetSlider || typeId == kWidgetText;
 
+  /// Returns a full descriptive label for debug mode (e.g. "Knob:Steering").
+  String get debugLabel {
+    final typeName = widgetTypeName(typeId);
+    final variantName = widgetVariantName(typeId, variant);
+    if (variantName.isEmpty) return typeName;
+    return '$typeName:$variantName';
+  }
+
   /// The intrinsic aspect ratio of this widget.
   /// For Multiple widgets, this is derived from the number of menu items.
   double get dynamicAspect {

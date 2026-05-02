@@ -151,3 +151,37 @@ String widgetTypeName(int typeId) {
     default:                 return 'Unknown';
   }
 }
+
+/// Returns a human-readable name for a widget variant.
+String widgetVariantName(int typeId, int variant) {
+  switch (typeId) {
+    case kWidgetButton:
+      return variant == 1 ? 'Toggle' : '';
+    case kWidgetMultiple:
+      return variant == 1 ? 'Bitmask' : 'Index';
+    case kWidgetKnob:
+      if (variant == 1) return 'Steering';
+      break;
+  }
+
+  // Common logic for centering/detents (Slider, Knob, Joystick)
+  if (typeId == kWidgetSlider || typeId == kWidgetKnob || typeId == kWidgetJoystick) {
+    final center = variantCentering(variant);
+    final detents = variantDetents(variant);
+    final parts = <String>[];
+    
+    if (center != kCenterNone) {
+      if (center == kCenterLeft) parts.add('Left');
+      else if (center == kCenterMid) parts.add('Mid');
+      else if (center == kCenterRight) parts.add('Right');
+    }
+    
+    if (detents > 1) {
+      parts.add('D$detents');
+    }
+    
+    return parts.join('+');
+  }
+
+  return variant == 0 ? '' : 'V:$variant';
+}

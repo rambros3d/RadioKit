@@ -43,23 +43,7 @@ class ModelsTab extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          const SizedBox(height: 16),
-          Text(
-            'HARDWARE_INVENTORY',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.brandOrange,
-              letterSpacing: 2.0,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'WORKSPACE',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w900,
-              letterSpacing: -1.0,
-            ),
-          ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           
           _ActiveLinkSection(),
           
