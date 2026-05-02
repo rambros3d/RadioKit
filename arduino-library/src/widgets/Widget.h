@@ -46,6 +46,7 @@ public:
     virtual void deserializeInput(const uint8_t* buf)        = 0;
 
     virtual uint16_t serializeStrings(uint8_t* buf) const;
+    virtual const char* getContent() const { return nullptr; }
 
 protected:
     uint8_t  _x, _y;

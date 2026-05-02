@@ -139,7 +139,7 @@ void RadioKitBLE::_onWrite(const uint8_t* data, size_t len) {
     uint8_t cmd; const uint8_t* payload; uint16_t payloadLen;
     for (size_t i = 0; i < len; i++) {
         if (rk_rxFeedByte(data[i], cmd, payload, payloadLen)) {
-            Serial.printf("BLE CMD: 0x%02X, payloadLen: %d\n", cmd, payloadLen);
+            Serial.printf("BLE CMD: %s (0x%02X), payloadLen: %d\n", rk_cmdName(cmd), cmd, payloadLen);
             _packetCallback(cmd, payload, payloadLen);
         }
     }

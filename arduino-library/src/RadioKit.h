@@ -122,6 +122,7 @@ private:
     void _handleVarUpdate(const uint8_t* payload, uint16_t len);
     void _handleMetaUpdate(const uint8_t* payload, uint16_t len);
     void _handleGetTelemetry();
+    void _sendPacket(uint16_t len);
 
     uint16_t _buildConfPayload(uint8_t* buf, uint16_t bufSize);
     uint16_t _buildVarPayload(uint8_t* buf, uint16_t bufSize);

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import '../models/device_info.dart';
 import '../models/widget_config.dart';
@@ -57,10 +58,13 @@ class DeviceProvider extends ChangeNotifier {
   int?                     _rssi;
   int?                     _latencyMs;
 
-  Timer?                   _pollTimer;
+
   Timer?                   _pingTimer;
   Timer?                   _telemetryTimer;
   Timer?                   _confTimeoutTimer;
+  bool                     _isWaitingForVars = false;
+  DateTime?                _lastRxAt;
+  DateTime?                _lastTxAt;
   DebugLogSink?            _debugSink;
   Completer<void>?         _confCompleter;
   DateTime?                _pingSentAt;
@@ -269,7 +273,7 @@ class DeviceProvider extends ChangeNotifier {
         final pkt = ProtocolService.buildGetConf();
         final hex = pkt.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join(' ');
         _log('TX -> GET_CONF (attempt ${attempt + 1}/3) bytes: $hex');
-        await _transport.writePacket(pkt);
+        await _writePacket(pkt);
       } catch (e) {
         _log('FAILED TO SEND GET_CONF: $e', level: ConsoleLogLevel.error);
         _errorMessage    = 'Failed to send GET_CONF: $e';
@@ -322,50 +326,53 @@ class DeviceProvider extends ChangeNotifier {
 
   void _startPolling() {
     // Always cancel existing timers before creating new ones.
-    // This is the single safe entry point — never call twice concurrently.
-    _pollTimer?.cancel();
     _pingTimer?.cancel();
     _telemetryTimer?.cancel();
-    _pollTimer = null;
     _pingTimer = null;
     _telemetryTimer = null;
     _demoTimer?.cancel();
     _demoTimer = null;
 
-    if (_configName != null) {
+    // Only start demo simulation for known demo configs, not real devices.
+    const demoConfigs = {'WIDGETS_DEMO', 'RC_CONTROLLER', 'IOT_DASHBOARD'};
+    if (_configName != null && demoConfigs.contains(_configName)) {
       _startDemoSimulation();
     }
 
-    // Request initial telemetry immediately on connection
+    // Request initial telemetry and variables immediately on connection
     if (_transport.isConnected) {
-      _transport.writePacket(ProtocolService.buildGetTelemetry()).catchError((e) {
-        debugPrint('RadioKit: Initial telemetry error: $e');
-      });
+      _writePacket(ProtocolService.buildGetTelemetry()).catchError((_) {});
+      _writePacket(ProtocolService.buildGetVars()).catchError((_) {});
     }
 
     _pingTimer = Timer.periodic(kPingInterval, (_) async {
       if (!_transport.isConnected) return;
-      try {
-        _pingSentAt = DateTime.now();
-        await _transport.writePacket(ProtocolService.buildPing());
-      } catch (e) {
-        debugPrint('RadioKit: Ping error: $e');
+      
+      final now = DateTime.now();
+      // Heartbeat optimization: Only ping if no packets sent OR received recently.
+      if (_lastRxAt != null) {
+        final idleRx = now.difference(_lastRxAt!);
+        if (idleRx < kPingInterval) return;
       }
+      if (_lastTxAt != null) {
+        final idleTx = now.difference(_lastTxAt!);
+        if (idleTx < kPingInterval) return;
+      }
+
+      try {
+        _pingSentAt = now;
+        await _writePacket(ProtocolService.buildPing());
+      } catch (_) {}
     });
 
     _telemetryTimer = Timer.periodic(kTelemetryInterval, (_) async {
-      if (!_transport.isConnected) return;
       try {
-        await _transport.writePacket(ProtocolService.buildGetTelemetry());
-      } catch (e) {
-        debugPrint('RadioKit: Telemetry poll error: $e');
-      }
+        await _writePacket(ProtocolService.buildGetTelemetry());
+      } catch (_) {}
     });
-
   }
 
   void _stopPolling() {
-    _pollTimer?.cancel(); _pollTimer = null;
     _pingTimer?.cancel(); _pingTimer = null;
     _telemetryTimer?.cancel(); _telemetryTimer = null;
     _demoTimer?.cancel(); _demoTimer = null;
@@ -446,7 +453,20 @@ class DeviceProvider extends ChangeNotifier {
 
   // ── Packet handling ──────────────────────────────────────────────────────────
 
+  /// Centralized packet transmission with timestamp tracking for heartbeat optimization.
+  Future<void> _writePacket(Uint8List pkt) async {
+    if (!_transport.isConnected) return;
+    try {
+      _lastTxAt = DateTime.now();
+      await _transport.writePacket(pkt);
+    } catch (e) {
+      debugPrint('RadioKit: _writePacket error: $e');
+      rethrow;
+    }
+  }
+
   void _handlePacket(ParsedPacket packet) {
+    _lastRxAt = DateTime.now(); // Activity detected
     switch (packet.cmd) {
       case kCmdConfData:  _handleConfData(packet.payload);  break;
       case kCmdVarData:   _handleVarData(packet.payload);   break;
@@ -474,8 +494,18 @@ class DeviceProvider extends ChangeNotifier {
   void _handleTelemetryData(List<int> payload) {
     if (payload.isNotEmpty) {
       final rawRssi = payload[0];
+      // Protocol uses a single byte for RSSI, interpreted as signed int8.
       _rssi = rawRssi > 127 ? rawRssi - 256 : rawRssi;
+      
+      // If firmware sends more bytes, we can parse latency/uptime here.
+      if (payload.length >= 4) {
+         // Future: parse other telemetry fields
+      }
+
+      debugPrint('RadioKit: TELEMETRY_DATA rssi=$_rssi (raw=$rawRssi, len=${payload.length})');
       notifyListeners();
+    } else {
+      debugPrint('RadioKit: TELEMETRY_DATA received but payload is empty');
     }
   }
 
@@ -503,7 +533,7 @@ class DeviceProvider extends ChangeNotifier {
     
     // Request initial variable states immediately after config is processed
     if (_transport.isConnected) {
-      _transport.writePacket(ProtocolService.buildGetVars()).catchError((_) {});
+      _writePacket(ProtocolService.buildGetVars()).catchError((_) {});
     }
 
     notifyListeners();
@@ -514,6 +544,7 @@ class DeviceProvider extends ChangeNotifier {
   }
 
   void _handleVarData(List<int> payload) {
+    _isWaitingForVars = false; // Response received, clear wait flag
     final current = _widgetState;
     if (current == null) return;
     final next = ProtocolService.parseVarData(payload, _widgets, current);
@@ -549,7 +580,7 @@ class DeviceProvider extends ChangeNotifier {
     _widgetState = next;
     notifyListeners();
 
-    _transport.writePacket(ProtocolService.buildAck(seq)).catchError((_){});
+    _writePacket(ProtocolService.buildAck(seq)).catchError((_){});
   }
 
   void _handleVarUpdate(List<int> payload) {
@@ -574,10 +605,20 @@ class DeviceProvider extends ChangeNotifier {
         // v3: [STATE, R, G, B, OPACITY]
         next = current.copyWithOutput(widgetId, List<int>.from(values.take(5)));
       } else if (widget.typeId == kWidgetText) {
-        final len = values.isNotEmpty ? values[0] : 0;
-        final text = utf8Decode(
-            values.length > 1 ? values.sublist(1, 1 + len) : []);
-        next = current.copyWithOutput(widgetId, text);
+        // [LEN(1)] [CHARS...]
+        if (values.isNotEmpty) {
+          final len = values[0];
+          final textLen = values.length - 1;
+          // Use the minimum of declared length and actual bytes received
+          final end = (1 + min(len, textLen)).clamp(0, values.length).toInt();
+          
+          final text = utf8Decode(values.sublist(1, end));
+          debugPrint('RadioKit: VAR_UPDATE Text wid=$widgetId len=$len actual=$textLen text="$text"');
+          next = current.copyWithOutput(widgetId, text);
+        } else {
+          debugPrint('RadioKit: VAR_UPDATE Text wid=$widgetId received with NO payload');
+          next = current.copyWithOutput(widgetId, '');
+        }
       } else {
         next = current.copyWithOutput(
             widgetId, values.isNotEmpty ? values[0] : 0);
@@ -594,7 +635,7 @@ class DeviceProvider extends ChangeNotifier {
         _log('RX <- VAR_UPDATE (wid:$widgetId, seq:$seq)');
     }
 
-    _transport.writePacket(ProtocolService.buildAck(seq)).catchError((_) {});
+    _writePacket(ProtocolService.buildAck(seq)).catchError((_) {});
   }
 
   void _handleMetaData(List<int> payload) {
@@ -618,7 +659,7 @@ class DeviceProvider extends ChangeNotifier {
       notifyListeners();
     }
 
-    _transport.writePacket(ProtocolService.buildAck(seq)).catchError((_) {});
+    _writePacket(ProtocolService.buildAck(seq)).catchError((_) {});
   }
 
   void _handleAck(List<int> payload) {
@@ -651,13 +692,13 @@ class DeviceProvider extends ChangeNotifier {
         _pendingUpdates.remove(seq);
         return;
       }
-      try { await _transport.writePacket(pkt); } catch (_) {}
+      try { await _writePacket(pkt); } catch (_) {}
 
       if (!_pendingUpdates.containsKey(seq)) return;
 
       if (entry.retries >= kVarUpdateMaxRetries) {
         _pendingUpdates.remove(seq);
-        try { await _transport.writePacket(ProtocolService.buildGetVars()); } catch (_) {}
+        try { await _writePacket(ProtocolService.buildGetVars()); } catch (_) {}
         return;
       }
 

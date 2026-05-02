@@ -141,3 +141,23 @@ bool rk_rxFeedByte(uint8_t byte,
     }
     return false;
 }
+
+const char* rk_cmdName(uint8_t cmd) {
+    switch (cmd) {
+        case RK_CMD_GET_CONF:      return "GET_CONF";
+        case RK_CMD_CONF_DATA:     return "CONF_DATA";
+        case RK_CMD_PING:          return "PING";
+        case RK_CMD_PONG:          return "PONG";
+        case RK_CMD_ACK:           return "ACK";
+        case RK_CMD_GET_VARS:      return "GET_VARS";
+        case RK_CMD_VAR_DATA:      return "VAR_DATA";
+        case RK_CMD_VAR_UPDATE:    return "VAR_UPDATE";
+        case RK_CMD_GET_META:      return "GET_META";
+        case RK_CMD_META_DATA:     return "META_DATA";
+        case RK_CMD_META_UPDATE:   return "META_UPDATE";
+        case RK_CMD_SET_INPUT:     return "SET_INPUT";
+        case RK_CMD_GET_TELEMETRY: return "GET_TELEMETRY";
+        case RK_CMD_TELEMETRY_DATA:return "TELEMETRY_DATA";
+        default:                   return "UNKNOWN";
+    }
+}

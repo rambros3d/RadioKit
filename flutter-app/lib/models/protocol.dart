@@ -89,9 +89,8 @@ const double kCanvasPortraitW  = 100.0;
 const double kCanvasPortraitH  = 200.0;
 
 // Poll intervals
-const Duration kGetVarsInterval = Duration(milliseconds: 250);
-const Duration kPingInterval    = Duration(seconds: 2);
-const Duration kTelemetryInterval = Duration(seconds: 2);
+const Duration kPingInterval    = Duration(seconds: 1);
+const Duration kTelemetryInterval = Duration(seconds: 5);
 // Increased to 8 s to handle slow USB CDC enumeration on some boards
 const Duration kConfTimeout     = Duration(seconds: 8);
 

@@ -339,6 +339,8 @@ class _DebugScreenState extends State<DebugScreen>
                   _QuickSendChip(label: 'PING',     dp: dp),
                   _QuickSendChip(label: 'GET_CONF', dp: dp),
                   _QuickSendChip(label: 'GET_VARS', dp: dp),
+                  _QuickSendChip(label: 'GET_META', dp: dp),
+                  _QuickSendChip(label: 'GET_TELE', dp: dp),
                 ],
               ),
               const SizedBox(height: 24),

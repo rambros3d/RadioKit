@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../models/protocol.dart';
 import '../models/widget_config.dart';
@@ -60,6 +61,7 @@ class ProtocolService {
   static Uint8List buildGetConf()  => buildPacket(kCmdGetConf);
   static Uint8List buildGetVars()  => buildPacket(kCmdGetVars);
   static Uint8List buildPing()     => buildPacket(kCmdPing);
+  static Uint8List buildGetMeta()  => buildPacket(kCmdGetMeta);
   static Uint8List buildGetTelemetry() => buildPacket(kCmdGetTelemetry);
 
   /// Build an ACK packet acknowledging a VAR_UPDATE with [seq].
@@ -280,28 +282,43 @@ class ProtocolService {
     int offset = 0;
     var state  = current;
 
-    final outputWidgets = widgets.where((w) => w.hasOutput).toList()
+    final sortedWidgets = widgets.toList()
       ..sort((a, b) => a.widgetId.compareTo(b.widgetId));
 
-    for (final widget in outputWidgets) {
+    for (final widget in sortedWidgets) {
+      final inSz = widget.inputSize;
+      final outSz = widget.outputSize;
+      final sz = outSz > 0 ? outSz : inSz;
+      
+      if (sz == 0) continue;
+      if (offset >= payload.length) break;
+
       if (widget.typeId == kWidgetText) {
-        if (offset >= payload.length) break;
+        // [LEN(1)] [CHARS...]
         final len = payload[offset];
-        if (offset + 1 + len > payload.length) break;
-        final raw = payload.sublist(offset + 1, offset + 1 + len);
-        final text = utf8.decode(raw, allowMalformed: true);
+        final remaining = payload.length - (offset + 1);
+        final end = (offset + 1 + min(len, remaining)).clamp(0, payload.length).toInt();
+        
+        final text = utf8.decode(payload.sublist(offset + 1, end), allowMalformed: true);
         state = state.copyWithOutput(widget.widgetId, text);
-        offset += 1 + len;
+        offset += 32; // Skip the fixed-size slot
       } else if (widget.typeId == kWidgetLed) {
-        // v3: LED output = 5 bytes [STATE, R, G, B, OPACITY]
-        if (offset + 5 > payload.length) break;
-        final led = List<int>.from(payload.sublist(offset, offset + 5));
-        state = state.copyWithOutput(widget.widgetId, led);
+        if (offset + 5 <= payload.length) {
+          final led = List<int>.from(payload.sublist(offset, offset + 5));
+          state = state.copyWithOutput(widget.widgetId, led);
+        }
         offset += 5;
       } else {
-        if (offset + 1 > payload.length) break;
-        state = state.copyWithOutput(widget.widgetId, payload[offset]);
-        offset += 1;
+        // Generic 1-byte or N-byte values (Switch, Slider, etc.)
+        if (offset + sz <= payload.length) {
+          final val = payload[offset]; // For now we assume 1-byte for most
+          if (outSz > 0) {
+            state = state.copyWithOutput(widget.widgetId, val);
+          } else {
+            state = state.copyWithInput(widget.widgetId, [val]);
+          }
+        }
+        offset += sz;
       }
     }
 

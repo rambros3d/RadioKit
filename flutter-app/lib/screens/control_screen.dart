@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../providers/device_provider.dart';
 import '../providers/debug_provider.dart';
 import '../providers/skin_provider.dart';
@@ -81,84 +82,102 @@ class _ControlScreenState extends State<ControlScreen> {
         final device      = deviceProvider.connectedDevice;
         final isConnected = deviceProvider.isConnected;
 
-        return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: Row(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: isConnected
-                        ? AppColors.connected
-                        : AppColors.disconnected,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isConnected
-                                ? AppColors.connected
-                                : AppColors.disconnected)
-                            .withValues(alpha: 0.6),
-                        blurRadius: 6,
-                        spreadRadius: 1,
+        return WillPopScope(
+          onWillPop: () async {
+            context.go('/models');
+            return false;
+          },
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              centerTitle: true,
+              leadingWidth: 180,
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Row(
+                  children: [
+                    // Connection indicator
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: isConnected ? AppColors.connected : AppColors.disconnected,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isConnected ? AppColors.connected : AppColors.disconnected)
+                                .withValues(alpha: 0.4),
+                            blurRadius: 6,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        device?.displayName ?? 'RadioKit Device',
-                        style: const TextStyle(fontSize: 16),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (isConnected)
-                        Row(
+                    ),
+                    const SizedBox(width: 12),
+                    // Telemetry (if connected)
+                    if (isConnected)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 0.5),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (deviceProvider.rssi != null) ...[
-                              const Icon(Icons.wifi_rounded, size: 12, color: Colors.white70),
+                              Icon(Icons.signal_cellular_alt_rounded, 
+                                size: 14, color: _getRssiColor(deviceProvider.rssi ?? -127)),
                               const SizedBox(width: 4),
-                              Text('${deviceProvider.rssi} dBm', style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold)),
-                              const SizedBox(width: 12),
-                            ],
-                            if (deviceProvider.latencyMs != null) ...[
-                              const Icon(Icons.timer_rounded, size: 12, color: Colors.white70),
+                              Text('${deviceProvider.rssi ?? "--"} dB', 
+                                style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold)),
+                            if (deviceProvider.rssi != null && deviceProvider.latencyMs != null)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: Text('|', style: TextStyle(color: Colors.white.withValues(alpha: 0.1), fontSize: 10)),
+                              ),
+                              Icon(Icons.timer_rounded, size: 14, color: Colors.white54),
                               const SizedBox(width: 4),
-                              Text('${deviceProvider.latencyMs}ms', style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold)),
-                            ],
+                              Text('${deviceProvider.latencyMs ?? "--"}ms', 
+                                style: const TextStyle(fontSize: 10, color: Colors.white54)),
                           ],
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
+              ),
+              title: Text(
+                device?.displayName ?? 'RadioKit Device',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.home_rounded),
+                  tooltip: 'Back to Models',
+                  onPressed: () => context.go('/models'),
+                ),
+                if (kDebugMode)
+                  IconButton(
+                    icon: const Icon(Icons.bug_report_rounded),
+                    tooltip: 'Debug',
+                    onPressed: _openDebug,
+                  ),
+                TextButton.icon(
+                  icon: const Icon(Icons.bluetooth_disabled_rounded, size: 18),
+                  label: const Text('DISCONNECT'),
+                  onPressed: _disconnect,
+                ),
+                const SizedBox(width: 8),
               ],
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.home_rounded),
-                tooltip: 'Back to Models',
-                onPressed: () => context.go('/models'),
-              ),
-              if (kDebugMode)
-                IconButton(
-                  icon: const Icon(Icons.bug_report_rounded),
-                  tooltip: 'Debug',
-                  onPressed: _openDebug,
-                ),
-              TextButton.icon(
-                icon: const Icon(Icons.bluetooth_disabled_rounded, size: 18),
-                label: const Text('DISCONNECT'),
-                onPressed: _disconnect,
-              ),
-              const SizedBox(width: 8),
-            ],
+            body: _buildBody(deviceProvider),
           ),
-          body: _buildBody(deviceProvider),
         );
       },
     );
@@ -234,6 +253,13 @@ class _ControlScreenState extends State<ControlScreen> {
       return (kCanvasPortraitW, kCanvasPortraitH);
     }
     return (kCanvasLandscapeW, kCanvasLandscapeH);
+  }
+
+  Color _getRssiColor(int rssi) {
+    if (rssi == -127) return Colors.white24;
+    if (rssi > -60) return Colors.greenAccent;
+    if (rssi > -80) return Colors.orangeAccent;
+    return Colors.redAccent;
   }
 
   Widget _buildCanvas(DeviceProvider deviceProvider) {

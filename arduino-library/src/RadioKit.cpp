@@ -121,7 +121,7 @@ void RadioKitClass::update() {
                     w->serializeOutput(&payload[2]);
                 }
                 uint16_t pkt = rk_buildPacket(_txBuf, cmd, payload, 2 + dataSz);
-                _transport->sendPacket(_txBuf, pkt);
+                _sendPacket(pkt);
                 _varUpdateSentAt = now;
                 _varUpdateRetries++;
             }
@@ -154,7 +154,7 @@ void RadioKitClass::update() {
                 payload[1] = _metaUpdateSeq;
                 uint16_t strLen = w->serializeStrings(&payload[2]);
                 uint16_t pkt = rk_buildPacket(_txBuf, RK_CMD_META_UPDATE, payload, 2 + strLen);
-                _transport->sendPacket(_txBuf, pkt);
+                _sendPacket(pkt);
                 _metaUpdateSentAt = now;
                 _metaUpdateRetries++;
             }
@@ -171,7 +171,7 @@ void RadioKitClass::_onPacket(uint8_t cmd,
                               uint16_t payloadLen)
 {
     if (!s_instance) return;
-    Serial.printf("RK: Dispatching CMD 0x%02X, len %d\n", cmd, payloadLen);
+    Serial.printf("RK: Dispatching CMD %s (0x%02X), len %d\n", rk_cmdName(cmd), cmd, payloadLen);
     switch (cmd) {
         case RK_CMD_GET_CONF:  s_instance->_handleGetConf();                      break;
         case RK_CMD_GET_VARS:  s_instance->_handleGetVars();                      break;
@@ -183,7 +183,7 @@ void RadioKitClass::_onPacket(uint8_t cmd,
         case RK_CMD_VAR_UPDATE:s_instance->_handleVarUpdate(payload, payloadLen); break;
         case RK_CMD_META_UPDATE:s_instance->_handleMetaUpdate(payload, payloadLen);break;
         default: 
-            Serial.printf("RK: Unknown CMD 0x%02X\n", cmd);
+            Serial.printf("RK: Unknown CMD %s (0x%02X)\n", rk_cmdName(cmd), cmd);
             break;
     }
 }
@@ -197,13 +197,15 @@ void RadioKitClass::_handleGetTelemetry() {
     if (!_transport) return;
     
     uint8_t payload[4];
-    payload[0] = (uint8_t)getRssi();
+    int r = getRssi();
+    payload[0] = (uint8_t)r;
     payload[1] = 0; // Reserved for latency
     payload[2] = 0;
     payload[3] = 0;
 
-    uint16_t len = rk_buildPacket(_txBuf, RK_CMD_TELEMETRY_DATA, payload, 1); // just RSSI for now
-    _transport->sendPacket(_txBuf, len);
+    // Send full 4-byte payload to match potential app expectations
+    uint16_t len = rk_buildPacket(_txBuf, RK_CMD_TELEMETRY_DATA, payload, 4);
+    _sendPacket(len);
 }
 
 void RadioKitClass::_handleGetConf() {
@@ -213,21 +215,21 @@ void RadioKitClass::_handleGetConf() {
     Serial.printf("RK: _handleGetConf: payloadLen = %d\n", payloadLen);
     uint16_t totalLen = rk_buildPacket(_txBuf, RK_CMD_CONF_DATA, payloadPtr, payloadLen);
     Serial.printf("RK: _handleGetConf: totalLen = %d, sending...\n", totalLen);
-    if (_transport) _transport->sendPacket(_txBuf, totalLen);
+    _sendPacket(totalLen);
 }
 
 void RadioKitClass::_handleGetVars() {
     uint16_t payloadLen = _buildVarPayload(&_txBuf[RK_HEADER_SIZE],
                                            RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE);
     uint16_t totalLen = rk_buildPacket(_txBuf, RK_CMD_VAR_DATA, nullptr, payloadLen);
-    if (_transport) _transport->sendPacket(_txBuf, totalLen);
+    _sendPacket(totalLen);
 }
 
 void RadioKitClass::_handleGetMeta() {
     uint16_t payloadLen = _buildMetaPayload(&_txBuf[RK_HEADER_SIZE],
                                             RK_MAX_PACKET_SIZE - RK_HEADER_SIZE - RK_CRC_SIZE);
     uint16_t totalLen = rk_buildPacket(_txBuf, RK_CMD_META_DATA, nullptr, payloadLen);
-    if (_transport) _transport->sendPacket(_txBuf, totalLen);
+    _sendPacket(totalLen);
 }
 
 void RadioKitClass::_handleSetInput(const uint8_t* payload, uint16_t len) {
@@ -242,12 +244,12 @@ void RadioKitClass::_handleSetInput(const uint8_t* payload, uint16_t len) {
     }
     uint8_t seq = 0;
     uint16_t pkt = rk_buildPacket(_txBuf, RK_CMD_ACK, &seq, 1);
-    if (_transport) _transport->sendPacket(_txBuf, pkt);
+    _sendPacket(pkt);
 }
 
 void RadioKitClass::_handlePing() {
     uint16_t pkt = rk_buildPong(_txBuf);
-    if (_transport) _transport->sendPacket(_txBuf, pkt);
+    _sendPacket(pkt);
 }
 
 void RadioKitClass::_handleAck(const uint8_t* payload, uint16_t len) {
@@ -281,7 +283,7 @@ void RadioKitClass::_handleVarUpdate(const uint8_t* payload, uint16_t len) {
 
     // Ack back to sender
     uint16_t pkt = rk_buildAck(_txBuf, seq);
-    if (_transport) _transport->sendPacket(_txBuf, pkt);
+    _sendPacket(pkt);
 }
 
 void RadioKitClass::_handleMetaUpdate(const uint8_t* payload, uint16_t len) {
@@ -297,7 +299,7 @@ void RadioKitClass::_handleMetaUpdate(const uint8_t* payload, uint16_t len) {
     
     // Ack back to sender
     uint16_t pkt = rk_buildAck(_txBuf, seq);
-    if (_transport) _transport->sendPacket(_txBuf, pkt);
+    _sendPacket(pkt);
 }
 
 // ── CONF_DATA payload builder (Protocol v3) ──────────────────────────────
@@ -397,4 +399,11 @@ uint16_t RadioKitClass::_buildMetaPayload(uint8_t* buf, uint16_t bufSize) {
         }
     }
     return out;
+}
+
+void RadioKitClass::_sendPacket(uint16_t len) {
+    if (!_transport) return;
+    uint8_t cmd = _txBuf[3];
+    Serial.printf("RK: Sending CMD %s (0x%02X), len %d\n", rk_cmdName(cmd), cmd, len);
+    _transport->sendPacket(_txBuf, len);
 }

@@ -48,7 +48,7 @@
 // ─────────────────────────────────────────────
 //  VAR_UPDATE reliability parameters
 // ─────────────────────────────────────────────
-#define RK_VAR_UPDATE_TIMEOUT_MS 200
+#define RK_VAR_UPDATE_TIMEOUT_MS 500
 #define RK_VAR_UPDATE_MAX_RETRIES 5
 
 // ─────────────────────────────────────────────
@@ -61,6 +61,7 @@
 //  CRC-16/CCITT-FALSE
 // ─────────────────────────────────────────────
 uint16_t rk_crc16(const uint8_t *data, uint16_t len);
+const char* rk_cmdName(uint8_t cmd);
 
 // ─────────────────────────────────────────────
 //  Packet builder helpers

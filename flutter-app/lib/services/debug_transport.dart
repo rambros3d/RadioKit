@@ -151,6 +151,11 @@ class DebugTransport implements TransportService {
       case kCmdPong:     return 'PONG';
       case kCmdAck:      return 'ACK';
       case kCmdVarUpdate: return 'VAR_UPDATE';
+      case kCmdGetMeta:   return 'GET_META';
+      case kCmdMetaData:  return 'META_DATA';
+      case kCmdMetaUpdate: return 'META_UPDATE';
+      case kCmdGetTelemetry: return 'GET_TELEMETRY';
+      case kCmdTelemetryData: return 'TELEMETRY_DATA';
       default: return '0x${cmd.toRadixString(16).padLeft(2, '0').toUpperCase()}';
     }
   }

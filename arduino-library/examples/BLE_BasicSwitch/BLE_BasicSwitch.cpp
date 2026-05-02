@@ -75,28 +75,40 @@ void setup() {
   Serial.println("RK: Setup complete.");
 }
 
+// ── State tracking ────────────────────────────────────────────
+static bool lastSwitchState = false;
+static bool lastMomentState = false;
+
 // ────────────────────────────────────────────────────────────
 void loop() {
   // Always call update() to process incoming packets and manage connections.
   RadioKit.update();
 
-  // Sync the physical LED and status widgets with the app switch state.
-  if (lightSwitch.get()) {
-    digitalWrite(LED_PIN, HIGH);
-    statusLED.on();
-    stateText.set("ON");
-  } else {
-    digitalWrite(LED_PIN, LOW);
-    statusLED.off();
-    stateText.set("OFF");
+  // Sync the physical LED and status widgets only when state changes.
+  bool switchNow = lightSwitch.get();
+  if (switchNow != lastSwitchState) {
+    lastSwitchState = switchNow;
+    if (switchNow) {
+      digitalWrite(LED_PIN, HIGH);
+      statusLED.on();
+      stateText.set("ON");
+    } else {
+      digitalWrite(LED_PIN, LOW);
+      statusLED.off();
+      stateText.set("OFF");
+    }
   }
 
-  // Handle the momentary pushbutton for pin 8
-  if (momentButton.get()) {
-    digitalWrite(SECOND_LED_PIN, HIGH);
-    secondLED.on();
-  } else {
-    digitalWrite(SECOND_LED_PIN, LOW);
-    secondLED.off();
+  // Handle the momentary pushbutton for pin 8 — only on change.
+  bool momentNow = momentButton.get();
+  if (momentNow != lastMomentState) {
+    lastMomentState = momentNow;
+    if (momentNow) {
+      digitalWrite(SECOND_LED_PIN, HIGH);
+      secondLED.on();
+    } else {
+      digitalWrite(SECOND_LED_PIN, LOW);
+      secondLED.off();
+    }
   }
 }

@@ -98,6 +98,9 @@ uint16_t RadioKit_Widget::serializeStrings(uint8_t* buf) const {
     if (_icon[0]    != '\0') mask |= RK_STR_ICON;
     if (_onText[0]  != '\0') mask |= RK_STR_ONTEXT;
     if (_offText[0] != '\0') mask |= RK_STR_OFFTEXT;
+    
+    const char* content = getContent();
+    if (content && content[0] != '\0') mask |= RK_STR_CONTENT;
 
     uint16_t out = 0;
     buf[out++] = mask;
@@ -113,6 +116,7 @@ uint16_t RadioKit_Widget::serializeStrings(uint8_t* buf) const {
     if (mask & RK_STR_ICON)    _writeStr(_icon,    RADIOKIT_MAX_ICON);
     if (mask & RK_STR_ONTEXT)  _writeStr(_onText,  RADIOKIT_MAX_LABEL);
     if (mask & RK_STR_OFFTEXT) _writeStr(_offText, RADIOKIT_MAX_LABEL);
+    if (mask & RK_STR_CONTENT) _writeStr(content,  RADIOKIT_TEXT_LEN);
 
     return out;
 }
