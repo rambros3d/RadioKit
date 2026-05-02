@@ -1,24 +1,21 @@
-# RadioKit Documentation
+# RadioKit
 
-**Control your Arduino from a smartphone app**
+Open source alternative to RemoteXY — build amazing UIs for your Arduino projects using a simple C++ API and a native Flutter companion app.
 
-RadioKit is an open-source alternative to RemoteXY. It allows you to build Amazing UI for your Arduino projects using a simple C++ API.
+## Overview
 
-## Features
+RadioKit lets you define your UI directly in Arduino code and see it instantly in a smartphone app. No server, no code generation, just BLE or Serial communication.
 
-- **Pure Arduino**: Define your UI in Arduino code.
-- **Multiple Transports**: BLE and Serial. More coming soon.
-- **Pure Native V1.6 Engine**: Extremely smooth SVG-based rendering with zero HTML overhead.
-- **Haptic Physics**: High-fidelity spring simulations for sliders and joysticks.
-- **Theme Gallery**: Explore and apply skins in real-time within the app.
-- **Cross-Platform**: Client app runs on Android, and Web (Chromium based).
+### Features
 
----
+- **Pure Arduino**: Define your UI in Arduino code with a clean object-oriented API
+- **Multiple Transports**: BLE (NimBLE) and Serial (USB/UART) support
+- **Native V2.0 Engine**: Smooth SVG-based rendering with zero HTML overhead
+- **Haptic Physics**: High-fidelity spring simulations for sliders and knobs
+- **Theme Gallery**: Multiple built-in skins (default, dark, retro, cyberpunk, neon, minimal)
+- **Cross-Platform**: Flutter-based client app runs on Android, iOS, and Web
 
-## 🚀 Quick Start
-
-### 1. Arduino Setup
-Install the library and define your widgets.
+### Quick Start
 
 ```cpp
 #include <RadioKit.h>
@@ -53,98 +50,43 @@ void loop() {
 }
 ```
 
-### 2. Connect
-Open the RadioKit app, scan, and connect. The UI will appear instantly.
-
----
-
-## 📖 Dive Deeper
-
-### Arduino Library
-- **[Getting Started](arduino/setup.md)**: How to set up the RadioKit library.
-- **[Widgets Reference](arduino/widgets.md)**: Every widget and its configuration.
-- **[UI Layout](arduino/ui_layout.md)**: How the coordinate system and layout works.
-- **[Protocol Specification](arduino/protocol.md)**: Details on the binary packet format.
-
-### Flutter Widget Library
-- **[Overview](flutter-library/README.md)**: Use RadioKit-style widgets in your own Flutter apps.
-- **[Widget API](flutter-library/rk_button.md)**: Full API reference for all widgets.
-
----
-
-## 🎨 Widget Types
-
-| Widget    | Direction | Description                              |
-|-----------|-----------|------------------------------------------|
-| Button    | Input     | Momentary press — value 1 while held     |
-| Toggle    | Input     | Latching on/off switch                   |
-| SlideSwitch | Input   | iOS-style slide toggle                   |
-| Slider    | Input     | Linear 0–100 with value label            |
-| Knob      | Input     | Rotary 0–100 with spring-centering       |
-| Joystick  | Input     | 2-axis draggable, springs to center      |
-| LED       | Output    | Colour indicator (off/red/green/blue/yellow) |
-| Text      | Output    | Read-only string display                 |
-| MultipleButton | Input | Radio-style button group (bitmask)     |
-| MultipleSelect | Input | Checkbox group (bitmask)               |
-
----
-
-## 🏗️ Architecture
-
-### Arduino Library (v2.0)
-- Object-oriented widget API with tailored structs
-- Zero dynamic allocation — all widgets use static pools
-- Reliable packet delivery with sequence tracking
-- Supports ESP32 (NimBLE), Nordic nRF52, STM32, SAMD
-- Both BLE and Serial transports
-
-### Flutter Widget Library
-- Pure Flutter, no platform code
-- RadioKit design tokens (colors, typography, shadows)
-- Spring physics for premium feel
-- Haptic feedback support
-- SVG-based rendering
-
----
-
-## 📦 Project Structure
+### Project Structure
 
 ```
 RadioKit/
 ├── arduino-library/          # Arduino library (v2.0)
-│   ├── src/
-│   │   ├── RadioKit.h        # Main entry point
-│   │   ├── RadioKitConfig.h  # Configuration
-│   │   ├── RadioKitProtocol.h# Protocol definitions
-│   │   ├── widgets/          # All widget implementations
-│   │   └── connection/       # BLE & Serial transports
-│   └── examples/             # Example sketches
+│   ├── src/                   # Core library headers & implementation
+│   │   ├── RadioKit.h         # Main entry point
+│   │   ├── RadioKitConfig.h   # Configuration & constants
+│   │   ├── RadioKitProtocol.h # Protocol v3 definitions
+│   │   ├── widgets/           # All widget implementations
+│   │   └── connection/        # BLE & Serial transports
+│   └── examples/              # Example sketches
 │
-├── flutter-library/          # Flutter widget library
-│   ├── lib/
-│   │   ├── radiokit_widgets.dart
-│   │   └── src/widgets/      # All widget implementations
-│   └── example/              # Example app
+├── flutter-library/           # Flutter widget library
+│   ├── lib/                   # Widget implementations
+│   └── example/               # Example app
 │
-├── flutter-app/              # Reference Flutter app
-│   ├── lib/                  # App source
+├── flutter-app/               # Reference Flutter companion app
+│   ├── lib/                   # App source
 │   └── pubspec.yaml
 │
-└── docs/                     # This documentation
+└── docs/                      # Documentation
 ```
 
----
+### Documentation
 
-## 🔧 Development
+- **[Arduino Library](arduino/setup.md)** — Setup, API reference, and examples
+- **[Widgets Reference](arduino/widgets.md)** — Complete widget API
+- **[UI Layout](arduino/ui_layout.md)** — Coordinate system and sizing
+- **[Protocol Spec](arduino/protocol.md)** — Binary packet format details
+- **[Flutter Library](flutter-library/README.md)** — Flutter widget API
 
-### Arduino Library
-See [library.json](https://github.com/rambros3d/RadioKit/blob/main/arduino-library/library.json) for dependencies.
+### Development
 
-### Flutter App
-See [pubspec.yaml](https://github.com/rambros3d/RadioKit/blob/main/flutter-app/pubspec.yaml) for dependencies.
+- **Arduino Library**: See [library.json](https://github.com/rambros3d/RadioKit/blob/main/arduino-library/library.json) for dependencies
+- **Flutter App**: See [pubspec.yaml](https://github.com/rambros3d/RadioKit/blob/main/flutter-app/pubspec.yaml) for dependencies
 
----
-
-## 📄 License
+### License
 
 MIT — see [LICENSE](../LICENSE) files in each repository.

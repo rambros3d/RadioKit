@@ -10,10 +10,10 @@ RadioKit uses a virtual coordinate system which is independent of the actual scr
 
 ```
 (0,200) ┌──────────────────────────┐ (200,200)
-        │                          │
-        │  Coord system (0-200)    │
-        │                          │
-  (0,0) └──────────────────────────┘ (200,0)
+         │                          │
+         │  Coord system (0-200)    │
+         │                          │
+   (0,0) └──────────────────────────┘ (200,0)
 ```
 
 - **Origin**: `(0,0)` is the **bottom-left** corner.
@@ -188,7 +188,7 @@ void loop() {
   
   // Change label dynamically
   status.props.label = "ALERT!";
-  RadioKit.pushMetaUpdate(status.getId());
+  RadioKit.pushMetaUpdate(status.widgetId);
   
   // Change position
   slider.props.x = newX;
@@ -199,7 +199,7 @@ void loop() {
   
   // Update value
   slider.props.value = 50;
-  RadioKit.pushUpdate(slider.getId());
+  RadioKit.pushUpdate(slider.widgetId);
 }
 ```
 

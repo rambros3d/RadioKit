@@ -157,21 +157,23 @@ class _ControlScreenState extends State<ControlScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.home_rounded),
-                  tooltip: 'Back to Models',
-                  onPressed: () => context.go('/models'),
-                ),
                 if (kDebugMode)
                   IconButton(
                     icon: const Icon(Icons.bug_report_rounded),
                     tooltip: 'Debug',
                     onPressed: _openDebug,
+                    color: Colors.orange,
                   ),
-                TextButton.icon(
-                  icon: const Icon(Icons.bluetooth_disabled_rounded, size: 18),
-                  label: const Text('DISCONNECT'),
+                IconButton(
+                  icon: const Icon(Icons.home_rounded),
+                  tooltip: 'Home',
+                  onPressed: () => context.go('/models'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.dangerous_rounded),
                   onPressed: _disconnect,
+                  tooltip: 'Disconnect',
+                  color: Colors.red,
                 ),
                 const SizedBox(width: 8),
               ],
@@ -347,11 +349,13 @@ class _ControlScreenState extends State<ControlScreen> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            WidgetAdapter.build(
-              config: config,
-              state: state,
-              onInputChanged: (values) => deviceProvider.setInputValue(config.widgetId, values),
-              scale: scale,
+            Center(
+              child: WidgetAdapter.build(
+                config: config,
+                state: state,
+                onInputChanged: (values) => deviceProvider.setInputValue(config.widgetId, values),
+                scale: scale,
+              ),
             ),
             if (debugMode) ...[
               // Bounding box

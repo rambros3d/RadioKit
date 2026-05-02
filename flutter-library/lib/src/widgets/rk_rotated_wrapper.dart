@@ -27,9 +27,9 @@ class RKRotatedWrapper extends StatelessWidget {
       return child;
     }
 
-    final double labelH = (label != null && label!.isNotEmpty) ? 25.0 : 0.0;
-    final double totalH = contentHeight + labelH;
-    final double totalW = math.max(contentWidth, 100.0); // Minimum width for labels
+    final double labelH = (label != null && label!.isNotEmpty) ? 33.0 : 0.0; // 25 (text) + 8 (gap)
+    final double totalH = contentHeight + (labelH * 2); // Double for symmetry
+    final double totalW = math.max(contentWidth, 120.0); // Minimum width for labels
 
     // Calculate the bounding box of the rotated rectangle
     final double absCos = math.cos(rotation).abs();
@@ -47,29 +47,38 @@ class RKRotatedWrapper extends StatelessWidget {
           child: Center(
             child: Transform.rotate(
               angle: rotation,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (label != null && label!.isNotEmpty) ...[
-                    Text(
-                      label!.toUpperCase(),
-                      style: TextStyle(
-                        color: labelColor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                        fontFamily: 'monospace',
+              child: SizedBox(
+                width: totalW,
+                height: totalH,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (label != null && label!.isNotEmpty) ...[
+                      Text(
+                        label!.toUpperCase(),
+                        style: TextStyle(
+                          color: labelColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                          fontFamily: 'monospace',
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    const SizedBox(height: 8),
+                      const SizedBox(height: 8),
+                    ],
+                    child,
+                    if (label != null && label!.isNotEmpty)
+                      const SizedBox(height: 33), // Match top spacer height (text + gap)
                   ],
-                  child,
-                ],
+                ),
               ),
             ),
           ),
         ),
       ),
     );
+
   }
 }

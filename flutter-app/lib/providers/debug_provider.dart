@@ -7,7 +7,7 @@ import '../services/transport_service.dart';
 import '../services/protocol_service.dart';
 
 /// Maximum number of entries kept in the ring-buffer.
-const int kDebugLogMaxEntries = 5000;
+const int kDebugLogMaxEntries = 1000;
 
 /// Manages the debug packet log.
 ///

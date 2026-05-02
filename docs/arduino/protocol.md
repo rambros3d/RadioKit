@@ -1,4 +1,4 @@
-# RadioKit Protocol - v2.0
+# RadioKit Protocol - v3.0
 
 ## Overview
 
@@ -58,7 +58,7 @@ Sent in response to `GET_CONF`. Contains device configuration and widget descrip
 
 | Field           | Type      | Description                                            |
 |-----------------|-----------|--------------------------------------------------------|
-| `PROTO_VER`     | `uint8_t` | Protocol version (current: `0x02`)                     |
+| `PROTO_VER`     | `uint8_t` | Protocol version (current: `0x03`)                     |
 | `ORIENT`        | `uint8_t` | `0x00` = Landscape, `0x01` = Portrait                  |
 | `WIDGET_COUNT`  | `uint8_t` | Number of widget descriptors that follow               |
 | `NAME_LEN`      | `uint8_t` | Length of device name string                           |
@@ -289,3 +289,4 @@ App → Arduino: ACK
 | v0.02   | Added VAR_DATA, SET_INPUT |
 | v0.03   | Added reliability (ACK, VAR_UPDATE) |
 | v2.0    | Added META_DATA, TELEMETRY, expanded to 256 widgets, aspect ratio support |
+| v3.0    | Current version — META_UPDATE, enhanced reliability, 8-bit addressing for 256 widgets |
