@@ -130,7 +130,7 @@ class _ControlScreenState extends State<ControlScreen> {
                               Icon(Icons.signal_cellular_alt_rounded, 
                                 size: 14, color: _getRssiColor(deviceProvider.rssi ?? -127)),
                               const SizedBox(width: 4),
-                              Text('${deviceProvider.rssi ?? "--"} dB', 
+                              Text('${deviceProvider.rssi ?? "--"} dBm', 
                                 style: const TextStyle(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.bold)),
                             if (deviceProvider.rssi != null && deviceProvider.latencyMs != null)
                               Padding(

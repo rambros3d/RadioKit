@@ -13,8 +13,8 @@ class InspectorPanel extends StatelessWidget {
     this.centerPosition,
     this.amplitude,
     this.resolution,
-    this.minAngle,
-    this.maxAngle,
+    this.startAngle,
+    this.endAngle,
     this.minValue,
     this.maxValue,
     this.springBehavior,
@@ -23,8 +23,8 @@ class InspectorPanel extends StatelessWidget {
     this.onCenterPositionChanged,
     this.onAmplitudeChanged,
     this.onResolutionChanged,
-    this.onMinAngleChanged,
-    this.onMaxAngleChanged,
+    this.onStartAngleChanged,
+    this.onEndAngleChanged,
     this.onMinValueChanged,
     this.onMaxValueChanged,
     this.onSpringBehaviorChanged,
@@ -72,8 +72,8 @@ class InspectorPanel extends StatelessWidget {
   final double? springDuration;
   final double? amplitude;
   final double? resolution;
-  final double? minAngle;
-  final double? maxAngle;
+  final double? startAngle;
+  final double? endAngle;
   final double? minValue;
   final double? maxValue;
   final ValueChanged<bool>? onSelfCenteringChanged;
@@ -82,8 +82,8 @@ class InspectorPanel extends StatelessWidget {
   final ValueChanged<double>? onSpringDurationChanged;
   final ValueChanged<double>? onAmplitudeChanged;
   final ValueChanged<double>? onResolutionChanged;
-  final ValueChanged<double>? onMinAngleChanged;
-  final ValueChanged<double>? onMaxAngleChanged;
+  final ValueChanged<double>? onStartAngleChanged;
+  final ValueChanged<double>? onEndAngleChanged;
   final ValueChanged<double>? onMinValueChanged;
   final ValueChanged<double>? onMaxValueChanged;
   final String? textOn;
@@ -265,20 +265,20 @@ class InspectorPanel extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _buildEditableField(
-                            'Min Angle',
-                            (minAngle ?? -135).toString(),
-                            onMinAngleChanged != null
-                                ? (v) => _tryParseDouble(v, onMinAngleChanged!, -135)
+                            'Start Angle',
+                            (startAngle ?? -135).toString(),
+                            onStartAngleChanged != null
+                                ? (v) => _tryParseDouble(v, onStartAngleChanged!, -135)
                                 : null,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildEditableField(
-                            'Max Angle',
-                            (maxAngle ?? 135).toString(),
-                            onMaxAngleChanged != null
-                                ? (v) => _tryParseDouble(v, onMaxAngleChanged!, 135)
+                            'End Angle',
+                            (endAngle ?? 135).toString(),
+                            onEndAngleChanged != null
+                                ? (v) => _tryParseDouble(v, onEndAngleChanged!, 135)
                                 : null,
                           ),
                         ),

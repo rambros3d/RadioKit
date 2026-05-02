@@ -223,6 +223,7 @@ class ProtocolService {
       final strMask = payload[offset++];
 
       String label = '', icon = '', onText = '', offText = '', content = '';
+      double startAngle = -135, endAngle = 135;
 
       String readStr() {
         if (offset >= payload.length) return '';
@@ -244,6 +245,21 @@ class ProtocolService {
       if ((strMask & kStrMaskOffText) != 0) offText = readStr();
       if ((strMask & kStrMaskContent) != 0) content = readStr();
 
+      if ((strMask & kStrMaskExtra) != 0) {
+        if (offset < payload.length) {
+          final extraLen = payload[offset++];
+          if (extraLen >= 4 && typeId == kWidgetKnob) {
+            final miRaw = payload[offset] | (payload[offset + 1] << 8);
+            startAngle = (miRaw >= 0x8000 ? miRaw - 0x10000 : miRaw).toDouble();
+            final maRaw = payload[offset + 2] | (payload[offset + 3] << 8);
+            endAngle = (maRaw >= 0x8000 ? maRaw - 0x10000 : maRaw).toDouble();
+            offset += extraLen;
+          } else {
+            offset += extraLen;
+          }
+        }
+      }
+
       widgets.add(WidgetConfig(
         typeId:   typeId,
         widgetId: widgetId,
@@ -260,6 +276,8 @@ class ProtocolService {
         onText:   onText,
         offText:  offText,
         content:  content,
+        startAngle: startAngle,
+        endAngle: endAngle,
       ));
 
       debugPrint('  widget[$i]: ${widgets.last}');
@@ -393,6 +411,23 @@ class ProtocolService {
     if ((strMask & kStrMaskOffText) != 0) offText = readNext();
     if ((strMask & kStrMaskContent) != 0) content = readNext();
 
+    double startAngle = w.startAngle;
+    double endAngle = w.endAngle;
+    if ((strMask & kStrMaskExtra) != 0) {
+      if (current < payload.length) {
+        final extraLen = payload[current++];
+        if (extraLen >= 4 && w.typeId == kWidgetKnob) {
+          final miRaw = payload[current] | (payload[current + 1] << 8);
+          startAngle = (miRaw >= 0x8000 ? miRaw - 0x10000 : miRaw).toDouble();
+          final maRaw = payload[current + 2] | (payload[current + 3] << 8);
+          endAngle = (maRaw >= 0x8000 ? maRaw - 0x10000 : maRaw).toDouble();
+          current += extraLen;
+        } else {
+          current += extraLen;
+        }
+      }
+    }
+
     final updated = w.copyWith(
       label: label,
       icon: icon,
@@ -400,6 +435,8 @@ class ProtocolService {
       offText: offText,
       content: content,
       strMask: strMask,
+      startAngle: startAngle,
+      endAngle: endAngle,
     );
     return (updated, current);
   }

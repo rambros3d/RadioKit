@@ -22,6 +22,8 @@ struct RK_KnobProps {
   uint8_t     centering = RK_CENTER_NONE; ///< RK_CENTER_NONE/LEFT/CENTER/RIGHT
   uint8_t     detents   = 0;             ///< 0 = continuous; 1-63 = snap positions
   int8_t      value     = 0;             ///< Initial value: -100 to +100
+  int16_t     startAngle = -135;          ///< Start angle in degrees
+  int16_t     endAngle   = 135;           ///< End angle in degrees
 };
 
 class RK_Knob : public RadioKit_Widget {
@@ -35,6 +37,7 @@ public:
     void serializeInput(uint8_t* buf)          const override;
     void serializeOutput(uint8_t*)             const override {}
     void deserializeInput(const uint8_t* buf)        override;
+    uint16_t serializeStrings(uint8_t* buf)    const override;
 
     int8_t  get()           const { return props.value; }
     void    set(int8_t val)       { props.value = val > 100 ? 100 : (val < -100 ? -100 : val); }

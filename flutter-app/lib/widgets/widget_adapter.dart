@@ -198,6 +198,8 @@ class WidgetAdapter {
       variant: knobVariant,
       autoCenter: autoCenter,
       center: centerPos,
+      startAngle: config.startAngle,
+      endAngle: config.endAngle,
       divisions: detents > 1 ? detents : null,
       onChanged: (v) {
         int intVal = ((v * 200) - 100).round().clamp(-100, 100);

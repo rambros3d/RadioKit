@@ -36,6 +36,14 @@ RK_Knob pan({.label = "Pan",
              .y = 40,
              .scale = 2.0f,
              .centering = RK_CENTER});
+RK_Knob steering({.label = "Steer",
+                  .icon = "steering",
+                  .x = 170,
+                  .y = 80,
+                  .scale = 2.0f,
+                  .centering = RK_CENTER,
+                  .minAngle = -90,
+                  .maxAngle = 90});
 RK_Joystick joy({.label = "Stick", .x = 160, .y = 70, .scale = 2.0f});
 RK_MultipleButton mode({.label = "Multiple Button",
                         .x = 60,

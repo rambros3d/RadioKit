@@ -745,7 +745,6 @@ class DeviceProvider extends ChangeNotifier {
     switch (w.typeId) {
       case kWidgetButton:
         if (w.variant == 1) {
-          // Toggle button
           return v != 0 ? '→ ON' : '→ OFF';
         }
         return v != 0 ? '→ PRESSED' : '→ RELEASED';
@@ -758,31 +757,32 @@ class DeviceProvider extends ChangeNotifier {
         if (v < items.length) {
           return '→ "${items[v].label}" (idx:$v)';
         }
-        return '→ position $v';
-      case kWidgetSlider:
-        return '→ $v';
-      case kWidgetKnob:
-        return '→ $v';
-      case kWidgetJoystick:
-        final x = v;
-        final y = values.length > 1 ? values[1] : 0;
-        return '→ X:$x Y:$y';
+        return '→ index $v';
       case kWidgetMultiple:
         final items = w.multipleItems;
         if (w.variant == 1) {
-          // Bitmask variant
-          final selected = <String>[];
+          final parts = <String>[];
           for (int i = 0; i < items.length; i++) {
-            if ((v & (1 << i)) != 0) selected.add(items[i].label);
+            if ((v >> i) & 1 == 1) parts.add(items[i].label);
           }
-          return '→ [${selected.join(', ')}] (mask:0x${v.toRadixString(16)})';
+          return '→ [${parts.join(", ")}] (mask:$v)';
         } else {
-          // Index variant
           if (v < items.length) {
             return '→ "${items[v].label}" (idx:$v)';
           }
           return '→ index $v';
         }
+      case kWidgetKnob:
+        if (w.variant == 1) {
+          return '→ Steering ${v.toString().padLeft(4)}%';
+        }
+        return '→ $v%';
+      case kWidgetSlider:
+        return '→ $v%';
+      case kWidgetJoystick:
+        final vx = values.isNotEmpty ? values[0] : 0;
+        final vy = values.length > 1 ? values[1] : 0;
+        return '→ X:$vx Y:$vy';
       default:
         return '→ $values';
     }

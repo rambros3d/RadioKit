@@ -135,6 +135,7 @@ const int kStrMaskIcon    = 0x02;
 const int kStrMaskOnText  = 0x04;
 const int kStrMaskOffText = 0x08;
 const int kStrMaskContent = 0x10;
+const int kStrMaskExtra   = 0x20;
 
 // Widget type name for display
 String widgetTypeName(int typeId) {
@@ -162,24 +163,31 @@ String widgetVariantName(int typeId, int variant) {
     case kWidgetKnob:
       if (variant == 1) return 'Steering';
       break;
+    case kWidgetJoystick:
+      // Joysticks often use the centering variants directly
+      break;
   }
 
   // Common logic for centering/detents (Slider, Knob, Joystick)
   if (typeId == kWidgetSlider || typeId == kWidgetKnob || typeId == kWidgetJoystick) {
     final center = variantCentering(variant);
     final detents = variantDetents(variant);
-    final parts = <String>[];
     
+    if (center == kCenterNone && detents <= 1) {
+      // If it's a Knob and we reached here, and variant was 1, it already returned 'Steering'.
+      // If variant was 0, it should return ''.
+      return variant == 0 ? '' : 'V:$variant';
+    }
+
+    final parts = <String>[];
     if (center != kCenterNone) {
       if (center == kCenterLeft) parts.add('Left');
       else if (center == kCenterMid) parts.add('Mid');
       else if (center == kCenterRight) parts.add('Right');
     }
-    
     if (detents > 1) {
       parts.add('D$detents');
     }
-    
     return parts.join('+');
   }
 

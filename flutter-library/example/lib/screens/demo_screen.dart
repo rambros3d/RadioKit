@@ -70,8 +70,8 @@ class _DemoScreenState extends State<DemoScreen> {
   String _knobCenterPos = 'center';
   String _knobSpringBehavior = 'smooth';
   double _knobSpringDuration = 500;
-  double _knobMinAngle = -135.0;
-  double _knobMaxAngle = 135.0;
+  double _knobStartAngle = -135.0;
+  double _knobEndAngle = 135.0;
   double _knobMin = -100.0;
   double _knobMax = 100.0;
   double _knobResolution = 1.0;
@@ -283,8 +283,8 @@ class _DemoScreenState extends State<DemoScreen> {
               : widget.selectedIndex == 4
                 ? _knobResolution
                 : _sliderResolution,
-            minAngle: _knobMinAngle,
-            maxAngle: _knobMaxAngle,
+            startAngle: _knobStartAngle,
+            endAngle: _knobEndAngle,
             minValue: widget.selectedIndex == 4 ? _knobMin : _sliderMin,
             maxValue: widget.selectedIndex == 4 ? _knobMax : _sliderMax,
             
@@ -304,8 +304,8 @@ class _DemoScreenState extends State<DemoScreen> {
               else if (widget.selectedIndex == 4) _knobResolution = v;
               else _sliderResolution = v;
             }),
-            onMinAngleChanged: (v) => setState(() => _knobMinAngle = v),
-            onMaxAngleChanged: (v) => setState(() => _knobMaxAngle = v),
+            onStartAngleChanged: (v) => setState(() => _knobStartAngle = v),
+            onEndAngleChanged: (v) => setState(() => _knobEndAngle = v),
             onMinValueChanged: (v) => setState(() {
               if (widget.selectedIndex == 4) _knobMin = v;
               else _sliderMin = v;
@@ -887,8 +887,8 @@ class _DemoScreenState extends State<DemoScreen> {
                     value: value,
                     min: _knobMin,
                     max: _knobMax,
-                    minAngle: _knobMinAngle,
-                    maxAngle: _knobMaxAngle,
+                    startAngle: _knobStartAngle,
+                    endAngle: _knobEndAngle,
                     autoCenter: _knobAutoCenter,
                     center: _getKnobCenter(_knobCenterPos),
                     springCurve: _getCurve(_knobSpringBehavior),
@@ -937,7 +937,7 @@ class _DemoScreenState extends State<DemoScreen> {
                       ),
                       TelemetryRow(
                         label: 'ANGLE', 
-                        value: (value / (_knobMax - _knobMin) * (_knobMaxAngle - _knobMinAngle)).toStringAsFixed(1) + '°'
+                        value: (value / (_knobMax - _knobMin) * (_knobEndAngle - _knobStartAngle)).toStringAsFixed(1) + '°'
                       ),
                       const TelemetryRow(label: 'MODE', value: 'ABSOLUTE'),
                     ],
@@ -959,8 +959,8 @@ class _DemoScreenState extends State<DemoScreen> {
                     value: value,
                     min: _knobMin,
                     max: _knobMax,
-                    minAngle: _knobMinAngle,
-                    maxAngle: _knobMaxAngle,
+                    startAngle: _knobStartAngle,
+                    endAngle: _knobEndAngle,
                     autoCenter: _knobAutoCenter,
                     center: _getKnobCenter(_knobCenterPos),
                     springCurve: _getCurve(_knobSpringBehavior),
@@ -1007,7 +1007,7 @@ class _DemoScreenState extends State<DemoScreen> {
                       ),
                       TelemetryRow(
                         label: 'ANGLE', 
-                        value: (value / (_knobMax - _knobMin) * (_knobMaxAngle - _knobMinAngle)).toStringAsFixed(1) + '°'
+                        value: (value / (_knobMax - _knobMin) * (_knobEndAngle - _knobStartAngle)).toStringAsFixed(1) + '°'
                       ),
                       const TelemetryRow(label: 'MODE', value: 'ABSOLUTE'),
                     ],

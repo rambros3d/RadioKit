@@ -17,8 +17,8 @@ class RKKnob extends StatefulWidget {
     this.size = 100.0,
     this.divisions,
     this.onInteractionChanged,
-    this.minAngle = -135.0,
-    this.maxAngle = 135.0,
+    this.startAngle = -135.0,
+    this.endAngle = 135.0,
     this.autoCenter = false,
     this.center = 0.5,
     this.springCurve = Curves.easeOutCubic,
@@ -46,10 +46,10 @@ class RKKnob extends StatefulWidget {
   final int? divisions;
 
   /// Start angle in degrees (default -135)
-  final double minAngle;
+  final double startAngle;
 
   /// End angle in degrees (default 135)
-  final double maxAngle;
+  final double endAngle;
 
   /// Whether the knob springs back to center
   final bool autoCenter;
@@ -160,8 +160,8 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
     final normalized = (widget.value - widget.min) / (widget.max - widget.min);
     final zeroPos = ((0.0 - widget.min) / (widget.max - widget.min)).clamp(0.0, 1.0);
     
-    final sweepRad = (widget.maxAngle - widget.minAngle) * math.pi / 180;
-    final startRad = (-math.pi / 2) - (zeroPos * sweepRad);
+    final sweepRad = (widget.endAngle - widget.startAngle) * math.pi / 180;
+    final startRad = (-math.pi / 2) + (widget.startAngle * math.pi / 180);
     final currentAngle = startRad + normalized * sweepRad;
 
     final double indicatorH = (widget.variant == RKKnobVariant.steeringWheel) ? 20.0 : 0.0;
@@ -169,7 +169,7 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
     final double contentW = widget.size;
 
     return RKRotatedWrapper(
-      rotation: widget.rotation,
+      rotation: widget.rotation * math.pi / 180,
       label: widget.label,
       contentWidth: contentW,
       contentHeight: contentH,
@@ -186,7 +186,7 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
               final center = box.size.center(Offset.zero);
               final localPos = box.globalToLocal(details.globalPosition);
               _previousTouchAngle = math.atan2(localPos.dy - center.dy, localPos.dx - center.dx) * 180 / math.pi;
-              _currentAccumulatedRotation = (normalized - zeroPos) * (widget.maxAngle - widget.minAngle);
+              _currentAccumulatedRotation = (normalized - widget.center) * (widget.endAngle - widget.startAngle);
             },
             onPanUpdate: (details) {
               if (_previousTouchAngle == null) return;
@@ -199,8 +199,8 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
               if (delta < -180) delta += 360;
               _currentAccumulatedRotation += delta;
               _previousTouchAngle = currentTouchAngle;
-              final minRot = (0.0 - zeroPos) * (widget.maxAngle - widget.minAngle);
-              final maxRot = (1.0 - zeroPos) * (widget.maxAngle - widget.minAngle);
+              final minRot = (0.0 - widget.center) * (widget.endAngle - widget.startAngle);
+              final maxRot = (1.0 - widget.center) * (widget.endAngle - widget.startAngle);
               final targetRotation = _currentAccumulatedRotation.clamp(minRot, maxRot);
               final norm = (targetRotation - minRot) / (maxRot - minRot);
               double newVal = widget.min + norm * (widget.max - widget.min);
@@ -228,17 +228,17 @@ class _RKKnobState extends State<RKKnob> with SingleTickerProviderStateMixin {
                             angle: currentAngle,
                             tokens: tokens,
                             normalized: normalized,
-                            zeroPos: zeroPos,
                             startAngle: startRad,
                             sweepAngle: sweepRad,
+                            centerPos: widget.center,
                           )
                         : _KnobPainter(
                             angle: currentAngle,
                             tokens: tokens,
                             normalized: normalized,
-                            zeroPos: zeroPos,
                             startAngle: startRad,
                             sweepAngle: sweepRad,
+                            centerPos: widget.center,
                           ),
                   ),
                   if (widget.variant == RKKnobVariant.steeringWheel)
@@ -267,7 +267,7 @@ class _KnobPainter extends CustomPainter {
     required this.angle,
     required this.tokens,
     required this.normalized,
-    required this.zeroPos,
+    required this.centerPos,
     required this.startAngle,
     required this.sweepAngle,
   });
@@ -275,7 +275,7 @@ class _KnobPainter extends CustomPainter {
   final double angle;
   final RKTokens tokens;
   final double normalized;
-  final double zeroPos;
+  final double centerPos;
   final double startAngle;
   final double sweepAngle;
 
@@ -305,8 +305,8 @@ class _KnobPainter extends CustomPainter {
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
 
-    final arcStart = startAngle + zeroPos * sweepAngle;
-    final arcSweep = (normalized - zeroPos) * sweepAngle;
+    final arcStart = startAngle + centerPos * sweepAngle;
+    final arcSweep = (normalized - centerPos) * sweepAngle;
 
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius - 4),
@@ -351,7 +351,7 @@ class _SteeringWheelPainter extends CustomPainter {
   final double angle;
   final RKTokens tokens;
   final double normalized;
-  final double zeroPos;
+  final double centerPos;
   final double startAngle;
   final double sweepAngle;
 
@@ -359,7 +359,7 @@ class _SteeringWheelPainter extends CustomPainter {
     required this.angle,
     required this.tokens,
     required this.normalized,
-    required this.zeroPos,
+    required this.centerPos,
     required this.startAngle,
     required this.sweepAngle,
   });
@@ -551,7 +551,7 @@ class _SteeringWheelPainter extends CustomPainter {
   @override
   bool shouldRepaint(_SteeringWheelPainter old) =>
       old.angle != angle ||
-      old.zeroPos != zeroPos ||
+      old.centerPos != centerPos ||
       old.normalized != normalized;
 }
 

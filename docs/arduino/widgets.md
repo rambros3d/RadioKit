@@ -298,6 +298,8 @@ struct RK_KnobProps {
     float       scale    = 1.0f;
     uint8_t     style    = 0;
     //--------------------------
+    int16_t     startAngle = -135; // Start angle in degrees
+    int16_t     endAngle   = 135;  // End angle in degrees
     uint8_t     centering = RK_CENTER_NONE;
     uint8_t     detents   = 0;
     int8_t      value     = 0; // -100 to +100
