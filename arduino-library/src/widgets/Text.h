@@ -14,15 +14,14 @@ struct RK_TextProps {
   uint8_t x = 0;
   uint8_t y = 0;
   int16_t rotation = 0; ///< Rotation in degrees.
-  float scale = 1.0f;
+  uint8_t height = 10;
+  uint8_t width = 0;
   uint8_t style = 0;
   const char *text = nullptr;
 };
 
 class RK_Text : public RadioKit_Widget {
 public:
-    static constexpr uint8_t DEFAULT_ASPECT = 40;
-
     RK_Text(RK_TextProps p);
 
     uint8_t inputSize()  const override { return 0; }
@@ -39,7 +38,7 @@ public:
     RK_TextProps props;
 
 protected:
-    uint8_t defaultAspect() const override { return DEFAULT_ASPECT; }
+    float defaultAspect() const override { return 4.0f; }
 
 private:
     char _text[RADIOKIT_TEXT_LEN];

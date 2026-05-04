@@ -4,7 +4,7 @@
 
 RK_LED::RK_LED(RK_LEDProps p) : props(p) {
     typeId = RK_TYPE_LED;
-    _init(p.label, p.x, p.y, p.scale, 0.0f, p.style, 0,
+    _init(p.label, p.x, p.y, p.height, p.width, p.style, 0,
           p.icon, nullptr, nullptr, p.rotation);
 }
 

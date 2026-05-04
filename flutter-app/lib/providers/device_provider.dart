@@ -212,13 +212,11 @@ class DeviceProvider extends ChangeNotifier {
     } 
     else if (demoId == 'RC_CONTROLLER') {
       _widgets = [
-        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 1, x: 45,  y: 50,  height: 25, variant: kCenterMid, label: 'L_STICK', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetJoystick,    widgetId: 2, x: 155, y: 50,  height: 25, variant: kCenterMid, label: 'R_STICK', strMask: kStrMaskLabel),
+        const WidgetConfig(typeId: kWidgetSlider,    widgetId: 1, x: 45,  y: 50,  height: 25, variant: kCenterMid, label: 'L_STICK', strMask: kStrMaskLabel),
         const WidgetConfig(typeId: kWidgetLed,         widgetId: 3, x: 100, y: 90,  height: 12, label: 'LINK', strMask: kStrMaskLabel),
         const WidgetConfig(typeId: kWidgetButton,      widgetId: 4, x: 30,  y: 90,  height: 10, variant: 1, label: 'ARM', onText: 'ARMED', offText: 'DISARM', strMask: kStrMaskLabel | kStrMaskOnText | kStrMaskOffText),
         const WidgetConfig(typeId: kWidgetButton,      widgetId: 5, x: 170, y: 90,  height: 10, label: 'KILL', icon: 'skull', onText: 'ENGAGED', offText: 'READY', strMask: kStrMaskLabel | kStrMaskIcon | kStrMaskOnText | kStrMaskOffText),
         const WidgetConfig(typeId: kWidgetText,        widgetId: 6, x: 100, y: 15, width: 70, height: 10, label: 'TELEMETRY', strMask: kStrMaskLabel),
-        const WidgetConfig(typeId: kWidgetSlideSwitch, widgetId: 7, x: 100, y: 50,  height: 35, label: 'TRIM', strMask: kStrMaskLabel),
       ];
       _orientation = kOrientationLandscape;
     }

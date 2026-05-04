@@ -16,7 +16,7 @@ void RadioKit_Multiple::_initFromProps(const RK_MultipleProps& p, uint8_t tid) {
         _poolCount++;
     }
 
-    _init(p.label, p.x, p.y, p.scale, 0.0f, p.style, p.variant,
+    _init(p.label, p.x, p.y, p.height, p.width, p.style, p.variant,
           p.icon, nullptr, nullptr, p.rotation);
 }
 

@@ -17,8 +17,8 @@ struct RK_SlideSwitchProps {
   uint8_t x = 0;
   uint8_t y = 0;
   int16_t rotation = 0;
-  float scale  = 1.0f;
-  float aspect = 1.0f;
+  uint8_t height = 10;
+  uint8_t width = 0;
   uint8_t style = 0;
   bool    state = false;
   const char *onText  = nullptr;
@@ -27,8 +27,6 @@ struct RK_SlideSwitchProps {
 
 class RK_SlideSwitch : public RadioKit_Widget {
 public:
-    static constexpr uint8_t DEFAULT_ASPECT = 25; // 2.5 — wider track
-
     RK_SlideSwitch(RK_SlideSwitchProps p);
 
     uint8_t inputSize()  const override { return 1; }
@@ -44,7 +42,7 @@ public:
     RK_SlideSwitchProps props;
 
 protected:
-    uint8_t defaultAspect() const override { return DEFAULT_ASPECT; }
+    float defaultAspect() const override { return 2.5f; }
 
 private:
     bool _state;

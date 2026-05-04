@@ -13,7 +13,8 @@ struct RK_JoystickProps {
   uint8_t x = 0;
   uint8_t y = 0;
   int16_t rotation = 0; ///< Rotation in degrees.
-  float scale = 1.0f;
+  uint8_t height = 20;
+  uint8_t width = 0;
   bool enabled = true;
   uint8_t variant = 0;
   int8_t xvalue = 0;
@@ -22,8 +23,6 @@ struct RK_JoystickProps {
 
 class RK_Joystick : public RadioKit_Widget {
 public:
-    static constexpr uint8_t DEFAULT_ASPECT = 10;
-
     RK_Joystick(RK_JoystickProps p);
 
     uint8_t inputSize()  const override { return 2; }
@@ -38,7 +37,7 @@ public:
     RK_JoystickProps props;
 
 protected:
-    uint8_t defaultAspect() const override { return DEFAULT_ASPECT; }
+    float defaultAspect() const override { return 1.0f; }
 };
 
 #endif // RADIOKIT_WIDGET_JOYSTICK_H

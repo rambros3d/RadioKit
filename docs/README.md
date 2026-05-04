@@ -1,17 +1,15 @@
 # RadioKit
 
-Open source alternative to RemoteXY — build amazing UIs for your Arduino projects using a simple C++ API and a native Flutter companion app.
+Open source alternative to RemoteXY, build amazing UIs for your Arduino projects using a simple C++ API and a native Flutter companion app.
 
 ## Overview
 
-RadioKit lets you define your UI directly in Arduino code and see it instantly in a smartphone app. No server, no code generation, just BLE or Serial communication.
+RadioKit lets you define your UI directly in Arduino code and see it instantly in a smartphone app.
 
 ### Features
 
 - **Pure Arduino**: Define your UI in Arduino code with a clean object-oriented API
-- **Multiple Transports**: BLE (NimBLE) and Serial (USB/UART) support
-- **Native V2.0 Engine**: Smooth SVG-based rendering with zero HTML overhead
-- **Haptic Physics**: High-fidelity spring simulations for sliders and knobs
+- **Multiple Transports**: BLE (NimBLE) and Serial (USB/UART) support (Classic bluetooth and wifi will be implemented later)
 - **Theme Gallery**: Multiple built-in skins (default, dark, retro, cyberpunk, neon, minimal)
 - **Cross-Platform**: Flutter-based client app runs on Android, iOS, and Web
 
@@ -21,13 +19,13 @@ RadioKit lets you define your UI directly in Arduino code and see it instantly i
 #include <RadioKit.h>
 
 // Widget declarations
-RK_PushButton fireBtn({.label="Fire", .x=20, .y=50, .scale=1.5, .icon="flame"});
-RK_ToggleButton power({.label="Power", .x=20, .y=80, .scale=1.5});
-RK_Slider slider({.label="Level", .x=100, .y=60, .aspect=8.0f, .value=0});
-RK_Knob pan({.label="Pan", .x=170, .y=40, .scale=2.0f, .centering=RK_CENTER});
-RK_Joystick joy({.label="Stick", .x=160, .y=70, .scale=2.0f});
-RK_LED status({.label="Status", .x=20, .y=20, .scale=1.4f});
-RK_Text uptime({.label="Uptime", .x=20, .y=10});
+RK_PushButton fireBtn({.label="Fire", .x=20, .y=50, .height=15, .icon="flame"});
+RK_ToggleButton power({.label="Power", .x=20, .y=80, .height=15});
+RK_Slider slider({.label="Level", .x=100, .y=60, .height=12, .width=80, .value=0});
+RK_Knob pan({.label="Pan", .x=170, .y=40, .height=20, .centering=RK_CENTER});
+RK_Joystick joy({.label="Stick", .x=160, .y=70, .height=20});
+RK_LED status({.label="Status", .x=20, .y=20, .height=15});
+RK_Text uptime({.label="Uptime", .x=20, .y=10, .height=10});
 
 void setup() {
   RadioKit.config.name = "MyRobot";
@@ -41,7 +39,7 @@ void loop() {
   RadioKit.update();
   
   // Read widget states
-  if (fireBtn.isPressed()) { /* fire! */ }
+  if (fireBtn.clicked()) { /* fire! (triggers once) */ }
   if (power.get()) { /* power on */ }
   
   // Update outputs

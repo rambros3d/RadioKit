@@ -24,7 +24,7 @@ import 'package:radiokit_widgets/radiokit_widgets.dart';
 |--------|-------------|
 | [RKButton](rk_button.md) | Momentary or toggle push button with haptic feedback |
 | [RKSwitch](rk_switch.md) | Material-style toggle switch |
-| [RKRollingSwitch](rk_rolling_switch.md) | iOS-style slide toggle |
+| [RKSlideSwitch](rk_slide_switch.md) | iOS-style slide toggle |
 | [RKRockerSwitch](rk_rocker_switch.md) | Rocker-style on/off switch |
 | [RKSlider](rk_slider.md) | Linear slider with value display |
 | [RKKnob](rk_knob.md) | Rotary knob with spring physics |

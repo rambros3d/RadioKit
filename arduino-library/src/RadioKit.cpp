@@ -348,8 +348,8 @@ uint16_t RadioKitClass::_buildConfPayload(uint8_t* buf, uint16_t bufSize) {
         buf[out++] = w->widgetId;
         buf[out++] = w->x();
         buf[out++] = w->y();
-        buf[out++] = w->scale();
-        buf[out++] = w->aspect();
+        buf[out++] = w->height();
+        buf[out++] = w->width();
         int16_t rot = w->rotation();
         buf[out++] = (uint8_t)(rot & 0xFF);
         buf[out++] = (uint8_t)((rot >> 8) & 0xFF);

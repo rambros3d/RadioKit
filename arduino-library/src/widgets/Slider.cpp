@@ -3,7 +3,7 @@
 RK_Slider::RK_Slider(RK_SliderProps p) : props(p) {
     typeId = RK_TYPE_SLIDER;
     uint8_t v = RK_VARIANT(p.centering, p.detents);
-    _init(p.label, p.x, p.y, p.scale, p.aspect, 0, v,
+    _init(p.label, p.x, p.y, p.height, p.width, 0, v,
           nullptr, nullptr, nullptr, p.rotation);
     props.value = p.value;
 }

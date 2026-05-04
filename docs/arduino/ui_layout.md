@@ -1,15 +1,15 @@
 # RadioKit UI & Layout
 
-This document describes the coordinate system, scaling model, and visual theme engine used by RadioKit v2.0.
+This document describes the coordinate system, absolute layout model, and visual theme engine used by RadioKit v3.0.
 
 ---
 
 ## 1. Coordinate System
 
-RadioKit uses a virtual coordinate system which is independent of the actual screen size of the device. The default canvas size is 200×200 (landscape) or 200×200 (portrait — same virtual space, rotated).
+RadioKit uses a virtual coordinate system which is independent of the actual screen size of the device. The default canvas size is 200×100 (landscape) or 100×200 (portrait — same virtual space, rotated).
 
 ```
-(0,200) ┌──────────────────────────┐ (200,200)
+ (0,100) ┌──────────────────────────┐ (200,100)
          │                          │
          │  Coord system (0-200)    │
          │                          │
@@ -25,29 +25,30 @@ RadioKit uses a virtual coordinate system which is independent of the actual scr
 
 ## 2. Layout Model
 
-RadioKit uses a **Baseline × Scale** model. Each widget has a baseline size (at `scale = 1.0`), and the final size is computed by multiplying by the scale factor.
+RadioKit uses an explicit **Height & Width** model. Each widget defines its physical dimensions in the virtual 200×200 canvas.
 
 ### Size Calculation
 
 ```
-finalHeight = baseHeight × scale
-finalWidth  = (baseHeight × aspect) × scale
+finalHeight = height
+finalWidth  = (width != 0) ? width : (height × defaultAspect)
 ```
 
-- **`scale`** — Controls overall size (default `1.0`).
-- **`aspect`** — Controls width relative to height (default varies by widget type).
-  - Slider: `aspect = 5.0` (5× wider than tall)
-  - Button: `aspect = 1.0` (square)
-  - Knob: `aspect = 1.0` (circular)
+- **`height`** — Primary size control (vertical span, 0–200). Default is `10`.
+- **`width`** — Horizontal span (0–200). 
+  - If `0` (default), the widget uses its internal **Default Aspect Ratio**.
+  - If non-zero, it overrides the aspect ratio.
+  - **Fixed Aspect Widgets**: Some widgets (Buttons, Knobs, Joysticks) enforce a fixed aspect ratio (e.g. 1.0). For these, the `width` parameter is ignored.
 
 ### Example
 
 ```cpp
 RK_Slider slider({
-    .label = "Throttle",
     .x = 100, .y = 50,
-    .scale = 1.5f,    // 1.5× taller
-    .aspect = 8.0f    // 8× wider than tall
+    .height = 15,    // 15 units tall
+    .width  = 120,   // 120 units wide (override)
+    .rotation = 0,
+    .label = "Throttle"
 });
 ```
 
@@ -62,23 +63,23 @@ All widgets share these common parameters in their `Props` struct:
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `x`, `y` | `uint8` | Center position (0–200) | 100, 100 |
-| `scale` | `float` | Size multiplier | 1.0 |
+| `height` | `uint8` | Physical height (0–200) | 10 |
+| `width` | `uint8` | Physical width (0–200) | 0 (Auto) |
 | `rotation` | `int16` | Rotation in degrees (clockwise) | 0 |
 | `label` | `const char*` | Text label above widget | `nullptr` |
 | `icon` | `const char*` | Icon name from skin | `nullptr` |
-| `style` | `uint8` | Visual style (0–4) | 0 |
 
 ### Coordinate Examples
 
 ```cpp
 // Top-left corner
-RK_Button btn1({.x = 20, .y = 180, .label = "TL"});
+RK_Button btn1({ .x = 20, .y = 180, .height = 10, .width = 0, .rotation = 0, .label = "TL" });
 
 // Center
-RK_Button btn2({.x = 100, .y = 100, .label = "Center"});
+RK_Button btn2({ .x = 100, .y = 100, .height = 10, .width = 0, .rotation = 0, .label = "Center" });
 
 // Bottom-right
-RK_Button btn3({.x = 180, .y = 20, .label = "BR"});
+RK_Button btn3({ .x = 180, .y = 20, .height = 10, .width = 0, .rotation = 0, .label = "BR" });
 ```
 
 ---
@@ -128,29 +129,6 @@ Set via `RadioKit.config.theme`:
 | `RK_MINIMAL` | Flat, minimal |
 | `"custom-url"` | Custom skin from GitHub |
 
-### Widget Styles
-
-The `style` parameter applies semantic meaning, mapped to theme colors:
-
-| Style | Constant | Use Case |
-|-------|----------|----------|
-| `0` | `RK_PRIMARY` | Primary action (default) |
-| `1` | `RK_DIM` | Inactive/secondary |
-| `2` | `RK_SUCCESS` | Positive state (green) |
-| `3` | `RK_WARNING` | Warning state (yellow) |
-| `4` | `RK_DANGER` | Danger state (red) |
-
-**Example:**
-
-```cpp
-RK_PushButton fire({
-    .label = "FIRE",
-    .x = 20, .y = 60,
-    .style = RK_DANGER,  // Red button
-    .icon = "flame"
-});
-```
-
 ---
 
 ## 6. Icons
@@ -170,9 +148,12 @@ Icons are referenced by string name. Standard names ensure cross-theme compatibi
 
 ```cpp
 RK_Button btn({
-    .label = "WiFi",
+    .x = 50, .y = 50,
+    .height = 15,
+    .width = 0,
+    .rotation = 0,
     .icon = "wifi",
-    .x = 50, .y = 50
+    .label = "WiFi"
 });
 ```
 
@@ -194,9 +175,6 @@ void loop() {
   slider.props.x = newX;
   slider.props.y = newY;
   
-  // Change style
-  led.props.style = RK_SUCCESS;
-  
   // Update value
   slider.props.value = 50;
   RadioKit.pushUpdate(slider.widgetId);
@@ -210,9 +188,9 @@ void loop() {
 | `widget.props.label = "..."` | Update label text |
 | `widget.props.icon = "..."` | Update icon name |
 | `widget.props.x/y` | Update position |
-| `widget.props.scale` | Update size |
+| `widget.props.height` | Update physical height |
+| `widget.props.width` | Update physical width |
 | `widget.props.rotation` | Update rotation |
-| `widget.props.style` | Update visual style |
 | `widget.props.value` | Update current value |
 
 ---
@@ -222,10 +200,9 @@ void loop() {
 1. **Use consistent spacing** — Maintain 10–20 unit gaps between widgets.
 2. **Group related controls** — Place related widgets near each other.
 3. **Respect safe zones** — Keep critical controls away from edges (10–20 unit margin).
-4. **Use appropriate scale** — Buttons: 1.5–2.0×, Sliders: 1.0–1.5×.
-5. **Leverage aspect ratio** — Make sliders wide, knobs square.
-6. **Use semantic styles** — Apply `RK_SUCCESS`, `RK_DANGER` appropriately.
-7. **Test on different screens** — Virtual coordinates ensure consistency.
+4. **Use appropriate height** — Buttons: 15–20, Sliders: 10–12.
+5. **Leverage width override** — Make sliders wide (e.g. `width=80`), knobs square (`width=0`).
+6. **Test on different screens** — Virtual coordinates ensure consistency.
 
 ## See Also
 

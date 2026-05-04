@@ -5,7 +5,7 @@
 void RadioKit_Button::_initFromProps(const RK_ButtonProps& p, uint8_t tid) {
     props  = p;
     typeId = tid;
-    _init(p.label, p.x, p.y, p.scale, 0.0f, p.style, 0,
+    _init(p.label, p.x, p.y, p.height, p.width, p.style, 0,
           p.icon, p.onText, p.offText, p.rotation);
 }
 

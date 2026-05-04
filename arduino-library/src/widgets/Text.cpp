@@ -10,7 +10,7 @@ RK_Text::RK_Text(RK_TextProps p)
     if (p.text && p.text[0] != '\0') {
         strncpy(_text, p.text, RADIOKIT_TEXT_LEN - 1);
     }
-    _init(p.label, p.x, p.y, p.scale, 0.0f, p.style, 0,
+    _init(p.label, p.x, p.y, p.height, p.width, p.style, 0,
           p.icon, nullptr, nullptr, p.rotation);
 }
 

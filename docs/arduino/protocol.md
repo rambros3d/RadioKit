@@ -27,21 +27,23 @@ Minimum packet size: **6 bytes** (no payload).
 
 ## Command Bytes
 
-| Value  | Name         | Direction     | Description                           |
-|--------|--------------|---------------|---------------------------------------|
-| `0x01` | `GET_CONF`   | App → Arduino | Request configuration descriptor      |
-| `0x02` | `CONF_DATA`  | Arduino → App | Configuration descriptor response     |
-| `0x03` | `GET_VARS`   | App → Arduino | Request current variable state        |
-| `0x04` | `VAR_DATA`   | Arduino → App | Variable state response               |
-| `0x05` | `GET_META`   | App → Arduino | Request widget metadata               |
-| `0x06` | `META_DATA`  | Arduino → App | Metadata response                     |
-| `0x07` | `SET_INPUT`  | App → Arduino | Set input widget state                |
-| `0x08` | `ACK`        | Both          | Acknowledge reliable packet           |
-| `0x09` | `PING`       | App → Arduino | Connectivity check                    |
-| `0x0A` | `PONG`       | Arduino → App | Ping response                         |
-| `0x0B` | `VAR_UPDATE` | Both          | Reliable push of a single widget state|
-| `0x0C` | `META_UPDATE`| Both          | Reliable push of widget metadata      |
-| `0x0D` | `TELEMETRY`  | Arduino → App | Telemetry data (RSSI, uptime, etc.)   |
+| Value  | Name             | Direction     | Description                           |
+|--------|------------------|---------------|---------------------------------------|
+| `0x01` | `GET_CONF`       | App → Arduino | Request configuration descriptor      |
+| `0x02` | `CONF_DATA`      | Arduino → App | Configuration descriptor response     |
+| `0x03` | `PING`           | App → Arduino | Connectivity check                    |
+| `0x04` | `PONG`           | Arduino → App | Ping response                         |
+| `0x05` | `ACK`            | Both          | Acknowledge reliable packet           |
+| `0x06` | `GET_VARS`       | App → Arduino | Request current variable state        |
+| `0x07` | `VAR_DATA`       | Arduino → App | Variable state response               |
+| `0x08` | `VAR_UPDATE`     | Both          | Reliable push of a single widget state|
+| `0x09` | `GET_META`       | App → Arduino | Request widget metadata               |
+| `0x0A` | `META_DATA`      | Arduino → App | Metadata response                     |
+| `0x0B` | `META_UPDATE`    | Both          | Reliable push of widget metadata      |
+| `0x0C` | `SET_INPUT`      | Arduino → App | Set state of an input widget from Arduino|
+| `0x0D` | `ACTIVE_STATE`   | App → Arduino | Bitmask of active widgets (1 bit/ID)  |
+| `0x0E` | `GET_TELEMETRY`  | App → Arduino | Request signal/battery status         |
+| `0x0F` | `TELEMETRY_DATA` | Arduino → App | Telemetry values (RSSI, etc.)         |
 
 ---
 
@@ -75,7 +77,7 @@ Sent in response to `GET_CONF`. Contains device configuration and widget descrip
 Each widget is described by a fixed header followed by optional string data.
 
 ```
-[TYPE][ID][X][Y][SCALE][ASPECT][ROT_LO][ROT_HI][STYLE][VARIANT][STR_MASK][STR_DATA...]
+[TYPE][ID][X][Y][HEIGHT][WIDTH][ROT_LO][ROT_HI][VARIANT][STR_MASK][STR_DATA...]
 ```
 
 | Field      | Type      | Description                                               |
@@ -84,11 +86,10 @@ Each widget is described by a fixed header followed by optional string data.
 | `ID`       | `uint8_t` | Widget index (0-based, sequential)                        |
 | `X`        | `uint8_t` | Center X on virtual canvas (0–200)                        |
 | `Y`        | `uint8_t` | Center Y on virtual canvas (0–200)                        |
-| `SCALE`    | `uint8_t` | Scale ×10 (e.g., `10` = 1.0×, `20` = 2.0×)                |
-| `ASPECT`   | `uint8_t` | Aspect ratio ×10 (e.g., `50` = 5.0, for Slider/Text)      |
+| `HEIGHT`   | `uint8_t` | Physical height in virtual units (0–200)                  |
+| `WIDTH`    | `uint8_t` | Physical width in virtual units (0 = auto-aspect)         |
 | `ROTATION` | `int16_t` | Rotation in degrees (clockwise)                           |
-| `STYLE`    | `uint8_t` | Visual style (0=primary, 1=dim, 2=success, 3=warning, 4=danger) |
-| `VARIANT`  | `uint8_t` | Behavioral variation (centering mode + detent count)      |
+| `VARIANT`  | `uint8_t` | Behavioral variation (e.g., spring mode)                  |
 | `STR_MASK` | `uint8_t` | String bitmask (determines following string segments)     |
 
 #### Widget Type IDs
@@ -145,9 +146,9 @@ Each widget's data is encoded according to its type:
 | 9     | MultipleButton  | 1 byte                                  | Bitmask of selected items       |
 | 10    | MultipleSelect  | 1 byte                                  | Bitmask of selected items       |
 
-### SET_INPUT (App → Arduino)
+### SET_INPUT (Arduino → App)
 
-Sent by the app when the user interacts with an input widget.
+Sent by the Arduino to programmatically set the state of an input widget in the app (e.g., resetting a slider or toggle).
 
 ```
 [ID][VALUE...]
@@ -158,12 +159,12 @@ Sent by the app when the user interacts with an input widget.
 | `ID`   | `uint8_t` | Widget index                             |
 | `VALUE`| variable  | Type-specific value (see VAR_DATA table) |
 
-The Arduino processes the input and may update internal state or trigger actions.
+The app updates the widget UI immediately. Unlike `VAR_UPDATE`, this is not acknowledged.
 
 ### VAR_UPDATE (Reliable Push)
 
 Pushes a change for a single widget. Can be sent by either side:
-- **App → Arduino**: When user changes an input (alternative to SET_INPUT with reliability)
+- **App → Arduino**: When user changes an input.
 - **Arduino → App**: When firmware programmatically changes a widget state
 
 ```
@@ -196,6 +197,18 @@ Confirms receipt of a reliable packet (`VAR_UPDATE` or `META_UPDATE`).
 |--------|-----------|------------------------------------------|
 | `SEQ`  | `uint8_t` | Sequence number being acknowledged       |
 
+### ACTIVE_STATE (App → Arduino)
+
+Sent whenever the "active" status of one or more widgets changes (e.g., user starts/stops touching a slider).
+
+```
+[BITMASK (4 bytes)]
+```
+
+- **Payload**: A 32-bit bitmask (Little-Endian).
+- **Mapping**: Bit `n` corresponds to Widget ID `n`.
+- **Value**: `1` = Active (being manipulated), `0` = Idle.
+
 ### META_DATA & META_UPDATE
 
 Same format as VAR_DATA/VAR_UPDATE but for widget metadata (label, icon, etc.). Used when firmware changes widget appearance at runtime.
@@ -205,14 +218,15 @@ Same format as VAR_DATA/VAR_UPDATE but for widget metadata (label, icon, etc.). 
 Periodic status updates (optional).
 
 ```
-[FLAGS][RSSI][UPTIME_LO][UPTIME_HI][UPTIME_MS_LO][UPTIME_MS_HI]
+[RSSI][LATENCY][RESERVED][RESERVED]
 ```
 
-| Field   | Type      | Description                              |
-|---------|-----------|------------------------------------------|
-| `FLAGS` | `uint8_t` | Bit 0: Connected, Bit 1: Has BLE, etc.   |
-| `RSSI`  | `int8_t`  | Signal strength (dBm, 127 if N/A)        |
-| `UPTIME`| `uint32_t`| Milliseconds since boot                  |
+| Field      | Type      | Description                               |
+|------------|-----------|-------------------------------------------|
+| `RSSI`     | `int8_t`  | Signal strength (dBm)                     |
+| `LATENCY`  | `uint8_t` | Reserved for latency                      |
+| `RESERVED` | `uint8_t` | Reserved                                  |
+| `RESERVED` | `uint8_t` | Reserved                                  |
 
 ---
 
@@ -272,8 +286,10 @@ Arduino → App: CONF_DATA (with all widget descriptors)
 App → Arduino: GET_VARS
 Arduino → App: VAR_DATA (current state of all widgets)
 [User taps button]
-App → Arduino: SET_INPUT (or VAR_UPDATE) with new state
+App → Arduino: VAR_UPDATE with new state
 Arduino → App: ACK
+[Arduino resets slider to zero]
+Arduino → App: SET_INPUT (or VAR_UPDATE) with value 0
 [LED state changes programmatically]
 Arduino → App: VAR_UPDATE (with LED new state)
 App → Arduino: ACK
@@ -289,4 +305,4 @@ App → Arduino: ACK
 | v0.02   | Added VAR_DATA, SET_INPUT |
 | v0.03   | Added reliability (ACK, VAR_UPDATE) |
 | v2.0    | Added META_DATA, TELEMETRY, expanded to 256 widgets, aspect ratio support |
-| v3.0    | Current version — META_UPDATE, enhanced reliability, 8-bit addressing for 256 widgets |
+| v3.0    | Current version — Absolute Height/Width layout, META_UPDATE, enhanced reliability |

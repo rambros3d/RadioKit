@@ -17,8 +17,8 @@ struct RK_SliderProps {
   uint8_t     x         = 0;
   uint8_t     y         = 0;
   int16_t     rotation  = 0;    ///< Rotation in degrees.
-  float       scale     = 1.0f;
-  float       aspect    = 1.0f;
+  uint8_t     height    = 10;
+  uint8_t     width     = 0;
   uint8_t     centering = RK_CENTER_NONE; ///< RK_CENTER_NONE/LEFT/CENTER/RIGHT
   uint8_t     detents   = 0;             ///< 0 = continuous; 1-63 = snap positions
   int8_t      value     = 0;             ///< Initial value: -100 to +100
@@ -26,8 +26,6 @@ struct RK_SliderProps {
 
 class RK_Slider : public RadioKit_Widget {
 public:
-  static constexpr uint8_t DEFAULT_ASPECT = 50; ///< 5.0 (wide)
-
   RK_Slider(RK_SliderProps p);
 
   uint8_t inputSize()  const override { return 1; }
@@ -44,7 +42,7 @@ public:
   RK_SliderProps props;
 
 protected:
-  uint8_t defaultAspect() const override { return DEFAULT_ASPECT; }
+  float defaultAspect() const override { return 5.0f; }
 };
 
 #endif // RADIOKIT_WIDGET_SLIDER_H

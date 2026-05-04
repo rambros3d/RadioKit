@@ -9,7 +9,6 @@ export 'src/theme/rk_tokens.dart';
 
 // Widgets
 export 'src/widgets/button/rk_button.dart';
-export 'src/widgets/switch/rk_switch.dart';
 export 'src/widgets/switch/rk_slide_switch.dart';
 export 'src/widgets/switch/rk_rocker_switch.dart';
 export 'src/widgets/slider/rk_slider.dart';

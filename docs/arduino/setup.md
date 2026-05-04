@@ -1,6 +1,6 @@
 # RadioKit Library - Functions Reference
 
-> This document reflects the **v2.0 Object-Oriented API** using **Tailored Initializers**.
+> This document reflects the **v3.0 Object-Oriented API** using **Tailored Initializers**.
 
 ---
 
@@ -23,13 +23,13 @@ Every RadioKit sketch follows a simple three-part pattern.
 // ── 1. Widget declarations (global scope) ────────────────────────────────
 // Each widget self-registers on construction
 
-RK_PushButton fireBtn({ .label="Fire", .x=20, .y=50, .scale=1.5, .icon="flame" });
-RK_ToggleButton power({ .label="Power", .x=20, .y=80, .scale=1.5 });
-RK_Slider throttle({ .label="Throttle", .x=100, .y=60, .aspect=8.0f, .value=0 });
-RK_Knob steering({ .label="Steer", .x=170, .y=40, .scale=2.0f, .centering=RK_CENTER });
-RK_Joystick joy({ .label="Stick", .x=160, .y=70, .scale=2.0f });
-RK_LED status({ .label="Status", .x=20, .y=20, .scale=1.4f });
-RK_Text uptime({ .label="Uptime", .x=20, .y=10 });
+RK_PushButton fireBtn({ .x = 20, .y = 50, .height = 15, .width = 0, .rotation = 0, .icon = "flame", .label = "Fire" });
+RK_ToggleButton power({ .x = 20, .y = 80, .height = 15, .width = 0, .rotation = 0, .label = "Power" });
+RK_Slider throttle({ .x = 100, .y = 60, .height = 12, .width = 80, .rotation = 0, .label = "Throttle", .value = 0 });
+RK_Knob steering({ .x = 170, .y = 40, .height = 20, .width = 0, .rotation = 0, .centering = RK_SPRING_CENTER, .label = "Steer" });
+RK_Joystick joy({ .x = 160, .y = 70, .height = 20, .width = 0, .rotation = 0, .label = "Stick" });
+RK_LED status({ .x = 20, .y = 20, .height = 15, .width = 0, .rotation = 0, .label = "Status" });
+RK_Text uptime({ .x = 20, .y = 10, .height = 10, .width = 0, .rotation = 0, .label = "Uptime" });
 
 // ── 2. setup() ───────────────────────────────────────────────────────────
 void setup() {
@@ -90,7 +90,7 @@ Global settings object. Configure **before** calling `begin()` — fields are re
 | `description` | `const char*` | Short overview of device function. | `""` |
 | `version` | `const char*` | User-defined firmware version (e.g. `"1.0.4"`). | `"1.0.0"` |
 | `type` | `const char*` | Device category (e.g. `"truck"`, `"robot"`). | `""` |
-| `theme` | `const char*` | Skin identifier (`RK_*` constants or URL). | `RK_DEFAULT` |
+| `theme` | `const char*` | Skin name string (e.g. "dark") or URL. | `"default"` |
 | `orientation` | `uint8_t` | `RK_LANDSCAPE` (default) or `RK_PORTRAIT`. | `RK_LANDSCAPE` |
 | `width` | `uint8_t` | Canvas width in virtual units (0–200, 0 = auto). | `0` |
 | `height` | `uint8_t` | Canvas height in virtual units (0–200, 0 = auto). | `0` |
@@ -173,7 +173,7 @@ int8_t getRssi();          // Returns RSSI in dBm (127 if N/A)
 
 ## 3. Widget Classes
 
-RadioKit v2.0 uses a **Props + Class** pattern. Each widget has:
+RadioKit v3.0 uses a **Props + Class** pattern. Each widget has:
 
 1. A **Props struct** (e.g., `RK_SliderProps`) — Plain data container with fields.
 2. A **Class** (e.g., `RK_Slider`) — Active controller with methods.
@@ -181,7 +181,7 @@ RadioKit v2.0 uses a **Props + Class** pattern. Each widget has:
 Instantiation uses an initializer list that implicitly creates the Props:
 
 ```cpp
-RK_Slider slider({ .label="Speed", .x=100, .y=60, .aspect=8.0f, .value=0 });
+RK_Slider slider({ .x = 100, .y = 60, .height = 12, .width = 80, .rotation = 0, .label = "Speed", .value = 0 });
 // { ... } creates RK_SliderProps, RK_Slider constructor consumes it
 ```
 
@@ -191,25 +191,26 @@ RK_Slider slider({ .label="Speed", .x=100, .y=60, .aspect=8.0f, .value=0 });
 |--------|-------|--------------|-----------|-------------|
 | PushButton | `RK_PushButton` | `RK_ButtonProps` | Input | Momentary (true while held) |
 | ToggleButton | `RK_ToggleButton` | `RK_ButtonProps` | Input | Latching on/off switch |
+| MultipleButton | `RK_MultipleButton` | `RK_MultipleProps` | Input | Radio-style group (bitmask) |
+| MultipleSelect | `RK_MultipleSelect` | `RK_MultipleProps` | Input | Checkbox group (bitmask) |
 | SlideSwitch | `RK_SlideSwitch` | `RK_SlideSwitchProps` | Input | iOS-style slide toggle |
 | Slider | `RK_Slider` | `RK_SliderProps` | Input | Linear -100..+100 |
 | Knob | `RK_Knob` | `RK_KnobProps` | Input | Rotary -100..+100 |
 | Joystick | `RK_Joystick` | `RK_JoystickProps` | Input | 2-axis (-100..+100 each) |
-| MultipleButton | `RK_MultipleButton` | `RK_MultipleProps` | Input | Radio-style group (bitmask) |
-| MultipleSelect | `RK_MultipleSelect` | `RK_MultipleProps` | Input | Checkbox group (bitmask) |
 | LED | `RK_LED` | `RK_LEDProps` | Output | Colour indicator |
-| Text | `RK_Text` | `RK_TextProps` | Output | Read-only text display |
+| Text | `RK_Text` | `RK_DisplayProps` | Output | Read-only text display |
+| Serial | `RK_Serial` | `RK_DisplayProps` | Output | Serial Monitor in app |
 
 ### Common Fields (all widgets)
 
 | Field | Type | Description | Default |
 |-------|------|-------------|---------|
 | `x`, `y` | `uint8_t` | Center position (0–200) | 100, 100 |
-| `scale` | `float` | Size multiplier | 1.0 |
+| `height` | `uint8_t` | Physical height (0–200) | 15 |
+| `width` | `uint8_t` | Physical width (0 = auto) | 0 |
 | `rotation` | `int16_t` | Rotation in degrees (clockwise) | 0 |
-| `label` | `const char*` | Text label above widget | `nullptr` |
 | `icon` | `const char*` | Icon name from skin | `nullptr` |
-| `style` | `uint8_t` | Visual style (0=primary, 1=dim, 2=success, 3=warning, 4=danger) | 0 |
+| `label` | `const char*` | Text label above widget | `nullptr` |
 
 ### Method Interface (Read/Write)
 
@@ -218,7 +219,8 @@ Best for standard control logic:
 ```cpp
 // Buttons
 bool isPressed();  // PushButton: true while held
-bool get();        // ToggleButton: current state
+bool clicked();    // PushButton: true once per click
+bool get();        // ToggleButton/Switch: current state
 void set(bool);    // Force update app-side state
 
 // Slider / Knob
@@ -232,8 +234,10 @@ int8_t getY();     // Y axis (-100 to +100)
 // Multiple
 uint8_t get();     // Returns bitmask
 bool get(uint8_t i); // Returns true if bit i is set
-void clear();      // Remove all items
-void add(RK_Item); // Add item (max 8)
+void clear();      // Remove all items from pool
+void add(RK_Item); // Add item to pool (max 8)
+void remove(uint8_t index); // Remove item from pool index
+void setIcon(const char*);  // Update group icon
 
 // LED
 void on();
@@ -242,10 +246,13 @@ void setColor(uint32_t rgba); // e.g. 0x00FF00
 void setRed/Green/Blue(uint8_t);
 void setOpacity(uint8_t);
 
-// Text
+// Display / Serial
 void set(const char*);
 void set(const String&);
 const char* get();
+void print(...);
+void println(...);
+void clear();
 ```
 
 ### Props Interface (Deep Access)
@@ -276,54 +283,34 @@ Detected hardware platform (read-only):
 
 ### UI Skins (`config.theme`)
 
-| Constant | Description |
-|----------|-------------|
-| `RK_DEFAULT` | Light blue, modern (default) |
-| `RK_DARK` | Dark mode |
-| `RK_RETRO` | CRT green phosphor |
-| `RK_FUTURISTIC` | Futuristic blue |
-| `RK_MILITARY` | Military green |
-| `RK_CYBERPUNK` | Cyberpunk neon |
-| `RK_NEON` | Neon glow |
-| `RK_MINIMAL` | Flat, minimal |
+Theme is passed as a string. Available built-in themes:
+
+| Theme Name | Description |
+|------------|-------------|
+| `"default"` | Light blue, modern (default) |
+| `"dark"` | Dark mode |
+| `"retro"` | CRT green phosphor |
+| `"futuristic"` | Futuristic blue |
+| `"military"` | Military green |
+| `"cyberpunk"` | Cyberpunk neon |
+| `"neon"` | Neon glow |
+| `"minimal"` | Flat, minimal |
 | `"https://..."` | Custom skin from GitHub ZIP |
 
-### Slider / Knob Centering Modes
+### Slider / Knob / Joystick Spring Modes
 
 Passed as `centering` field:
 
 | Constant | Value | Behaviour |
 |----------|-------|-----------|
-| `RK_CENTER_NONE` | 0 | No spring return (stays where released) |
-| `RK_CENTER_LEFT` | 1 | Springs to −100 on release |
-| `RK_CENTER` | 2 | Springs to 0 (centre) on release |
-| `RK_CENTER_RIGHT` | 3 | Springs to +100 on release |
+| `RK_SPRING_NONE` | 0 | No spring return (stays where released) |
+| `RK_SPRING_CENTER` | 1 | Springs to 0 (centre) on release |
+| `RK_SPRING_TOP` | 2 | Springs to −100 on release (Vertical) |
+| `RK_SPRING_BOTTOM` | 3 | Springs to +100 on release (Vertical) |
+| `RK_SPRING_LEFT` | 4 | Springs to −100 on release (Horizontal) |
+| `RK_SPRING_RIGHT` | 5 | Springs to +100 on release (Horizontal) |
 
-### `RK_VARIANT()` Macro
-
-Packs centering mode and detent count into a single `variant` byte:
-
-```cpp
-RK_VARIANT(centering, detents)
-//   centering : RK_CENTER_NONE / LEFT / CENTER / RIGHT
-//   detents   : 0 = continuous; 1–63 = snap positions
-
-// Examples
-RK_VARIANT(RK_CENTER, 0)      // spring-to-centre, continuous
-RK_VARIANT(RK_CENTER_NONE, 5) // no spring, 5 snap positions
-```
-
-When using `RK_SliderProps` or `RK_KnobProps`, set `centering` and `detents` directly — the constructor packs them automatically.
-
-### Widget Styles
-
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `RK_PRIMARY` | 0 | Primary style (default) |
-| `RK_DIM` | 1 | Dimmed/inactive |
-| `RK_SUCCESS` | 2 | Success state (green) |
-| `RK_WARNING` | 3 | Warning state (yellow) |
-| `RK_DANGER` | 4 | Danger state (red) |
+When using `RK_SliderProps` or `RK_KnobProps`, set the `centering` field directly. This value is packed into the `VARIANT` byte in the protocol.
 
 ### LED Colours
 
@@ -354,9 +341,7 @@ RGB hex values for `setColor()`:
 4. **Use `pushUpdate()` for programmatic changes** — Keeps the app in sync when firmware modifies widget state.
 5. **Keep `loop()` fast** — Defer heavy work to timers or state machines.
 6. **Check `isConnected()`** — Before sending critical updates.
-7. **Use `centering` and `detents`** — For tactile, physical-feeling controls.
-8. **Respect the 8-item limit** — `MultipleButton`/`MultipleSelect` have a fixed pool of 8 slots.
-9. **Use the Props interface for runtime changes** — Modify `widget.props.label`, `widget.props.value`, etc., then call `pushMetaUpdate()` or `pushUpdate()`.
+7. **Use the Props interface for runtime changes** — Modify `widget.props.label`, `widget.props.value`, etc., then call `pushMetaUpdate()` or `pushUpdate()`.
 
 ## See Also
 

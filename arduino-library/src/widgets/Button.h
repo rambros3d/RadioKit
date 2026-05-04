@@ -17,7 +17,8 @@ struct RK_ButtonProps {
   uint8_t x = 0;
   uint8_t y = 0;
   int16_t rotation = 0; ///< Rotation in degrees. Positive = clockwise.
-  float scale = 1.0f;
+  uint8_t height = 15;
+  uint8_t width = 0;   ///< 0 = use default aspect
   uint8_t style = 0;
   bool state = false;
   const char *onText = nullptr;
@@ -42,7 +43,7 @@ public:
     RK_ButtonProps props;
 
 protected:
-    uint8_t defaultAspect() const override { return DEFAULT_ASPECT; }
+    float   defaultAspect() const override { return 1.0f; }
     bool    _pendingPress = false;
 
     void _initFromProps(const RK_ButtonProps& p, uint8_t typeId);

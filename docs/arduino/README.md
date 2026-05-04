@@ -6,7 +6,7 @@
 
 ## What is RadioKit?
 
-RadioKit is a powerful, object-oriented Arduino library (v2.0) that bridges your hardware and a highly customizable mobile dashboard. It allows you to build industrial-grade control interfaces using simple C++ structures.
+RadioKit is a powerful, object-oriented Arduino library (v3.0) that bridges your hardware and a highly customizable mobile dashboard. It allows you to build industrial-grade control interfaces using simple C++ structures.
 
 ### Key Features
 
@@ -47,20 +47,20 @@ lib_deps =
 #include <RadioKit.h>
 
 // ── Widget declarations (global scope) ────────────────────────────────
-RK_PushButton fireBtn({.label="Fire", .icon="flame", .x=20, .y=60, .scale=2.0f});
-RK_ToggleButton power({.label="Power", .x=20, .y=80, .scale=2.0f});
-RK_Slider level({.label="Level", .x=100, .y=60, .aspect=8.0f, .value=0});
-RK_Knob pan({.label="Pan", .icon="knob", .x=170, .y=40, .scale=2.0f, .centering=RK_CENTER});
-RK_Joystick joy({.label="Stick", .x=160, .y=70, .scale=2.0f});
-RK_LED status({.label="Status", .x=20, .y=20, .scale=1.4f});
-RK_Text uptime({.label="Uptime", .x=20, .y=10});
+RK_PushButton fireBtn({.x=20, .y=60, .height=20, .width=0, .rotation=0, .icon="flame", .label="Fire", .active=false});
+RK_ToggleButton power({.x=20, .y=80, .height=20, .width=0, .rotation=0, .label="Power", .active=false});
+RK_Slider level({.x=100, .y=60, .height=12, .width=100, .rotation=0, .label="Level", .active=false, .value=0});
+RK_Knob pan({.x=170, .y=40, .height=25, .width=0, .rotation=0, .icon="knob", .label="Pan", .active=false, .centering=RK_SPRING_CENTER});
+RK_Joystick joy({.x=160, .y=70, .height=25, .width=0, .rotation=0, .label="Stick", .active=false});
+RK_LED status({.x=20, .y=20, .height=15, .width=0, .rotation=0, .label="Status", .active=false});
+RK_Text uptime({.x=20, .y=10, .height=10, .width=0, .rotation=0, .label="Uptime", .active=false});
 
 void setup() {
   Serial.begin(115200);
   
   RadioKit.config.name = "MyRobot";
-  RadioKit.config.description = "Robot Controller v2.0";
-  RadioKit.config.theme = RK_DEFAULT;
+  RadioKit.config.description = "Robot Controller v3.0";
+  RadioKit.config.theme = "default";
   RadioKit.config.password = "1234";  // optional
   
   RadioKit.begin();
@@ -100,7 +100,7 @@ void loop() {
 }
 ```
 
-## Architecture (v2.0)
+## Architecture (v3.0)
 
 ### Object-Oriented Design
 
@@ -113,8 +113,8 @@ void loop() {
 
 - Fixed-size widget pool (`RADIOKIT_MAX_WIDGETS`, default 32)
 - No dynamic allocation after construction
-- Each widget type has a baseline aspect ratio and size
-- Scale factors control physical dimensions
+- Each widget type has a baseline height and width
+- Height and Width parameters control physical dimensions
 
 ### Communication Protocol
 

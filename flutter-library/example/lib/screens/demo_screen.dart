@@ -24,7 +24,6 @@ class _DemoScreenState extends State<DemoScreen> {
   final _pushActive = ValueNotifier<bool>(false);
   final _toggleState = ValueNotifier<bool>(false);
   final _toggleActive = ValueNotifier<bool>(false);
-  final _switchState = ValueNotifier<bool>(false);
   final _slideState = ValueNotifier<bool>(false);
   final _rockerState = ValueNotifier<bool>(false);
   final _sliderState = ValueNotifier<double>(0.5);
@@ -34,7 +33,6 @@ class _DemoScreenState extends State<DemoScreen> {
   final _knobActive = ValueNotifier<bool>(false);
   final _wheelState = ValueNotifier<double>(0.5);
   final _wheelActive = ValueNotifier<bool>(false);
-  final _switchActive = ValueNotifier<bool>(false);
   final _slideActive = ValueNotifier<bool>(false);
   final _rockerActive = ValueNotifier<bool>(false);
   final _pedalState = ValueNotifier<double>(0.0);
@@ -143,7 +141,6 @@ class _DemoScreenState extends State<DemoScreen> {
     _pushActive.dispose();
     _toggleState.dispose();
     _toggleActive.dispose();
-    _switchState.dispose();
     _slideState.dispose();
     _rockerState.dispose();
     _sliderState.dispose();
@@ -154,7 +151,6 @@ class _DemoScreenState extends State<DemoScreen> {
     _knobActive.dispose();
     _wheelState.dispose();
     _wheelActive.dispose();
-    _switchActive.dispose();
     _slideActive.dispose();
     _rockerActive.dispose();
     _displayText.dispose();
@@ -606,56 +602,10 @@ class _DemoScreenState extends State<DemoScreen> {
           SizedBox(
             width: 480,
             child: ValueListenableBuilder<bool>(
-              valueListenable: _switchState,
-              builder: (context, value, _) {
-                return DemoCard(
-                  index: 1,
-                  title: 'TOGGLE SWITCH',
-                  liveWidget: RKSwitch(
-                    value: value,
-                    onChanged: (v) => _switchState.value = v,
-                    onInteractionChanged: (active) => _switchActive.value = active,
-                    width: 80,
-                    height: 40,
-                    // Track content (labels only)
-                    onChild: _switchOnText.isNotEmpty 
-                      ? Text(_switchOnText, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))
-                      : null,
-                    offChild: _switchOffText.isNotEmpty
-                      ? Text(_switchOffText, style: const TextStyle(color: Color(0xFF666666), fontSize: 10, fontWeight: FontWeight.bold))
-                      : null,
-                    // Thumb content (icons only)
-                    onThumbChild: _switchOnIcon != null ? Icon(_switchOnIcon, size: 16, color: Colors.white) : null,
-                    offThumbChild: _switchOffIcon != null ? Icon(_switchOffIcon, size: 16, color: const Color(0xFF666666)) : null,
-                    enableHapticFeedback: _hapticsEnabled,
-                    label: _widgetLabel,
-                    rotation: _rotation * math.pi / 180,
-                  ),
-                  inputLabel: 'INPUT CONTROL',
-                  inputWidget: _buildBooleanInput(value, (v) => _switchState.value = v),
-                  outputWidget: Column(
-                    children: [
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _switchActive,
-                        builder: (context, active, _) => TelemetryRow(
-                          label: 'ACTIVE',
-                          value: active.toString().toUpperCase(),
-                        ),
-                      ),
-                      TelemetryRow(label: 'VALUE', value: value.toString().toUpperCase()),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          SizedBox(
-            width: 480,
-            child: ValueListenableBuilder<bool>(
               valueListenable: _slideState,
               builder: (context, value, _) {
                 return DemoCard(
-                  index: 2,
+                  index: 1,
                   title: 'SLIDE SWITCH',
                   liveWidget: RKSlideSwitch(
                     value: value,
@@ -691,7 +641,7 @@ class _DemoScreenState extends State<DemoScreen> {
               valueListenable: _rockerState,
               builder: (context, value, _) {
                 return DemoCard(
-                  index: 3,
+                  index: 2,
                   title: 'ROCKER SWITCH',
                   liveWidget: RKRockerSwitch(
                     value: value,

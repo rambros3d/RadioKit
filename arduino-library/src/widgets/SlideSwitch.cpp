@@ -6,7 +6,7 @@ RK_SlideSwitch::RK_SlideSwitch(RK_SlideSwitchProps p)
 {
     props  = p;
     typeId = RK_TYPE_SLIDE_SWITCH;
-    _init(p.label, p.x, p.y, p.scale, p.aspect, p.style, 0,
+    _init(p.label, p.x, p.y, p.height, p.width, p.style, 0,
           p.icon, p.onText, p.offText, p.rotation);
 }
 

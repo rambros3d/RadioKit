@@ -1,16 +1,16 @@
-# RadioKit - Controller UI Skins (v2.0)
+# RadioKit - Controller UI Skins (v3.0)
 
-RadioKit v2.0 introduces **Independent Width & Height Scaling** for supported widgets, while maintaining a high-fidelity native vector engine for all skin packs.
+RadioKit v3.0 introduces **Absolute Height & Width Sizing** for all widgets, while maintaining a high-fidelity native vector engine for all skin packs.
 
 ---
 
 ## 1. Dimensional Scaling
+|
+Starting with v3.0, the layout engine uses absolute height and width units (0–200) to provide deterministic control over the dashboard layout:
 
-Starting with v2.0, the layout engine strictly separates width and height multipliers to provide more intuitive control over the dashboard layout:
-
-- **Variable Scaling**: Slider and Text widgets allow independent `width` and `height` factors.
-- **Dynamic Aspect**: `MultipleButton` and `MultipleSelect` widgets automatically calculate their width based on the number of items (`1 : N`), scaled by the `height` factor.
-- **Fixed Scaling**: All other widgets (Joystick, Knob, LED, Button, Switch) are scaled using a single `height` factor to preserve their natural shapes.
+- **Variable Scaling**: Slider and Text widgets allow independent `width` and `height` values.
+- **Auto-Aspect**: Setting `width` to `0` enables the auto-aspect mode, where the widget calculates its own width based on its internal content (e.g., labels or number of items).
+- **Fixed Scaling**: Widgets with fixed aspect ratios (Joystick, Knob, LED, Button, Switch) are sized primarily by their `height`. The `width` parameter is ignored for these widgets to preserve their natural geometry.
 
 ---
 
@@ -18,7 +18,7 @@ Starting with v2.0, the layout engine strictly separates width and height multip
 
 RadioKit skins now exclusively use Skia/Impeller-based rendering. Widgets are composed of high-quality SVG layers that are tinted and transformed in real-time.
 
-### Key Features in v2.0:
+### Key Features in v3.0:
 
 - **No HTML/CSS**: Pure native rendering for maximum performance.
 - **Decentralized Config**: Each widget is a self-contained folder in the skin pack.
@@ -87,7 +87,7 @@ Each widget folder contains a `config.json` that defines its specific visual map
 
 ### High-Fidelity Physics
 
-RadioKit v2.0 uses a **Spring Simulation** for interactive elements like Joysticks, Sliders, and Knobs.
+RadioKit v3.0 uses a **Spring Simulation** for interactive elements like Joysticks, Sliders, and Knobs.
 
 ```json
 {

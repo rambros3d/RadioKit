@@ -22,7 +22,8 @@ struct RK_MultipleProps {
   uint8_t x = 0;
   uint8_t y = 0;
   int16_t rotation = 0; ///< Rotation in degrees.
-  float scale = 1.0f;
+  uint8_t height = 10;
+  uint8_t width = 0;
   uint8_t style = 0;
   uint8_t variant = 0;
   uint8_t value = 0;
@@ -31,8 +32,6 @@ struct RK_MultipleProps {
 
 class RadioKit_Multiple : public RadioKit_Widget {
 public:
-    static constexpr uint8_t DEFAULT_ASPECT = 30;
-
     uint8_t inputSize()  const override { return 1; }
     uint8_t outputSize() const override { return 0; }
     uint16_t serializeStrings(uint8_t* buf) const override;
@@ -50,7 +49,7 @@ public:
     RK_MultipleProps props;
 
 protected:
-    uint8_t defaultAspect() const override { return DEFAULT_ASPECT; }
+    float defaultAspect() const override { return 1.0f; }
     RK_Item  _pool[RADIOKIT_MAX_ITEMS];
     uint8_t  _poolCount = 0;
 

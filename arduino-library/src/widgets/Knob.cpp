@@ -3,7 +3,7 @@
 RK_Knob::RK_Knob(RK_KnobProps p) : props(p) {
     typeId = RK_TYPE_KNOB;
     uint8_t v = RK_VARIANT(p.centering, p.detents);
-    _init(p.label, p.x, p.y, p.scale, 0.0f, p.style, v,
+    _init(p.label, p.x, p.y, p.height, p.width, p.style, v,
           p.icon, nullptr, nullptr, 0);
     props.value = p.value;
 }

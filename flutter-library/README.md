@@ -7,7 +7,8 @@ A Flutter widget library providing hardware-control UI widgets — buttons, slid
 | Widget | Description |
 |---|---|
 | `RKButton` | Momentary or toggle push button |
-| `RKSwitch` | On/off toggle switch |
+| `RKSlideSwitch` | Horizontal slide on/off switch |
+| `RKRockerSwitch` | Vertical rocker on/off switch |
 | `RKSlider` | Linear slider (horizontal/vertical) |
 | `RKKnob` | Rotary knob |
 | `RKJoystick` | 2-axis joystick |

@@ -22,10 +22,10 @@ public:
     // ── Accessors ──────────────────────────────────────────────────────
     uint8_t     x()        const { return _x; }
     uint8_t     y()        const { return _y; }
-    /// Scale ×10 (e.g. 1.5 → 15)
-    uint8_t     scale()    const { return _scale; }
-    /// Aspect ×10 (e.g. 2.5 → 25). 0 = use widget default.
-    uint8_t     aspect()   const { return _aspect != 0 ? _aspect : defaultAspect(); }
+    /// Height in virtual units (0-200).
+    uint8_t     height()   const { return _height; }
+    /// Width in virtual units (0-200).
+    uint8_t     width()    const { return _width; }
     /// Rotation in degrees (absolute).
     int16_t     rotation() const { return _rotation; }
     bool        enabled()  const { return _enabled; }
@@ -50,8 +50,8 @@ public:
 
 protected:
     uint8_t  _x, _y;
-    uint8_t  _scale;
-    uint8_t  _aspect;
+    uint8_t  _height;
+    uint8_t  _width;
     int16_t  _rotation;
     bool     _enabled;
     uint8_t  _style;
@@ -61,11 +61,11 @@ protected:
     char     _onText [RADIOKIT_MAX_LABEL + 1];
     char     _offText[RADIOKIT_MAX_LABEL + 1];
 
-    virtual uint8_t defaultAspect() const = 0;
+    virtual float defaultAspect() const = 0;
 
     /// rotation defaults to 0. Positive = clockwise in degrees.
     void _init(const char* label,  uint8_t x,        uint8_t y,
-               float scale,        float   aspect,
+               uint8_t height,     uint8_t width,
                uint8_t style,      uint8_t variant,
                const char* icon,   const char* onText, const char* offText,
                int16_t rotation = 0);
@@ -75,10 +75,9 @@ private:
 };
 
 // ── Static helper ────────────────────────────────────────────────────────
-static inline uint8_t _floatToWire(float f) {
-    if (f <= 0.0f) return 0;
-    float v = f * 10.0f + 0.5f;
-    return (v > 255.0f) ? 255 : (uint8_t)v;
+static inline uint8_t _clampUint8(int val) {
+    if (val < 0) return 0;
+    return (val > 255) ? 255 : (uint8_t)val;
 }
 
 #endif // RADIOKIT_WIDGET_H

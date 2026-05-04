@@ -17,7 +17,8 @@ struct RK_KnobProps {
   const char* icon      = nullptr; ///< Icon identifier shown on the knob face.
   uint8_t     x         = 0;
   uint8_t     y         = 0;
-  float       scale     = 1.0f;
+  uint8_t     height    = 20;
+  uint8_t     width     = 0;   ///< 0 = use default aspect
   uint8_t     style     = 0;
   uint8_t     centering = RK_CENTER_NONE; ///< RK_CENTER_NONE/LEFT/CENTER/RIGHT
   uint8_t     detents   = 0;             ///< 0 = continuous; 1-63 = snap positions
@@ -28,8 +29,6 @@ struct RK_KnobProps {
 
 class RK_Knob : public RadioKit_Widget {
 public:
-    static constexpr uint8_t DEFAULT_ASPECT = 10; ///< Square (1.0)
-
     RK_Knob(RK_KnobProps p);
 
     uint8_t inputSize()  const override { return 1; }
@@ -47,7 +46,7 @@ public:
     RK_KnobProps props;
 
 protected:
-    uint8_t defaultAspect() const override { return DEFAULT_ASPECT; }
+    float defaultAspect() const override { return 1.0f; }
 };
 
 #endif // RADIOKIT_WIDGET_KNOB_H
